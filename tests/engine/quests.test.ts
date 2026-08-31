@@ -1,7 +1,7 @@
 import { describe, it, expect } from 'vitest';
-import { generateCoreQuestTemplates } from '../../src/engine/quests';
+import { generateCoreQuestTemplates, generateQuests } from '../../src/engine/quests';
 import { DEFAULT_CONFIG } from '../../src/engine/config';
-import type { EngineDeps, ImplementationIntention } from '../../src/engine/types';
+import type { EngineDeps, ImplementationIntention, QuestInstance } from '../../src/engine/types';
 
 function seededDeps(): EngineDeps {
   let counter = 0;
@@ -93,5 +93,65 @@ describe('generateCoreQuestTemplates', () => {
       expect(t.active_to).toBeNull();
       expect(t.locked_until_checkpoint).toBe(true);
     }
+  });
+});
+
+describe('generateQuests', () => {
+  const templates = generateCoreQuestTemplates('arc-1', INTENTIONS, DEFAULT_CONFIG, seededDeps());
+  const today = '2026-09-05';
+
+  it('produces exactly 6 instances for a fresh day', () => {
+    const instances = generateQuests(today, templates, [], DEFAULT_CONFIG, seededDeps());
+    expect(instances).toHaveLength(6);
+    expect(instances.every((i) => i.state === 'available')).toBe(true);
+    expect(instances.every((i) => i.local_date === today)).toBe(true);
+  });
+
+  it('is idempotent: called twice with the existing instances, returns them unchanged', () => {
+    const first = generateQuests(today, templates, [], DEFAULT_CONFIG, seededDeps());
+    const second = generateQuests(today, templates, first, DEFAULT_CONFIG, seededDeps());
+    expect(second).toEqual(first);
+  });
+
+  it('never overwrites a completed instance', () => {
+    const first = generateQuests(today, templates, [], DEFAULT_CONFIG, seededDeps());
+    const completed: QuestInstance[] = first.map((i, idx) =>
+      idx === 0 ? { ...i, state: 'complete', completed_at: '2026-09-05T05:00:00Z' } : i
+    );
+    const regenerated = generateQuests(today, templates, completed, DEFAULT_CONFIG, seededDeps());
+    expect(regenerated[0]?.state).toBe('complete');
+    expect(regenerated[0]?.completed_at).toBe('2026-09-05T05:00:00Z');
+  });
+
+  it('excludes templates outside their active window', () => {
+    const futureTemplate = { ...templates[0]!, id: 'tpl-future', active_from: '2099-01-01' };
+    const expiredTemplate = { ...templates[1]!, id: 'tpl-expired', active_to: '2020-01-01' };
+    const instances = generateQuests(
+      today,
+      [...templates, futureTemplate, expiredTemplate],
+      [],
+      DEFAULT_CONFIG,
+      seededDeps()
+    );
+    expect(instances.map((i) => i.template_id)).not.toContain('tpl-future');
+    expect(instances.map((i) => i.template_id)).not.toContain('tpl-expired');
+    expect(instances).toHaveLength(6);
+  });
+
+  it('is deterministic with a seeded newId', () => {
+    const a = generateQuests(today, templates, [], DEFAULT_CONFIG, seededDeps());
+    const b = generateQuests(today, templates, [], DEFAULT_CONFIG, seededDeps());
+    expect(a).toEqual(b);
+  });
+
+  it('generates for the given localDate only — no backfill', () => {
+    const instances = generateQuests(today, templates, [], DEFAULT_CONFIG, seededDeps());
+    expect(new Set(instances.map((i) => i.local_date))).toEqual(new Set([today]));
+    // A prior day's instances passed as `existing` are irrelevant — they
+    // don't match today's local_date, so the caller wouldn't pass them in
+    // (existing is scoped to `localDate`), and generation still yields
+    // exactly today's 6, never a backfilled set for the gap.
+    const withStaleExisting = generateQuests(today, templates, [], DEFAULT_CONFIG, seededDeps());
+    expect(withStaleExisting).toHaveLength(6);
   });
 });

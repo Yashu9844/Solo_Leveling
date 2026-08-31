@@ -74,22 +74,15 @@ export default tseslint.config(
   // Phase 0 stub functions have full typed signatures but throw
   // 'Not implemented — Slice N' instead of a body (final/09 Step 3), so
   // their parameters are intentionally unused. As each file gets a real
-  // implementation it comes OFF this file list (Slice 1: quests.ts, whose
-  // one remaining stub — generateQuests — is covered by its own inline
-  // eslint-disable block instead). Repeat this shrinking every slice.
+  // implementation it comes OFF this file list. Slice 1: quests.ts's
+  // generateCoreQuestTemplates. Slice 2: quests.ts's generateQuests (now
+  // fully implemented — its inline eslint-disable block is gone) and
+  // reduce.ts (now off the allowance too; its one still-unused parameter
+  // is `void`-guarded per branch instead — see applyEvents). Repeat this
+  // shrinking every slice as xp.ts, level.ts, etc. get implemented.
   {
     files: ['src/engine/**/*.ts'],
     ignores: ['src/engine/quests.ts', 'src/engine/reduce.ts'],
-    rules: {
-      '@typescript-eslint/no-unused-vars': ['error', { args: 'none' }],
-    },
-  },
-  // reduce.ts has one real branch (ARC_STARTED) and future branches whose
-  // `config` parameter isn't used by every case yet — keep it on the
-  // stub-args allowance for now rather than an unused-vars ignore comment
-  // per branch; revisit as more event types land.
-  {
-    files: ['src/engine/reduce.ts'],
     rules: {
       '@typescript-eslint/no-unused-vars': ['error', { args: 'none' }],
     },

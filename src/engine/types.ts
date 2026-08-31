@@ -86,7 +86,7 @@ export type QuestInstanceState =
   | 'recoverable'
   | 'expired';
 
-export interface QuestState {
+export interface QuestInstance {
   id: string;
   template_id: string;
   local_date: string;
@@ -232,10 +232,45 @@ export interface MetricRecordedPayload {
   unit: string;
 }
 
+export interface QuestCompletedPayload {
+  instanceId: string;
+  templateId: string;
+  questKey: CoreQuestKey;
+  localDate: string;
+}
+
+export interface QuestUndonePayload {
+  instanceId: string;
+  localDate: string;
+}
+
+/**
+ * A completion recorded purely from the event log. There is no
+ * "instance created" event in the V1 catalogue (final/07 §4.1) — quest
+ * instances are a generated projection (see engine/quests.ts's
+ * generateQuests), not event-sourced. So reduce.ts cannot hold instance
+ * objects; it holds this overlay instead, keyed by instance id, and the
+ * store layer merges it onto freshly generated 'available' instances.
+ * QUEST_UNDONE deletes the corresponding entry rather than storing a
+ * separate "undone" record — undone means "no overlay," i.e. available.
+ */
+export interface QuestCompletionRecord {
+  instance_id: string;
+  template_id: string;
+  local_date: string;
+  completed_at: string;
+}
+
 /** The full derived state produced by replaying the event log. reduce.ts */
 export interface EngineState {
   player: PlayerState;
   days: Record<string, DayState>; // keyed by local_date
-  quests: QuestState[];
+  quests: Record<string, QuestCompletionRecord>; // keyed by instance id
+  // Latest PLAN_AMENDED per quest key — see QuestCompletionRecord's note:
+  // there is no template object in EngineState to "attach" an intention
+  // to (templates aren't event-sourced either), so this tracks the same
+  // information the way reduce.ts actually can.
+  intentions: Partial<Record<CoreQuestKey, ImplementationIntention>>;
+  baselineMetrics: Record<string, number>; // kind -> value, from METRIC_RECORDED
   arc: ArcState | null;
 }

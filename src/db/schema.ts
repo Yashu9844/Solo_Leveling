@@ -3,7 +3,7 @@
 import type {
   EventSource,
   EventType,
-  QuestInstanceState,
+  QuestInstance,
   QuestTemplate,
   XpCategory,
 } from '../engine/types';
@@ -54,15 +54,8 @@ export interface ArcRow {
 // Same shape as the pure engine type — the row IS the persisted template.
 export type QuestTemplateRow = QuestTemplate;
 
-export interface QuestInstanceRow {
-  id: string; // pk
-  template_id: string;
-  local_date: string;
-  state: QuestInstanceState;
-  progress: Record<string, unknown>;
-  completed_at?: string;
-  recovered: boolean;
-}
+// Same shape as the pure engine type — the row IS the generated instance.
+export type QuestInstanceRow = QuestInstance;
 
 export interface ApplicationRow {
   id: string; // pk

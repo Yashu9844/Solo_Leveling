@@ -1,0 +1,30 @@
+/* Design tokens — final/06-ux-screens-design.md §4.1. Verbatim. */
+:root {
+  --bg: #0a0b0d;
+  --surface: #131519;
+  --surface-2: #1b1e24;
+  --border: #262a31;
+
+  --text: #e8eaed;
+  --text-dim: #9ba1aa;
+  --text-faint: #5c636d;
+
+  --accent: #4da3ff; /* the ONLY brand colour */
+  --accent-dim: #2a5a8f;
+
+  --state-complete: #3fbf8f;
+  --state-pending: #5c636d; /* grey, never red */
+  --state-recover: #e0a33e;
+  --state-alert: #d95c5c; /* RESERVED: data-loss + safety warnings only */
+
+  --radius-sm: 6px;
+  --radius-md: 10px;
+  --radius-pill: 999px;
+  --sp-1: 4px;
+  --sp-2: 8px;
+  --sp-3: 12px;
+  --sp-4: 16px;
+  --sp-6: 24px;
+  --sp-8: 32px;
+  --sp-12: 48px;
+}

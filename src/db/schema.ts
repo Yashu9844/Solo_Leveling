@@ -51,20 +51,8 @@ export interface ArcRow {
   status: 'active' | 'paused' | 'complete';
 }
 
-export interface QuestTemplateRow {
-  id: string; // pk
-  arc_id: string;
-  type: 'core' | 'weekly' | 'adaptive' | 'recovery' | 'revisit' | 'boss' | 'side';
-  key: string;
-  title: string;
-  category: XpCategory;
-  xp: number;
-  criterion: Record<string, unknown>;
-  implementation_intention?: { time: string; place: string; first_action: string };
-  active_from: string;
-  active_to?: string;
-  locked_until_checkpoint: boolean;
-}
+// Same shape as the pure engine type — the row IS the persisted template.
+export type QuestTemplateRow = QuestTemplate;
 
 export interface QuestInstanceRow {
   id: string; // pk
@@ -267,6 +255,10 @@ export interface AttributeSnapshotRow {
   components: Record<string, number>;
 }
 
+// export_verified is required true before sealing from Day 30 onward
+// (final/07 §8's export-before-seal rule) — Day 0 is exempt since there
+// is nothing to export yet at arc creation. Enforced at the write site
+// (src/store/onboarding.ts for Day 0; Slice 12 for Day 30+), not here.
 export interface CheckpointRow {
   id: string; // pk
   day: 0 | 14 | 30 | 60 | 90 | 120;

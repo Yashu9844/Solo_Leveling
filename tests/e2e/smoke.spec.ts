@@ -1,7 +1,9 @@
 import { test, expect } from '@playwright/test';
+import { completeOnboarding } from './helpers';
 
 test('app loads and the four tabs are visible and navigable', async ({ page }) => {
-  await page.goto('/');
+  // Slice 1: the 4-tab shell is gated behind arc creation.
+  await completeOnboarding(page);
 
   const nav = page.getByRole('navigation', { name: 'Primary' });
   await expect(nav).toBeVisible();

@@ -33,6 +33,15 @@ export default {
         8: 'var(--sp-8)',
         12: 'var(--sp-12)',
       },
+      // final/06-ux-screens-design.md §4.2 — the product's type scale.
+      fontSize: {
+        xl: ['32px', { lineHeight: '36px', fontWeight: '600' }],
+        lg: ['22px', { lineHeight: '28px', fontWeight: '600' }],
+        md: ['17px', { lineHeight: '24px', fontWeight: '500' }],
+        sm: ['15px', { lineHeight: '22px', fontWeight: '400' }],
+        xs: ['13px', { lineHeight: '18px', fontWeight: '400' }],
+        xxs: ['11px', { lineHeight: '16px', fontWeight: '500', letterSpacing: '0.08em' }],
+      },
     },
   },
   plugins: [],

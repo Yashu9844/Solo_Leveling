@@ -180,7 +180,7 @@ export interface EngineDeps {
 
 ## STEP 5 — TYPES, CONFIG, TIME
 
-**`src/engine/types.ts`** — define (types only, no logic): `SystemEvent`, `EventType` (the 27 types listed in `final/07-data-model-architecture.md` §4.1), `XpCategory`, `XpGrant`, `QuestKey`, `QuestState`, `DayState`, `PlayerState`, `Attribute`, `Rank`, `MasteryState`, `EngineConfig`, `EngineDeps`.
+**`src/engine/types.ts`** — define (types only, no logic): `SystemEvent`, `EventType` (the 30 types listed in `final/07-data-model-architecture.md` §4.1), `XpCategory`, `XpGrant`, `QuestKey`, `QuestState`, `DayState`, `PlayerState`, `Attribute`, `Rank`, `MasteryState`, `EngineConfig`, `EngineDeps`.
 
 **`src/engine/config.ts`** — every tunable constant, transcribed exactly from `final/01-quests-xp-level-rank.md`. Nothing may be hard-coded anywhere else in the codebase:
 
@@ -209,7 +209,7 @@ export const DEFAULT_CONFIG = {
   mvdXp: 35,
   recoveryXp: 40,
   bossXp: 500,
-  level: { base: 200, coefficient: 75, exponent: 0.98, roundTo: 10 },
+  level: { base: 200, coefficient: 84, exponent: 0.98, roundTo: 10 },
   streak: { graceDaysPer28: 4, reducedModeTriggerMisses: 2, reducedModeExitDays: 2 },
   attributes: { windowDays: 28 },
   srs: { firstAttemptIntervals: [3, 10, 30, 90], hint: 3, editorial: 2, unsolved: 1,

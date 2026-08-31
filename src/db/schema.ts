@@ -1,6 +1,12 @@
 // Dexie table + index declarations only. No queries, no business logic.
 // Mirrors final/07-data-model-architecture.md §4. Version 1.
-import type { EventSource, EventType, QuestInstanceState, XpCategory } from '../engine/types';
+import type {
+  EventSource,
+  EventType,
+  QuestInstanceState,
+  QuestTemplate,
+  XpCategory,
+} from '../engine/types';
 
 export interface EventRow {
   id: string; // uuidv7, pk

@@ -117,9 +117,9 @@ Career is now a core quest and had no attribute representation. Added MOMENTUM (
 
 Sleep is 60 XP, not 75. Instead of pricing late nights, quests become **unavailable after 03:00** (sleep target 02:00 + 60 min grace) until the 04:00 rollover. Working past 03:00 earns nothing. That's a firmer constraint than an XP penalty, and it carries no shame.
 
-### C6 — Level curve re-tuned: coefficient 62 → **75**
+### C6 — Level curve re-tuned: coefficient 62 → **84**
 
-The new quest set has richer bonus sources (extra applications, office learning blocks, steps, maintenance). Left unchanged, the curve inflated to Level 44 at 85% and 48 at perfect play. Re-tuned so Level 40 remains the arc terminus at 85%. Full table and simulation in `01`.
+The new quest set has richer bonus sources (extra applications, office learning blocks, steps, maintenance). Re-tuned twice: first to 75, then to **84** once the uncapped weekly, boss and recovery grants were included in the simulation — they add ~13% to arc totals. Level 40 remains the arc terminus at 85% completion. Full table and simulation in `01 §3`.
 
 ### C7 — A **Moments** system, per your §29
 

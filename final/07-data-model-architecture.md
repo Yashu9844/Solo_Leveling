@@ -142,7 +142,8 @@ xp_ledger {
 }
 ```
 
-**Event catalogue — 27 types, the complete V1 set:**
+**Event catalogue — 30 types, the complete V1 set:**
+*(Corrected 31 Aug 2026. An earlier revision said 27; the enumerated list has always been 30 and the list is authoritative.)*
 
 ```
 ARC_STARTED  ARC_PAUSED  ARC_RESUMED  ARC_AMENDED

@@ -27,15 +27,11 @@ export default tseslint.config(
   // ── The engine boundary ────────────────────────────────────────────────
   // src/engine/ must be pure and deterministic: no React, no Dexie, no
   // Zustand, no DOM globals, no ambient clock/randomness/uuid. The clock
-  // and id generator are always injected via EngineDeps.
+  // and id generator are always injected via EngineDeps. Applies to every
+  // engine file, implemented or not — this restriction never shrinks.
   {
     files: ['src/engine/**/*.ts'],
     rules: {
-      // Phase 0 stub functions have full typed signatures but throw
-      // 'Not implemented — Slice N' instead of a body, per
-      // final/09-PHASE-0-PROMPT.md Step 3 — so their parameters are
-      // intentionally unused until the slice that implements them.
-      '@typescript-eslint/no-unused-vars': ['error', { args: 'none' }],
       'no-restricted-imports': [
         'error',
         {
@@ -72,6 +68,30 @@ export default tseslint.config(
           message: 'Inject the clock — no `new Date()` in engine/.',
         },
       ],
+    },
+  },
+  // ── Stub-args allowance — shrinks every slice ──────────────────────────
+  // Phase 0 stub functions have full typed signatures but throw
+  // 'Not implemented — Slice N' instead of a body (final/09 Step 3), so
+  // their parameters are intentionally unused. As each file gets a real
+  // implementation it comes OFF this file list (Slice 1: quests.ts, whose
+  // one remaining stub — generateQuests — is covered by its own inline
+  // eslint-disable block instead). Repeat this shrinking every slice.
+  {
+    files: ['src/engine/**/*.ts'],
+    ignores: ['src/engine/quests.ts', 'src/engine/reduce.ts'],
+    rules: {
+      '@typescript-eslint/no-unused-vars': ['error', { args: 'none' }],
+    },
+  },
+  // reduce.ts has one real branch (ARC_STARTED) and future branches whose
+  // `config` parameter isn't used by every case yet — keep it on the
+  // stub-args allowance for now rather than an unused-vars ignore comment
+  // per branch; revisit as more event types land.
+  {
+    files: ['src/engine/reduce.ts'],
+    rules: {
+      '@typescript-eslint/no-unused-vars': ['error', { args: 'none' }],
     },
   }
 );

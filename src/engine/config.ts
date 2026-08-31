@@ -18,6 +18,10 @@ export const DEFAULT_CONFIG: EngineConfig = {
     sleep: { xp: 60, category: 'SLEEP' },
     attention: { xp: 40, category: 'ATTENTION' },
   }, // sums to 500
+  // BONUS and BOSS grants (weekly payout, recovery, boss clears) are
+  // deliberately absent from this table — final/01 §2.1.1: they are
+  // frequency-limited, not volume-limited, and are exempt from both
+  // category caps and the daily cap. See EngineConfig.categoryCaps.
   categoryCaps: {
     CAREER: 140,
     MIND: 200,
@@ -32,7 +36,11 @@ export const DEFAULT_CONFIG: EngineConfig = {
   mvdXp: 35,
   recoveryXp: 40,
   bossXp: 500,
-  level: { base: 200, coefficient: 75, exponent: 0.98, roundTo: 10 },
+  // Revised 84 (was 75) — final/01 §3 revision note, 31 Aug 2026. The
+  // original 75 was tuned on a simulation that omitted the uncapped
+  // BONUS/BOSS grants above; including them adds ~13% to arc totals and
+  // pushed the Level-40 terminus to 43. 84 restores it to 40 at 85%.
+  level: { base: 200, coefficient: 84, exponent: 0.98, roundTo: 10 },
   streak: { graceDaysPer28: 4, reducedModeTriggerMisses: 2, reducedModeExitDays: 2 },
   attributes: { windowDays: 28 },
   srs: {

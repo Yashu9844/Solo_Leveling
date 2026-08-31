@@ -187,7 +187,7 @@ Five seconds to know what matters, then close.
 
 ```
 ┌─────────────────────────────────┐
-│  DAY 22 · LEVEL 12 · RANK D     │
+│  DAY 22 · LEVEL 13 · RANK D     │
 │                                  │
 │  Today: applications at 08:35,   │  ← THE priority, one sentence
 │  then DSA at 22:00.              │

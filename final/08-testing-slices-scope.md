@@ -98,7 +98,7 @@ xp.test.ts
   ✓ MVD = 35 and cannot be repeated within a day
 
 level.test.ts
-  ✓ req(n) matches the published table exactly (coefficient 75)
+  ✓ req(n) matches the published table exactly (coefficient 84)
   ✓ boundary: exactly-enough levels up; one XP short does not
   ✓ multi-level-up in one grant handled
   ✓ simulated arcs reproduce the §3 outcome table (±1 level)

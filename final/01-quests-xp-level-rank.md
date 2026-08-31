@@ -111,7 +111,19 @@ Not part of core-completion %. Cannot compete with the six. Present so the day f
 | MAINT | 20 | all-done bonus |
 | **Hard daily cap** | **700** | binds before the 885 sum of category caps |
 
-Non-repeating grants outside the daily cap accounting: weekly quest 150–250 · recovery quest 40 · boss cleared 500.
+### 2.1.1 Uncapped grants — `BONUS` and `BOSS`
+
+Three grant types are **exempt from both category caps and the daily cap**:
+
+| Grant | Category | Frequency limit (this is what constrains it) |
+|---|---|---|
+| Weekly quest payout | `BONUS` | once per weekly quest, per week |
+| Recovery quest | `BONUS` | max 1 per day |
+| Boss cleared | `BOSS` | once per boss, 4 in the arc |
+
+**Why exempt:** each is *frequency*-limited rather than *volume*-limited, so it cannot be farmed. And capping them produces an absurdity — clearing a boss on an ordinary 555 XP day would silently discard 355 of the 500 XP, making the biggest moment in the arc feel like nothing.
+
+Consequently `categoryCaps` in `engine/config.ts` is typed `Record<Exclude<XpCategory,'BONUS'|'BOSS'>, number>` — 8 entries, matching the table above exactly. Do not invent caps for `BONUS` or `BOSS`.
 
 ### 2.2 Verified behaviour (60 seeds × 120 days, simulated)
 
@@ -138,43 +150,47 @@ The review earns nothing because paying for reviews incentivises reviewing over 
 ## 3. Level system
 
 ```
-req(n) = round₁₀( 200 + 75 · n^0.98 )     ← coefficient re-tuned from 62
+req(n) = round₁₀( 200 + 84 · n^0.98 )
 ```
+
+> **Revision note (31 Aug 2026).** The coefficient was 62 in v1 and 75 in the first final draft. Both were tuned on a simulation that **omitted the uncapped grants in §2.1.1** — weekly payouts, boss clears, recovery quests. Including them adds ~13% to arc totals and pushed the terminus to Level 43. **The coefficient is now 84**, restoring Level 40 at 85% completion. This is a one-line change in `engine/config.ts`; `level.ts` is not yet implemented, so nothing downstream is affected.
 
 | From → To | XP | Cumulative to reach |
 |---|---|---|
 | 1 → 2 | 280 | — |
-| 2 → 3 | 350 | 280 |
-| 3 → 4 | 420 | 630 |
-| 5 → 6 | 560 | 1,540 |
-| 10 → 11 | 920 | 5,060 |
-| 15 → 16 | 1,270 | 10,360 |
-| 20 → 21 | 1,610 | 17,380 |
-| 25 → 26 | 1,960 | 26,130 |
-| 30 → 31 | 2,300 | 36,610 |
-| 35 → 36 | 2,640 | 48,810 |
-| 40 → 41 | 2,990 | 62,710 |
-| 45 → 46 | 3,330 | 78,320 |
-| 50 → 51 | 3,670 | 95,640 |
+| 2 → 3 | 370 | 280 |
+| 3 → 4 | 450 | 650 |
+| 5 → 6 | 610 | 1,630 |
+| 10 → 11 | 1,000 | 5,460 |
+| 15 → 16 | 1,390 | 11,260 |
+| 20 → 21 | 1,780 | 19,000 |
+| 25 → 26 | 2,170 | 28,680 |
+| 30 → 31 | 2,550 | 40,300 |
+| 35 → 36 | 2,940 | 53,830 |
+| 40 → 41 | 3,320 | 69,280 |
+| 45 → 46 | 3,700 | 86,650 |
+| 50 → 51 | 4,080 | 105,930 |
 
 ### Simulated arc outcomes
 
+Monte Carlo, 60 runs per condition, 120 days, **including** capped bonuses and the uncapped weekly / boss / recovery grants:
+
 | Core completion | XP/day | Total | L@30 | L@60 | L@90 | **L@120** |
 |---|---|---|---|---|---|---|
-| 50% | 315 | 37,811 | 14 | 20 | 26 | **30** |
-| 60% | 378 | 45,360 | 15 | 23 | 28 | **33** |
-| 70% | 441 | 52,931 | 17 | 25 | 31 | **36** |
-| **85%** | **533** | **63,954** | **19** | **27** | **34** | **40** |
-| 95% | 595 | 71,414 | 20 | 29 | 36 | **42** |
-| 100% | 628 | 75,400 | 20 | 30 | 37 | **44** |
+| 50% | 363 | 43,574 | 14 | 21 | 26 | **31** |
+| 60% | 430 | 51,657 | 16 | 23 | 29 | **34** |
+| 70% | 500 | 60,044 | 17 | 25 | 31 | **37** |
+| **85%** | **600** | **71,984** | **19** | **27** | **34** | **40** |
+| 95% | 668 | 80,200 | 20 | 29 | 36 | **43** |
+| 100% | 702 | 84,201 | 20 | 30 | 37 | **44** |
 
-**Days per level at 85%:** L1→5 = 0.7 · L5→10 = 1.3 · L10→15 = 2.0 · L15→20 = 2.6 · L20→25 = 3.3 · L25→30 = 3.9 · L30→35 = 4.6 · L35→40 = 5.2.
+**Days per level at 85%:** L1→5 = 0.7 · L5→10 = 1.3 · L10→15 = 1.9 · L15→20 = 2.6 · L20→25 = 3.2 · L25→30 = 3.9 · L30→35 = 4.5 · L35→40 = 5.2.
 
-**First week, core-complete daily:** Day 1 → L2 · Day 2 → L4 · Day 3 → L5 · Day 5 → L7 · Day 7 → L8.
+**First week, core-complete daily (~555/day):** Day 1 → L2 · Day 2 → L4 · Day 3 → L5 · Day 5 → L6 · Day 7 → L8.
 
 **Why Level 40 and not 100:** at 120 days, reaching 100 requires either one level per day (meaningless) or XP inflation. Level 40 with 5+ days per level at the end means the last levels are genuinely earned, and a second arc continues from 40 rather than resetting.
 
-**Why the 50%–100% spread is only 30 → 44:** Level is not the discriminator between a good arc and a mediocre one. Rank is. If Level punished a bad fortnight hard, the visible stall would trigger abandonment at exactly the wrong moment.
+**Why the 50%–100% spread is only 31 → 44:** Level is not the discriminator between a good arc and a mediocre one. Rank is. If Level punished a bad fortnight hard, the visible stall would trigger abandonment at exactly the wrong moment.
 
 ### Level unlocks (progressive disclosure, not rewards)
 

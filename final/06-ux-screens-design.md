@@ -199,7 +199,7 @@ Every state has a **shape** as well as a colour (○ ● ◐ ↺ ⌁) so nothing
 
 ```
 ┌─────────────────────────────────────┐
-│  DAY 22 · LEVEL 12 · RANK D         │
+│  DAY 22 · LEVEL 13 · RANK D         │
 │                                      │
 │  Today: applications at 08:35,       │
 │  then DSA at 22:00.                  │
@@ -325,9 +325,9 @@ REALITY is the **default** sub-tab from Day 30. Small decision, large effect: th
 ```
 ┌─────────────────────────────────────┐
 │  YASHAVANTH                          │
-│      LEVEL 12         RANK D         │
-│   ▓▓▓▓▓▓▓░░░  730 / 1,060 to L13     │
-│                    total XP  7,700   │
+│      LEVEL 13         RANK D         │
+│   ▓▓▓▓▓▓▓░░░  760 / 1,240 to L14     │
+│                    total XP  9,460   │
 │                                      │
 │  ⓘ Rank D → C: 6 conditions, you     │
 │    meet 4. Checkpoint Day 30 (8d).   │

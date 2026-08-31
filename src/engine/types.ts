@@ -142,8 +142,10 @@ export interface EngineConfig {
     endDate: string;
   };
   coreQuests: Record<CoreQuestKey, { xp: number; category: XpCategory }>;
-  // BONUS and BOSS are non-repeating grants outside category-cap accounting
-  // (final/01 §2.1) — they have no entry in this table.
+  // BONUS (weekly payout, recovery) and BOSS grants are frequency-limited,
+  // not volume-limited, and are exempt from both category caps and the
+  // daily cap — final/01 §2.1.1. This is a specified exemption, not an
+  // omission: do not add entries for them here.
   categoryCaps: Record<Exclude<XpCategory, 'BONUS' | 'BOSS'>, number>;
   dailyCap: number;
   mvdXp: number;
@@ -172,9 +174,68 @@ export interface EngineDeps {
   newId: () => string; // uuidv7
 }
 
+/** An "at [time] at [place] I will [first_action]" if-then sentence. final/06 §5.1 step 5. */
+export interface ImplementationIntention {
+  time: string; // "HH:mm"
+  place: string;
+  first_action: string;
+}
+
+/** Pure output of generateCoreQuestTemplates — mirrors db/schema.ts's QuestTemplateRow. */
+export interface QuestTemplate {
+  id: string;
+  arc_id: string;
+  type: QuestType;
+  key: CoreQuestKey;
+  title: string;
+  category: XpCategory;
+  xp: number;
+  criterion: Record<string, unknown>;
+  implementation_intention?: ImplementationIntention;
+  active_from: string;
+  active_to: string | null;
+  locked_until_checkpoint: boolean;
+}
+
+/** Derived arc state folded from ARC_STARTED. final/07 §4.2. */
+export interface ArcState {
+  id: string;
+  start_date: string;
+  end_date: string;
+  timezone: string;
+  day_boundary_hour: number;
+  day_close_hour: number;
+  main_quest_text: string;
+  stake_text?: string;
+  status: 'active' | 'paused' | 'complete';
+}
+
+export interface ArcStartedPayload {
+  arcId: string;
+  startDate: string;
+  endDate: string;
+  timezone: string;
+  dayBoundaryHour: number;
+  dayCloseHour: number;
+  mainQuestText: string;
+  stakeText?: string;
+}
+
+export interface PlanAmendedPayload {
+  questKey: CoreQuestKey;
+  implementationIntention: ImplementationIntention;
+}
+
+export interface MetricRecordedPayload {
+  kind: string;
+  value: number;
+  unit: string;
+}
+
 /** The full derived state produced by replaying the event log. reduce.ts */
 export interface EngineState {
   player: PlayerState;
   days: Record<string, DayState>; // keyed by local_date
   quests: QuestState[];
+  arc: ArcState | null;
 }

@@ -22,6 +22,7 @@ export interface LiveStreakState {
   grace_remaining: number;
   reduced_mode: boolean;
   consistency_7: number;
+  consistency_14: number;
   consistency_28: number;
 }
 
@@ -30,6 +31,7 @@ const EMPTY_STREAK: LiveStreakState = {
   grace_remaining: 0,
   reduced_mode: false,
   consistency_7: 0,
+  consistency_14: 0,
   consistency_28: 0,
 };
 
@@ -56,6 +58,7 @@ export async function getStreakState(today: string, config: EngineConfig): Promi
     grace_remaining: result.grace_remaining,
     reduced_mode: result.reduced_mode,
     consistency_7: consistencyOver(result.history, 7),
+    consistency_14: consistencyOver(result.history, 14),
     consistency_28: consistencyOver(result.history, 28),
   };
 }

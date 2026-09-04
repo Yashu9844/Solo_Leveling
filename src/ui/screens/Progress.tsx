@@ -9,6 +9,7 @@ import { getStreakState, type LiveStreakState } from '../../store/streak';
 import { getRealitySummary, type RealitySummary } from '../../store/reality';
 import { AttributeBars } from '../components/AttributeBars';
 import { WeeklyReview } from '../review/WeeklyReview';
+import { getCurrentRank } from '../../store/checkpoint';
 
 type SubTab = 'SYSTEM' | 'REALITY';
 
@@ -63,25 +64,31 @@ export function Progress() {
 
 function SystemTab() {
   const [totalXp, setTotalXp] = useState<number | null>(null);
+  const [rank, setRank] = useState<string | null>(null);
   const [streak, setStreak] = useState<LiveStreakState | null>(null);
   const [reviewOpen, setReviewOpen] = useState(false);
   const today = localDate(realDeps.now(), DEFAULT_CONFIG.arc.timezone, DEFAULT_CONFIG.arc.dayBoundaryHour);
 
   useEffect(() => {
     void (async () => {
-      const [xp, streakState] = await Promise.all([getTotalXp(), getStreakState(today, DEFAULT_CONFIG)]);
+      const [xp, streakState, currentRank] = await Promise.all([
+        getTotalXp(),
+        getStreakState(today, DEFAULT_CONFIG),
+        getCurrentRank(),
+      ]);
       setTotalXp(xp);
       setStreak(streakState);
+      setRank(currentRank);
     })();
   }, [today]);
 
-  if (totalXp === null) return null;
+  if (totalXp === null || rank === null) return null;
   const level = levelFor(totalXp, DEFAULT_CONFIG);
 
   return (
     <div>
       <p className="mt-3 font-mono text-sm tabular-nums text-text-dim">
-        LEVEL {level.level} · RANK E · total XP {level.totalXp.toLocaleString()}
+        LEVEL {level.level} · RANK {rank} · total XP {level.totalXp.toLocaleString()}
       </p>
       {streak && (
         <p className="mt-1 text-xxs text-text-faint">

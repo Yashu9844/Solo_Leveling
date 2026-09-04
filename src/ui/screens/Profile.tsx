@@ -2,24 +2,29 @@ import { useCallback, useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { DEFAULT_CONFIG } from '../../engine/config';
 import { levelFor } from '../../engine/level';
-import { localDate } from '../../engine/time';
+import { arcDay, localDate } from '../../engine/time';
 import { applyEvents } from '../../engine/reduce';
 import { resetArc } from '../../store/onboarding';
 import { realDeps } from '../../store/deps';
 import { useArcStatus } from '../../store/ArcStatusContext';
-import { getDayZeroCheckpoint, saveSelfEfficacy, selfEfficacyIsComplete } from '../../store/checkpoint';
+import { getDayZeroCheckpoint, saveSelfEfficacy, selfEfficacyIsComplete, getCurrentRank } from '../../store/checkpoint';
+import type { Checkpoint } from '../../engine/rank';
 import { getTotalXp } from '../../store/playerState';
 import { pauseArc, resumeArc } from '../../store/pause';
 import { db } from '../../db/db';
 import { getAllEvents } from '../../db/events';
 import { verifyIntegrity, type IntegrityReport } from '../../db/projections';
 import { AttributeBars } from '../components/AttributeBars';
+import { CheckpointScreen } from '../checkpoint/CheckpointScreen';
+
+const CHECKPOINT_DAYS: Checkpoint['day'][] = [14, 30, 60, 90, 120];
 
 export function Profile() {
   return (
     <div className="p-4">
       <h1 className="text-lg font-semibold">PROFILE</h1>
       <LevelSummary />
+      <CheckpointRow />
       <AttributeBars />
       <DayZeroBaselineRow />
       <ArcPauseControl />
@@ -33,29 +38,85 @@ export function Profile() {
   );
 }
 
-/** Real level, real total XP, real progress. Rank stays hardcoded E
- * until Slice 12. final/12-SLICE-3-PROMPT.md Step 4. */
+/** Real level, real total XP, real rank (the rank as of the most
+ * recently sealed checkpoint — final/01 §4: "Level measures effort.
+ * Rank measures evidence. They are not convertible."). */
 function LevelSummary() {
   const [totalXp, setTotalXp] = useState<number | null>(null);
+  const [rank, setRank] = useState<string | null>(null);
 
   useEffect(() => {
     let cancelled = false;
-    getTotalXp().then((xp) => {
-      if (!cancelled) setTotalXp(xp);
+    void Promise.all([getTotalXp(), getCurrentRank()]).then(([xp, r]) => {
+      if (!cancelled) {
+        setTotalXp(xp);
+        setRank(r);
+      }
     });
     return () => {
       cancelled = true;
     };
   }, []);
 
-  if (totalXp === null) return null;
+  if (totalXp === null || rank === null) return null;
   const level = levelFor(totalXp, DEFAULT_CONFIG);
 
   return (
     <p className="mt-2 font-mono text-sm tabular-nums text-text-dim">
       LEVEL {level.level} · {level.xpIntoLevel.toLocaleString()} / {level.xpForNext.toLocaleString()} to L
-      {level.level + 1} · total XP {level.totalXp.toLocaleString()} · RANK E
+      {level.level + 1} · total XP {level.totalXp.toLocaleString()} · RANK {rank}
     </p>
+  );
+}
+
+/** final/01 §4.1 — "The Profile screen always shows the next gate as a
+ * ✓/✗ checklist. This is the app's most important sentence." */
+function CheckpointRow() {
+  const [day, setDay] = useState<number | null>(null);
+  const [nextCheckpointDay, setNextCheckpointDay] = useState<Checkpoint['day'] | null>(null);
+  const [open, setOpen] = useState(false);
+  const today = localDate(realDeps.now(), DEFAULT_CONFIG.arc.timezone, DEFAULT_CONFIG.arc.dayBoundaryHour);
+
+  const refresh = useCallback(async () => {
+    const arc = await db.arc.toCollection().first();
+    if (!arc) return;
+    setDay(arcDay(realDeps.now(), arc.start_date, arc.timezone, arc.day_boundary_hour));
+
+    const sealedDays = new Set(
+      (await db.checkpoint.toArray()).filter((c) => c.sealed_at !== undefined).map((c) => c.day)
+    );
+    const next = CHECKPOINT_DAYS.find((d) => !sealedDays.has(d)) ?? null;
+    setNextCheckpointDay(next);
+  }, []);
+
+  useEffect(() => {
+    void refresh();
+  }, [refresh]);
+
+  if (nextCheckpointDay === null) return null;
+  const daysUntil = day !== null ? nextCheckpointDay - day : null;
+
+  return (
+    <div className="mt-3 rounded-md border border-border p-3">
+      <button
+        type="button"
+        onClick={() => setOpen(true)}
+        className="min-h-[44px] w-full text-left text-sm text-accent"
+      >
+        Next checkpoint: Day {nextCheckpointDay}
+        {daysUntil !== null && daysUntil > 0 ? ` (${daysUntil}d)` : daysUntil !== null ? ' — due' : ''}
+      </button>
+      {open && (
+        <CheckpointScreen
+          day={nextCheckpointDay}
+          today={today}
+          onClose={() => {
+            setOpen(false);
+            void refresh();
+          }}
+        />
+      )}
+    </div>
   );
 }
 

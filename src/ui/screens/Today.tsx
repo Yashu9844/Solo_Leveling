@@ -19,6 +19,7 @@ import { EveningReview } from '../review/EveningReview';
 import { LogApplicationSheet } from '../career/LogApplicationSheet';
 import { LogProblemSheet } from '../dsa/LogProblemSheet';
 import { getRevisitsDue, logRevisit, type RevisitDue } from '../../store/dsa';
+import { getCurrentRank } from '../../store/checkpoint';
 import { LogBuildSessionSheet } from '../build/LogBuildSessionSheet';
 import { LogTrainingSheet } from '../training/LogTrainingSheet';
 import { LogSleepSheet } from '../lifestyle/LogSleepSheet';
@@ -93,6 +94,7 @@ export function Today() {
   const [sleepLogOpen, setSleepLogOpen] = useState(false);
   const [attentionLogOpen, setAttentionLogOpen] = useState(false);
   const [revisitsDue, setRevisitsDue] = useState<RevisitDue[]>([]);
+  const [rank, setRank] = useState('E');
   const [revisitingId, setRevisitingId] = useState<string | null>(null);
   const dayClosed = isDayClosed(realDeps.now(), CONFIG);
 
@@ -115,16 +117,18 @@ export function Today() {
     setInstances(i);
     await refreshXp(date);
 
-    const [streakState, recoverableDay, alreadyReviewed, dueRevisits] = await Promise.all([
+    const [streakState, recoverableDay, alreadyReviewed, dueRevisits, currentRank] = await Promise.all([
       getStreakState(date, CONFIG),
       getRecoverableDay(date, CONFIG),
       hasReviewedToday(date),
       getRevisitsDue(date, CONFIG),
+      getCurrentRank(),
     ]);
     setStreak(streakState);
     setRecoverable(recoverableDay);
     setReviewed(alreadyReviewed);
     setRevisitsDue(dueRevisits);
+    setRank(currentRank);
   }, [refreshXp]);
 
   useEffect(() => {
@@ -261,7 +265,7 @@ export function Today() {
   return (
     <div className="p-4">
       <div className="mb-1 text-xs uppercase tracking-wide text-text-dim">
-        {day != null ? `DAY ${day} · ` : ''}LEVEL {levelState.level} · RANK E
+        {day != null ? `DAY ${day} · ` : ''}LEVEL {levelState.level} · RANK {rank}
       </div>
       <div className="mb-1 h-1 w-full overflow-hidden rounded-pill bg-surface-2">
         <div

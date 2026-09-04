@@ -294,6 +294,14 @@ export interface ScreentimeLoggedPayload {
 /** final/04 §6 — one row/day; `allDone` is computed by the store from the
  * day's applicable items (laundry only every 3rd day) and is what
  * engine/xp.ts reads to decide the flat 20 XP grant. */
+/** final/01 §7 — one of the four real-world milestones. `bossId` mirrors
+ * engine/boss.ts's BossId; duplicated here rather than imported, since
+ * types.ts stays the foundational file every other engine module
+ * imports FROM, never the reverse. */
+export interface BossClearedPayload {
+  bossId: 'I' | 'II' | 'III' | 'IV';
+}
+
 export interface MaintenanceLoggedPayload {
   localDate: string;
   bath: boolean;

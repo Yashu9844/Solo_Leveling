@@ -16,11 +16,11 @@ export interface Checkpoint {
 
 /**
  * Every field a rank gate anywhere in final/01 §4.2 / final/00 §2 reads.
- * The store layer computes these from real DB data; a handful (marked
- * below) have no data source yet in this build and are always supplied
- * as false/0 by store/checkpoint.ts until a later slice adds them —
- * meaning those gates correctly, safely never fire early rather than
- * being guessed at. Flagged in the Slice 12 report.
+ * The store layer computes these from real DB data; two fields
+ * (marked below) have no data source anywhere in this build and are
+ * always supplied as false by store/checkpoint.ts — meaning those
+ * gates correctly, safely never fire rather than being guessed at.
+ * The four bossXCleared fields are real as of Slice 13 (store/boss.ts).
  */
 export interface GateEvidence {
   mvdConsistency14d: number; // 0-1, trailing 14 days, effort-only (final/01 §4.2's D gate)
@@ -51,7 +51,7 @@ export interface GateEvidence {
   trainingEst1RmGainPct: number; // 0-1; 0 without >= 2 dated samples to compare
   costPerTaskMeasured: boolean; // final/00 §2 — no data source yet, always false
   interviewBenchmarkPassed: boolean; // final/00 §2 — no data source yet, always false
-  bossICleared: boolean; // final/01 §7 — bosses are Slice 13; always false until then
+  bossICleared: boolean; // final/01 §7 — real as of Slice 13's store/boss.ts
   bossIICleared: boolean;
   bossIIICleared: boolean;
   bossIVCleared: boolean;

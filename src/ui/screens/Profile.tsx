@@ -16,6 +16,8 @@ import { getAllEvents } from '../../db/events';
 import { verifyIntegrity, type IntegrityReport } from '../../db/projections';
 import { AttributeBars } from '../components/AttributeBars';
 import { CheckpointScreen } from '../checkpoint/CheckpointScreen';
+import { BossList } from '../components/BossList';
+import { AchievementsList } from '../components/AchievementsList';
 
 const CHECKPOINT_DAYS: Checkpoint['day'][] = [14, 30, 60, 90, 120];
 
@@ -25,6 +27,8 @@ export function Profile() {
       <h1 className="text-lg font-semibold">PROFILE</h1>
       <LevelSummary />
       <CheckpointRow />
+      <BossList />
+      <AchievementsList />
       <AttributeBars />
       <DayZeroBaselineRow />
       <ArcPauseControl />

@@ -66,6 +66,11 @@ function baseGrantsFor(event: SystemEvent, config: EngineConfig): XpGrant[] {
       if (payload.steps < config.stepsBonusThreshold) return [];
       return [{ category: 'BODY', amount: config.stepsBonusXp, reason: 'steps_bonus' }];
     }
+    case 'BOSS_CLEARED':
+      // Flat, frequency-limited (once per boss, enforced by the idem_key,
+      // not here), BOSS-category, exempt from both caps — final/01
+      // §2.1.1, §7.
+      return [{ category: 'BOSS', amount: config.bossXp, reason: 'boss' }];
     case 'MAINTENANCE_LOGGED': {
       // final/04 §6: one flat 20 XP grant, only when every one of today's
       // applicable items is ticked — "zero pressure," no partial credit.

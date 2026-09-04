@@ -316,6 +316,13 @@ describe('applyEvents — physical/lifestyle logging events are handled no-ops (
   });
 });
 
+describe('applyEvents — BOSS_CLEARED is a handled no-op (Slice 13)', () => {
+  it('does not throw during replay', () => {
+    const log = [arcStartedEvent(), event('BOSS_CLEARED', { bossId: 'I' }, 'boss:I')];
+    expect(() => applyEvents(log, DEFAULT_CONFIG)).not.toThrow();
+  });
+});
+
 describe('applyEvents — determinism and the boundary rule', () => {
   it('replaying the full log twice is deep-equal', () => {
     const log = onboardingEventLog();
@@ -323,9 +330,12 @@ describe('applyEvents — determinism and the boundary rule', () => {
   });
 
   it('an unhandled event type still throws — no silent default case', () => {
-    // BOSS_CLEARED is still a stub this slice (no boss quests until
-    // Slice 15) — APP_OPENED became a handled no-op case in Slice 3.
-    const unhandled = event('BOSS_CLEARED', {}, 'idem-unhandled');
+    // CHECKPOINT_SEALED has no EngineState fold: sealing writes directly
+    // to db.checkpoint (store/checkpoint.ts), a row this app's rebuild
+    // never touches, same as self-efficacy — so it stays genuinely
+    // unhandled here, unlike BOSS_CLEARED which became a handled no-op
+    // in Slice 13.
+    const unhandled = event('CHECKPOINT_SEALED', {}, 'idem-unhandled');
     expect(() => applyEvents([unhandled], DEFAULT_CONFIG)).toThrow('Not implemented');
   });
 

@@ -11,18 +11,20 @@
 // gate that blocks sealing. computeGateEvidence pulls every field
 // engine/rank.ts's GateEvidence needs from real tables where the data
 // exists (career, DSA, foundations, training, resume, system design —
-// all real as of Slices 6-11). Four fields have no data source ANYWHERE
-// in this build and are always false: costPerTaskMeasured and
-// interviewBenchmarkPassed have no logging surface in any final/ doc;
-// all four bossXCleared fields are Slice 13's boss-quest system, which
-// doesn't exist yet. This is the safe direction — a gate depending on
-// them can never over-report a rank it hasn't actually earned.
+// all real as of Slices 6-11; the four bossXCleared fields became real
+// too in Slice 13, via store/boss.ts's getBossStatus). Two fields still
+// have no data source ANYWHERE in this build and stay always false:
+// costPerTaskMeasured and interviewBenchmarkPassed have no logging
+// surface in any final/ doc. This is the safe direction — a gate
+// depending on them can never over-report a rank it hasn't actually
+// earned.
 import { addDays, format, parseISO } from 'date-fns';
 import { evaluateGates, verdictTextFor, type Checkpoint, type GateEvidence, type GateResult } from '../engine/rank';
 import type { DsaAttemptFixture } from '../engine/dsa';
 import { foundationMasteryFor, FOUNDATION_TOPICS } from '../engine/foundations';
 import { followThroughRate, type ApplicationFixture, type ApplicationStatus } from '../engine/career';
 import { getStreakState } from './streak';
+import { getBossStatus } from './boss';
 import { getAllEvents } from '../db/events';
 import { db } from '../db/db';
 import type { CheckpointRow } from '../db/schema';
@@ -119,6 +121,10 @@ export async function computeGateEvidence(today: string, config: EngineConfig): 
     trainingSessions,
     metricSamples,
     checkpointsBefore,
+    bossI,
+    bossII,
+    bossIII,
+    bossIV,
   ] = await Promise.all([
     getStreakState(today, config),
     db.dsa_attempt.toArray(),
@@ -132,6 +138,10 @@ export async function computeGateEvidence(today: string, config: EngineConfig): 
     db.training_session.toArray(),
     db.metric_sample.toArray(),
     db.checkpoint.toArray(),
+    getBossStatus('I', today),
+    getBossStatus('II', today),
+    getBossStatus('III', today),
+    getBossStatus('IV', today),
   ]);
 
   const problemById = new Map(dsaProblems.map((p) => [p.id, p]));
@@ -238,10 +248,10 @@ export async function computeGateEvidence(today: string, config: EngineConfig): 
     trainingEst1RmGainPct,
     costPerTaskMeasured: false,
     interviewBenchmarkPassed: false,
-    bossICleared: false,
-    bossIICleared: false,
-    bossIIICleared: false,
-    bossIVCleared: false,
+    bossICleared: bossI.cleared,
+    bossIICleared: bossII.cleared,
+    bossIIICleared: bossIII.cleared,
+    bossIVCleared: bossIV.cleared,
     arcSealed,
   };
 }

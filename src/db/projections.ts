@@ -46,6 +46,7 @@ const NON_COMPLETION_XP_EVENT_TYPES: ReadonlySet<SystemEvent['type']> = new Set(
   'SYSTEM_DESIGN_LOGGED',
   'STEPS_LOGGED',
   'MAINTENANCE_LOGGED',
+  'BOSS_CLEARED',
 ]);
 
 function enumerateDates(start: string, end: string): string[] {

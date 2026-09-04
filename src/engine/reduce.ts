@@ -227,6 +227,14 @@ function applyOne(state: EngineState, event: SystemEvent): EngineState {
     case 'MAINTENANCE_LOGGED':
       return state;
 
+    // Slice 13 — final/01 §7. BOSS_CLEARED grants XP the same way
+    // QUEST_RECOVERED does (engine/xp.ts reads the raw event directly);
+    // "cleared or not" for a given boss is read live off the raw event
+    // log by store/boss.ts, not folded into EngineState. Explicit no-op,
+    // not a silent default.
+    case 'BOSS_CLEARED':
+      return state;
+
     default:
       throw new Error(`Not implemented — Slice N (unhandled event type: ${event.type})`);
   }

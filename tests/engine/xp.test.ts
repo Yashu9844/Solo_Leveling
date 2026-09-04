@@ -245,6 +245,15 @@ describe('computeXp — properties', () => {
     }
   });
 
+  it('BOSS_CLEARED yields a flat BOSS grant equal to config.bossXp, uncapped (Slice 13)', () => {
+    const dayEvents = [questCompletedEvent('career'), otherEvent('BOSS_CLEARED', { bossId: 'I' })];
+    const entries = computeDayLedger('2026-09-05', dayEvents, DEFAULT_CONFIG);
+    const bossEntry = entries.find((e) => e.reason === 'boss');
+    expect(bossEntry?.amount).toBe(DEFAULT_CONFIG.bossXp);
+    expect(bossEntry?.category).toBe('BOSS');
+    expect(bossEntry?.cappedFrom).toBeUndefined();
+  });
+
   it('QUEST_RECOVERED yields a flat BONUS grant equal to config.recoveryXp, uncapped', () => {
     const dayEvents = [questCompletedEvent('career'), otherEvent('QUEST_RECOVERED', { localDate: '2026-09-04' })];
     const entries = computeDayLedger('2026-09-05', dayEvents, DEFAULT_CONFIG);

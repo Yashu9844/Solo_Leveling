@@ -1,10 +1,8 @@
 // final/03-learning-systems.md §4.1 — the LEARN/SHIP enforcement rule.
 // Not pre-scaffolded in Phase 0 (there was no engine/build.ts stub);
 // added following the same pattern as engine/career.ts and engine/dsa.ts
-// — a small pure domain module, not part of engine/rules.ts's full
-// weekly rules engine (still a Slice 11 stub; this is one narrow,
-// specific check the Slice 8 "done when" criterion calls for on its
-// own, not the general evaluateRules(history) surface).
+// — a small pure domain module, reused (not duplicated) by
+// engine/rules.ts's evaluateRules from Slice 11 onward.
 
 export interface BuildSessionFixture {
   local_date: string;

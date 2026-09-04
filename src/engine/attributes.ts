@@ -1,4 +1,5 @@
 import type { Attribute } from './types';
+export type { Attribute };
 
 // final/01-quests-xp-level-rank.md §5 — the six formulas, transcribed
 // verbatim. Weights and denominators are structural parts of the formula

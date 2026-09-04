@@ -8,6 +8,7 @@ import { getTotalXp } from '../../store/playerState';
 import { getStreakState, type LiveStreakState } from '../../store/streak';
 import { getRealitySummary, type RealitySummary } from '../../store/reality';
 import { AttributeBars } from '../components/AttributeBars';
+import { WeeklyReview } from '../review/WeeklyReview';
 
 type SubTab = 'SYSTEM' | 'REALITY';
 
@@ -63,15 +64,16 @@ export function Progress() {
 function SystemTab() {
   const [totalXp, setTotalXp] = useState<number | null>(null);
   const [streak, setStreak] = useState<LiveStreakState | null>(null);
+  const [reviewOpen, setReviewOpen] = useState(false);
+  const today = localDate(realDeps.now(), DEFAULT_CONFIG.arc.timezone, DEFAULT_CONFIG.arc.dayBoundaryHour);
 
   useEffect(() => {
     void (async () => {
-      const today = localDate(realDeps.now(), DEFAULT_CONFIG.arc.timezone, DEFAULT_CONFIG.arc.dayBoundaryHour);
       const [xp, streakState] = await Promise.all([getTotalXp(), getStreakState(today, DEFAULT_CONFIG)]);
       setTotalXp(xp);
       setStreak(streakState);
     })();
-  }, []);
+  }, [today]);
 
   if (totalXp === null) return null;
   const level = levelFor(totalXp, DEFAULT_CONFIG);
@@ -86,7 +88,15 @@ function SystemTab() {
           {streak.consistency_7}% (7d) · {streak.consistency_28}% (28d) · streak {streak.arc_streak}
         </p>
       )}
+      <button
+        type="button"
+        onClick={() => setReviewOpen(true)}
+        className="mt-3 min-h-[44px] w-full rounded-md border border-border text-sm text-accent"
+      >
+        Weekly review
+      </button>
       <AttributeBars />
+      {reviewOpen && <WeeklyReview today={today} onClose={() => setReviewOpen(false)} />}
     </div>
   );
 }

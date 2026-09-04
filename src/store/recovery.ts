@@ -52,6 +52,14 @@ export async function getRecoverableDay(today: string, config: EngineConfig): Pr
     if (coreTemplates.length === 0) continue;
 
     const dayInstances = await db.quest_instance.where('local_date').equals(localDate).toArray();
+    // A day with zero instances was never opened, not missed — same
+    // distinction db/projections.ts's buildDayOutcomes makes for streak
+    // purposes (engine/quests.ts: "a day with no instances is a day that
+    // was never opened"). Without this, an arc whose start_date predates
+    // the day the user actually begins (or a freshly onboarded arc in a
+    // test/dev environment with a start_date in the past) surfaces a
+    // bogus recovery card for days nobody ever saw.
+    if (dayInstances.length === 0) continue;
     const completedTemplateIds = new Set(
       dayInstances.filter((i) => i.state === 'complete').map((i) => i.template_id)
     );

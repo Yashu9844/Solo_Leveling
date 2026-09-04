@@ -2,7 +2,7 @@ import { useCallback, useEffect, useState } from 'react';
 import { DEFAULT_CONFIG } from '../../engine/config';
 import { arcDay, isDayClosed, localDate } from '../../engine/time';
 import { levelFor, type LevelState } from '../../engine/level';
-import type { CoreQuestKey, QuestInstance, QuestTemplate } from '../../engine/types';
+import type { CoreQuestKey, QuestInstance, QuestRecoveredPayload, QuestTemplate } from '../../engine/types';
 import { realDeps } from '../../store/deps';
 import { db } from '../../db/db';
 import { loadTodayQuests, completeQuest, undoQuest } from '../../store/quests';
@@ -24,8 +24,24 @@ import { LogTrainingSheet } from '../training/LogTrainingSheet';
 import { LogSleepSheet } from '../lifestyle/LogSleepSheet';
 import { LogAttentionSheet } from '../lifestyle/LogAttentionSheet';
 import { MaintenanceCard } from '../lifestyle/MaintenanceCard';
+import { SingleChipSelect } from '../components/SingleChipSelect';
 
 const CONFIG = DEFAULT_CONFIG;
+
+// final/01 §6.3 — "one optional diagnostic tap, no free text." 3x
+// "wrong time" in 14 days feeds engine/rules.ts's WRONG_TIME_PATTERN.
+const RECOVERY_REASONS: NonNullable<QuestRecoveredPayload['reason']>[] = [
+  'ran_out_of_time',
+  'too_tired',
+  'wrong_time',
+  'didnt_want_to',
+];
+const RECOVERY_REASON_LABELS: Record<NonNullable<QuestRecoveredPayload['reason']>, string> = {
+  ran_out_of_time: 'Ran out of time',
+  too_tired: 'Too tired',
+  wrong_time: 'Wrong time',
+  didnt_want_to: "Didn't want to",
+};
 
 function currentLocalDate(): string {
   return localDate(realDeps.now(), CONFIG.arc.timezone, CONFIG.arc.dayBoundaryHour);
@@ -67,6 +83,7 @@ export function Today() {
   const [streak, setStreak] = useState<LiveStreakState | null>(null);
   const [recoverable, setRecoverable] = useState<RecoverableDay | null>(null);
   const [claimingRecovery, setClaimingRecovery] = useState(false);
+  const [recoveryReason, setRecoveryReason] = useState<NonNullable<QuestRecoveredPayload['reason']> | null>(null);
   const [reviewed, setReviewed] = useState(true); // true until refresh() proves otherwise — hides the entry on first paint
   const [reviewOpen, setReviewOpen] = useState(false);
   const [careerLogOpen, setCareerLogOpen] = useState(false);
@@ -186,8 +203,9 @@ export function Today() {
     if (!arc || !recoverable || claimingRecovery) return;
     setClaimingRecovery(true);
     try {
-      await claimRecovery(recoverable.localDate, today, arc.id, CONFIG, realDeps);
+      await claimRecovery(recoverable.localDate, today, arc.id, CONFIG, realDeps, recoveryReason ?? undefined);
       setRecoverable(null);
+      setRecoveryReason(null);
       await refreshXp(today);
     } catch {
       setNotice('Could not save — try again.');
@@ -282,6 +300,15 @@ export function Today() {
           <p className="mt-1 text-xs text-text-faint">
             Worth less than what you'd have earned — recovering is never better than not missing.
           </p>
+          <div className="mt-2">
+            <SingleChipSelect
+              label="What got in the way? (optional)"
+              options={RECOVERY_REASONS}
+              labelFor={(r) => RECOVERY_REASON_LABELS[r]}
+              selected={recoveryReason}
+              onSelect={setRecoveryReason}
+            />
+          </div>
           <button
             type="button"
             disabled={claimingRecovery}

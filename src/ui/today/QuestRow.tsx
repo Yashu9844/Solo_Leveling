@@ -5,18 +5,25 @@ interface QuestRowProps {
   template: QuestTemplate;
   instance: QuestInstance;
   dayClosed: boolean;
+  /** Actual XP granted for a completed instance (may be capped below
+   * template.xp) — omitted while incomplete, where the row shows the
+   * template's nominal value instead. */
+  xp?: { amount: number; cappedFrom?: number };
   onToggle: () => void;
   onOpen: () => void;
 }
 
 /** 64px row, two >= 44px tap targets: the circle (complete/undo) and the
  * rest of the row (opens the detail sheet). final/06 §4.4. */
-export function QuestRow({ template, instance, dayClosed, onToggle, onOpen }: QuestRowProps) {
+export function QuestRow({ template, instance, dayClosed, xp, onToggle, onOpen }: QuestRowProps) {
   const complete = instance.state === 'complete';
   const disabled = dayClosed;
+  const displayedXp = complete ? (xp?.amount ?? template.xp) : template.xp;
+  const capped = complete && xp?.cappedFrom !== undefined;
 
   return (
     <div
+      data-testid={`quest-row-${template.key}`}
       className={[
         'flex min-h-[64px] items-center gap-3 border-b border-border',
         disabled ? 'opacity-40' : '',
@@ -41,10 +48,21 @@ export function QuestRow({ template, instance, dayClosed, onToggle, onOpen }: Qu
         type="button"
         onClick={onOpen}
         disabled={disabled}
-        className="flex min-h-[44px] flex-1 flex-col items-start justify-center text-left"
+        className="flex min-h-[44px] flex-1 items-center justify-between text-left"
       >
-        <span className="text-md text-text">{template.title}</span>
-        <span className="text-xs text-text-dim">{ROW_SUMMARY[template.key]}</span>
+        <span className="flex flex-col items-start justify-center">
+          <span className="text-md text-text">{template.title}</span>
+          <span className="text-xs text-text-dim">{ROW_SUMMARY[template.key]}</span>
+        </span>
+        <span
+          className={[
+            'font-mono text-sm tabular-nums',
+            complete ? 'text-accent' : 'text-text-faint',
+          ].join(' ')}
+        >
+          +{displayedXp}
+          {capped && <span className="ml-1 text-xs text-text-faint">capped</span>}
+        </span>
       </button>
     </div>
   );

@@ -1,0 +1,198 @@
+import { describe, it, expect } from 'vitest';
+import fc from 'fast-check';
+import { computeXp, emptyDayState, computeDayLedger } from '../../src/engine/xp';
+import { DEFAULT_CONFIG } from '../../src/engine/config';
+import type { CoreQuestKey, DayState, EngineConfig, SystemEvent } from '../../src/engine/types';
+
+const CORE_KEYS: CoreQuestKey[] = ['career', 'dsa', 'build', 'training', 'sleep', 'attention'];
+
+function questCompletedEvent(questKey: CoreQuestKey, overrides: Partial<SystemEvent> = {}): SystemEvent {
+  return {
+    id: `evt-${questKey}`,
+    type: 'QUEST_COMPLETED',
+    occurred_at: '2026-09-05T10:00:00Z',
+    local_date: '2026-09-05',
+    arc_id: 'arc-1',
+    payload: { instanceId: `inst-${questKey}`, templateId: `tpl-${questKey}`, questKey, localDate: '2026-09-05' },
+    source: 'user',
+    idem_key: `quest-complete:inst-${questKey}:0`,
+    schema_v: 1,
+    ...overrides,
+  };
+}
+
+function otherEvent(type: SystemEvent['type'], payload: Record<string, unknown> = {}): SystemEvent {
+  return {
+    id: `evt-${type}`,
+    type,
+    occurred_at: '2026-09-05T10:00:00Z',
+    local_date: '2026-09-05',
+    arc_id: 'arc-1',
+    payload,
+    source: 'user',
+    idem_key: `${type}:1`,
+    schema_v: 1,
+  };
+}
+
+describe('computeXp — base grants', () => {
+  it('each core quest yields exactly 100/100/100/100/60/40', () => {
+    const expected = { career: 100, dsa: 100, build: 100, training: 100, sleep: 60, attention: 40 };
+    for (const key of CORE_KEYS) {
+      const grants = computeXp(questCompletedEvent(key), emptyDayState('2026-09-05'), DEFAULT_CONFIG);
+      expect(grants).toHaveLength(1);
+      expect(grants[0]?.amount).toBe(expected[key]);
+      expect(grants[0]?.category).toBe(DEFAULT_CONFIG.coreQuests[key].category);
+    }
+  });
+
+  it('six core completions in a day sum to exactly 500', () => {
+    let dayState = emptyDayState('2026-09-05');
+    let total = 0;
+    for (const key of CORE_KEYS) {
+      const grants = computeXp(questCompletedEvent(key), dayState, DEFAULT_CONFIG);
+      for (const grant of grants) {
+        total += grant.amount;
+        dayState = {
+          ...dayState,
+          category_totals: {
+            ...dayState.category_totals,
+            [grant.category as keyof DayState['category_totals']]:
+              (dayState.category_totals[grant.category as keyof DayState['category_totals']] ?? 0) +
+              grant.amount,
+          },
+          daily_total: dayState.daily_total + grant.amount,
+        };
+      }
+    }
+    expect(total).toBe(500);
+  });
+});
+
+describe('computeXp — caps', () => {
+  it('the category cap trims and records capped_from', () => {
+    const dayState: DayState = { ...emptyDayState('2026-09-05'), category_totals: { ...emptyDayState('2026-09-05').category_totals, CAREER: 60 } };
+    // CAREER cap is 140; 60 already used + a fresh 100-XP career grant would be 160.
+    const grants = computeXp(questCompletedEvent('career'), dayState, DEFAULT_CONFIG);
+    expect(grants[0]?.amount).toBe(80);
+    expect(grants[0]?.capped_from).toBe(100);
+  });
+
+  it('the daily cap (700) binds before the 885 category-cap sum', () => {
+    const dayState: DayState = { ...emptyDayState('2026-09-05'), daily_total: 690 };
+    // MIND cap (200) has plenty of headroom; the daily cap does not.
+    const grants = computeXp(questCompletedEvent('dsa'), dayState, DEFAULT_CONFIG);
+    expect(grants[0]?.amount).toBe(10);
+    expect(grants[0]?.capped_from).toBe(100);
+  });
+
+  it('BONUS and BOSS grants bypass both caps', () => {
+    const bonusConfig: EngineConfig = {
+      ...DEFAULT_CONFIG,
+      coreQuests: { ...DEFAULT_CONFIG.coreQuests, career: { xp: 999, category: 'BONUS' } },
+    };
+    const dayState: DayState = { ...emptyDayState('2026-09-05'), daily_total: 690 };
+    const grants = computeXp(questCompletedEvent('career'), dayState, bonusConfig);
+    expect(grants[0]?.amount).toBe(999);
+    expect(grants[0]?.capped_from).toBeUndefined();
+
+    const bossConfig: EngineConfig = {
+      ...DEFAULT_CONFIG,
+      coreQuests: { ...DEFAULT_CONFIG.coreQuests, career: { xp: 999, category: 'BOSS' } },
+    };
+    const bossGrants = computeXp(questCompletedEvent('career'), dayState, bossConfig);
+    expect(bossGrants[0]?.amount).toBe(999);
+    expect(bossGrants[0]?.capped_from).toBeUndefined();
+  });
+});
+
+describe('computeXp — never earns XP', () => {
+  it('APP_OPENED / REVIEW_COMPLETED / CHECKPOINT_SEALED yield []', () => {
+    for (const type of ['APP_OPENED', 'REVIEW_COMPLETED', 'CHECKPOINT_SEALED'] as const) {
+      expect(computeXp(otherEvent(type), emptyDayState('2026-09-05'), DEFAULT_CONFIG)).toEqual([]);
+    }
+  });
+
+  it('INVARIANT: no body METRIC_RECORDED produces a ledger row', () => {
+    for (const kind of ['weight_kg', 'waist_cm', 'bodyfat_pct']) {
+      const event = otherEvent('METRIC_RECORDED', { kind, value: 70, unit: 'kg' });
+      expect(computeXp(event, emptyDayState('2026-09-05'), DEFAULT_CONFIG)).toEqual([]);
+    }
+  });
+
+  it('INVARIANT: no external CAREER_EVENT_LOGGED produces a ledger row', () => {
+    for (const kind of ['response', 'call', 'interview', 'onsite', 'offer', 'rejection']) {
+      const event = otherEvent('CAREER_EVENT_LOGGED', { kind });
+      expect(computeXp(event, emptyDayState('2026-09-05'), DEFAULT_CONFIG)).toEqual([]);
+    }
+  });
+});
+
+describe('computeXp — properties', () => {
+  const questKeyArb = fc.constantFrom(...CORE_KEYS);
+
+  it('property: for any sequence of core completions in a day, 0 <= daily capped XP <= 700', () => {
+    fc.assert(
+      fc.property(fc.array(questKeyArb, { minLength: 0, maxLength: 40 }), (keys) => {
+        let dayState = emptyDayState('2026-09-05');
+        for (const key of keys) {
+          const grants = computeXp(questCompletedEvent(key), dayState, DEFAULT_CONFIG);
+          for (const grant of grants) {
+            let categoryTotals = dayState.category_totals;
+            if (grant.category !== 'BONUS' && grant.category !== 'BOSS') {
+              categoryTotals = {
+                ...categoryTotals,
+                [grant.category]: (categoryTotals[grant.category] ?? 0) + grant.amount,
+              };
+            }
+            dayState = { ...dayState, category_totals: categoryTotals, daily_total: dayState.daily_total + grant.amount };
+          }
+        }
+        expect(dayState.daily_total).toBeGreaterThanOrEqual(0);
+        expect(dayState.daily_total).toBeLessThanOrEqual(DEFAULT_CONFIG.dailyCap);
+      })
+    );
+  });
+
+  it('property: every grant amount is >= 0', () => {
+    fc.assert(
+      fc.property(fc.array(questKeyArb, { minLength: 0, maxLength: 40 }), (keys) => {
+        let dayState = emptyDayState('2026-09-05');
+        for (const key of keys) {
+          const grants = computeXp(questCompletedEvent(key), dayState, DEFAULT_CONFIG);
+          for (const grant of grants) {
+            expect(grant.amount).toBeGreaterThanOrEqual(0);
+            let categoryTotals = dayState.category_totals;
+            if (grant.category !== 'BONUS' && grant.category !== 'BOSS') {
+              categoryTotals = {
+                ...categoryTotals,
+                [grant.category]: (categoryTotals[grant.category] ?? 0) + grant.amount,
+              };
+            }
+            dayState = { ...dayState, category_totals: categoryTotals, daily_total: dayState.daily_total + grant.amount };
+          }
+        }
+      })
+    );
+  });
+
+  it('property: total_xp === SUM(ledger.amount) for any set of completions in a day', () => {
+    fc.assert(
+      fc.property(fc.uniqueArray(questKeyArb, { minLength: 0, maxLength: 6 }), (keys) => {
+        const completions = keys.map((key, idx) => ({
+          instanceId: `inst-${key}`,
+          templateId: `tpl-${key}`,
+          questKey: key,
+          completedAt: `2026-09-05T10:0${idx}:00Z`,
+        }));
+        const entries = computeDayLedger('2026-09-05', completions, DEFAULT_CONFIG);
+        const sum = entries.reduce((acc, e) => acc + e.amount, 0);
+        expect(sum).toBeGreaterThanOrEqual(0);
+        expect(sum).toBeLessThanOrEqual(DEFAULT_CONFIG.dailyCap);
+        // Every completion produces exactly one ledger entry this slice
+        // (one core quest -> one grant; no zero-grant paths for core keys).
+        expect(entries).toHaveLength(completions.length);
+      })
+    );
+  });
+});

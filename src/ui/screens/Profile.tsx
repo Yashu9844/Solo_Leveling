@@ -1,17 +1,53 @@
 import { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
+import { DEFAULT_CONFIG } from '../../engine/config';
+import { levelFor } from '../../engine/level';
 import { resetArc } from '../../store/onboarding';
+import { realDeps } from '../../store/deps';
 import { useArcStatus } from '../../store/ArcStatusContext';
 import { getDayZeroCheckpoint, saveSelfEfficacy, selfEfficacyIsComplete } from '../../store/checkpoint';
+import { getTotalXp } from '../../store/playerState';
+import { verifyIntegrity, type IntegrityReport } from '../../db/projections';
 
 export function Profile() {
   return (
     <div className="p-4">
       <h1 className="text-lg font-semibold">PROFILE</h1>
-      <p className="mt-2 text-sm text-text-dim">Phase 0 — not implemented</p>
+      <LevelSummary />
       <DayZeroBaselineRow />
-      {import.meta.env.DEV && <DevResetArc />}
+      {import.meta.env.DEV && (
+        <>
+          <DevResetArc />
+          <DevVerifyIntegrity />
+        </>
+      )}
     </div>
+  );
+}
+
+/** Real level, real total XP, real progress. Rank stays hardcoded E
+ * until Slice 12. final/12-SLICE-3-PROMPT.md Step 4. */
+function LevelSummary() {
+  const [totalXp, setTotalXp] = useState<number | null>(null);
+
+  useEffect(() => {
+    let cancelled = false;
+    getTotalXp().then((xp) => {
+      if (!cancelled) setTotalXp(xp);
+    });
+    return () => {
+      cancelled = true;
+    };
+  }, []);
+
+  if (totalXp === null) return null;
+  const level = levelFor(totalXp, DEFAULT_CONFIG);
+
+  return (
+    <p className="mt-2 font-mono text-sm tabular-nums text-text-dim">
+      LEVEL {level.level} · {level.xpIntoLevel.toLocaleString()} / {level.xpForNext.toLocaleString()} to L
+      {level.level + 1} · total XP {level.totalXp.toLocaleString()} · RANK E
+    </p>
   );
 }
 
@@ -143,6 +179,51 @@ function DevResetArc() {
       <p className="mt-2 text-xs text-text-faint">
         Deletes all events and projections, clears the arc, returns to onboarding.
       </p>
+    </div>
+  );
+}
+
+/**
+ * DEV-only. Runs verifyIntegrity() (db/projections.ts) and prints the
+ * report — rebuilds quest_template/quest_instance/xp_ledger from the
+ * event log in memory and diffs against the live tables, without writing
+ * anything.
+ */
+function DevVerifyIntegrity() {
+  const [report, setReport] = useState<IntegrityReport | null>(null);
+  const [running, setRunning] = useState(false);
+
+  async function handleVerify() {
+    setRunning(true);
+    const result = await verifyIntegrity(DEFAULT_CONFIG, realDeps);
+    setReport(result);
+    setRunning(false);
+  }
+
+  return (
+    <div className="mt-4 rounded-md border border-state-alert p-3">
+      <div className="text-xxs uppercase tracking-wide text-state-alert">Dev only</div>
+      <button
+        type="button"
+        disabled={running}
+        onClick={() => void handleVerify()}
+        className="mt-2 min-h-[44px] w-full rounded-md border border-state-alert text-sm text-state-alert disabled:opacity-40"
+      >
+        {running ? 'Verifying…' : 'Verify integrity'}
+      </button>
+      {report && (
+        <div className="mt-2 text-xs text-text-faint">
+          {report.clean ? (
+            <p>Clean — rebuild matches the live tables exactly.</p>
+          ) : (
+            <ul className="list-disc space-y-1 pl-4">
+              {report.discrepancies.map((line) => (
+                <li key={line}>{line}</li>
+              ))}
+            </ul>
+          )}
+        </div>
+      )}
     </div>
   );
 }

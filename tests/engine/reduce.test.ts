@@ -202,7 +202,14 @@ describe('applyEvents — determinism and the boundary rule', () => {
   });
 
   it('an unhandled event type still throws — no silent default case', () => {
-    const unhandled = event('APP_OPENED', {}, 'idem-unhandled');
+    // BOSS_CLEARED is still a stub this slice (no boss quests until
+    // Slice 15) — APP_OPENED became a handled no-op case in Slice 3.
+    const unhandled = event('BOSS_CLEARED', {}, 'idem-unhandled');
     expect(() => applyEvents([unhandled], DEFAULT_CONFIG)).toThrow('Not implemented');
+  });
+
+  it('APP_OPENED is a handled no-op, not a silent default — Slice 3', () => {
+    const opened = event('APP_OPENED', { seconds: 0 }, 'app-opened:2026-09-05');
+    expect(() => applyEvents([arcStartedEvent(), opened], DEFAULT_CONFIG)).not.toThrow();
   });
 });

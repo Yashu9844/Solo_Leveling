@@ -95,8 +95,10 @@ function applyOne(state: EngineState, event: SystemEvent): EngineState {
           [payload.instanceId]: {
             instance_id: payload.instanceId,
             template_id: payload.templateId,
+            quest_key: payload.questKey,
             local_date: payload.localDate,
             completed_at: event.occurred_at,
+            event_id: event.id,
           },
         },
       };
@@ -111,6 +113,14 @@ function applyOne(state: EngineState, event: SystemEvent): EngineState {
       );
       return { ...state, quests };
     }
+
+    case 'APP_OPENED':
+      // "Was this day opened" is read directly off the raw event log by
+      // db/projections.ts (the set of local_dates with an APP_OPENED
+      // event) — EngineState has nothing to fold it into. This is an
+      // explicit no-op case, not a silent default: APP_OPENED is
+      // deliberately handled and deliberately inert here.
+      return state;
 
     default:
       throw new Error(`Not implemented — Slice N (unhandled event type: ${event.type})`);

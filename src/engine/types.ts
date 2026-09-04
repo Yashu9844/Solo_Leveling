@@ -96,10 +96,14 @@ export interface QuestInstance {
   recovered: boolean;
 }
 
-/** Rolling per-day accumulator the XP engine consults to apply caps. */
+/**
+ * Rolling per-day accumulator the XP engine consults to apply caps.
+ * BONUS/BOSS are exempt from caps (final/01 §2.1.1) and so are never
+ * accumulated here — same exclusion as EngineConfig.categoryCaps.
+ */
 export interface DayState {
   local_date: string;
-  category_totals: Record<XpCategory, number>;
+  category_totals: Record<Exclude<XpCategory, 'BONUS' | 'BOSS'>, number>;
   daily_total: number;
   quests_completed: QuestKey[];
   mvd_met: boolean;
@@ -257,8 +261,13 @@ export interface QuestUndonePayload {
 export interface QuestCompletionRecord {
   instance_id: string;
   template_id: string;
+  quest_key: CoreQuestKey;
   local_date: string;
   completed_at: string;
+  // The QUEST_COMPLETED event's own id — lets db/projections.ts link a
+  // rebuilt ledger row back to its source event without re-scanning the
+  // log for it.
+  event_id: string;
 }
 
 /** The full derived state produced by replaying the event log. reduce.ts */

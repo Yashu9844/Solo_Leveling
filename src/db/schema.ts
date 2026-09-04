@@ -23,6 +23,10 @@ export interface EventRow {
 export interface XpLedgerRow {
   id: string; // pk
   event_id: string;
+  // Denormalized beyond final/07 §4.1's literal xp_ledger shape — lets
+  // the UI show "this quest earned N XP" without joining back through
+  // db.event on every render. Always derivable from event_id's payload.
+  instance_id?: string;
   local_date: string;
   amount: number; // always >= 0
   category: XpCategory;

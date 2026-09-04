@@ -76,10 +76,11 @@ export default tseslint.config(
   // their parameters are intentionally unused. As each file gets a real
   // implementation it comes OFF this file list. Slice 1: quests.ts's
   // generateCoreQuestTemplates. Slice 2: quests.ts's generateQuests and
-  // reduce.ts. Slice 3: xp.ts and level.ts. Slice 4: streak.ts — all
-  // fully implemented; any still-unused parameter in an implemented file
-  // is `void`-guarded per call site instead of blanket-allowed. Repeat
-  // this shrinking every slice as rank.ts, attributes.ts, etc. land.
+  // reduce.ts. Slice 3: xp.ts and level.ts. Slice 4: streak.ts. Slice 5:
+  // messages.ts (P4/P5 only — see its header comment) — all fully
+  // implemented; any still-unused parameter in an implemented file is
+  // `void`-guarded per call site instead of blanket-allowed. Repeat this
+  // shrinking every slice as rank.ts, attributes.ts, etc. land.
   {
     files: ['src/engine/**/*.ts'],
     ignores: [
@@ -88,6 +89,7 @@ export default tseslint.config(
       'src/engine/xp.ts',
       'src/engine/level.ts',
       'src/engine/streak.ts',
+      'src/engine/messages.ts',
     ],
     rules: {
       '@typescript-eslint/no-unused-vars': ['error', { args: 'none' }],

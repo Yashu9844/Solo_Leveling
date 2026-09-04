@@ -281,6 +281,27 @@ export interface QuestRecoveredPayload {
   reason?: 'ran_out_of_time' | 'too_tired' | 'wrong_time' | 'didnt_want_to';
 }
 
+/** What got in the way of today, if anything — final/05 §5's evening
+ * review chip row. 'nothing' is its own value (not "no answer"): the
+ * review always requires picking one, even on a full day. */
+export type ReviewBlocker = 'time' | 'tired' | 'wrong_time' | 'didnt_want_to' | 'nothing';
+
+/**
+ * The evening review — final/05 §5, 25 seconds, 5 taps, no typing.
+ * energy/focus are 1-5 (the wireframe's 5-dot rows). sleptAt is a plain
+ * "HH:mm" capture, not a full SLEEP_LOGGED event — real sleep-window
+ * tracking (wake SD, the sleep quest's criterion) is Slice 9's domain;
+ * this is just what the review screen collects today.
+ */
+export interface ReviewCompletedPayload {
+  localDate: string;
+  energy: number; // 1-5
+  focus: number; // 1-5
+  blocker: ReviewBlocker;
+  tomorrowPriority?: CoreQuestKey;
+  sleptAt?: string; // "HH:mm"
+}
+
 /**
  * A completion recorded purely from the event log. There is no
  * "instance created" event in the V1 catalogue (final/07 §4.1) — quest
@@ -318,5 +339,9 @@ export interface EngineState {
   // (not the claim date) — QUEST_RECOVERED's idem_key already enforces
   // max-1-per-day, so a Set-like presence check is all this needs to be.
   recoveries: Record<string, true>;
+  // Completed evening reviews, keyed by local_date — same presence-check
+  // shape as recoveries, gates re-showing the review for an already-
+  // reviewed day and carries the payload for the daily report.
+  reviews: Record<string, ReviewCompletedPayload>;
   arc: ArcState | null;
 }

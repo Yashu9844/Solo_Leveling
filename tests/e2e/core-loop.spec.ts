@@ -1,5 +1,5 @@
 import { test, expect, type Page } from '@playwright/test';
-import { completeOnboarding } from './helpers';
+import { completeOnboarding, waitForQuestInstanceState } from './helpers';
 
 // Every one of these tests depends on "now" falling inside the arc's
 // active window (arc.startDate is the fixed constant 2026-09-01 in
@@ -22,6 +22,7 @@ test('complete a quest -> reload -> still complete', async ({ page }) => {
   const careerButton = page.getByRole('button', { name: 'Complete CAREER' });
   await careerButton.click();
   await expect(page.getByRole('button', { name: 'Undo CAREER' })).toBeVisible();
+  await waitForQuestInstanceState(page, 'CAREER', '2026-09-05', 'complete');
 
   await page.reload();
   await expect(page.getByRole('button', { name: 'Undo CAREER' })).toBeVisible();
@@ -33,8 +34,11 @@ test('complete -> undo -> reload -> not complete', async ({ page }) => {
 
   await page.getByRole('button', { name: 'Complete CAREER' }).click();
   await expect(page.getByRole('button', { name: 'Undo CAREER' })).toBeVisible();
+  await waitForQuestInstanceState(page, 'CAREER', '2026-09-05', 'complete');
+
   await page.getByRole('button', { name: 'Undo CAREER' }).click();
   await expect(page.getByRole('button', { name: 'Complete CAREER' })).toBeVisible();
+  await waitForQuestInstanceState(page, 'CAREER', '2026-09-05', 'available');
 
   await page.reload();
   await expect(page.getByRole('button', { name: 'Complete CAREER' })).toBeVisible();

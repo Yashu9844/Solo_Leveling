@@ -33,3 +33,63 @@ export async function completeOnboarding(page: Page, name = 'Ada') {
   await page.getByRole('button', { name: 'Initialise system' }).click();
   await expect(page).toHaveURL(/\/today$/);
 }
+
+/**
+ * Waits until db.quest_instance actually shows `state` for a template
+ * titled `templateTitle` on `localDate` — i.e. the confirmed write, not
+ * the optimistic UI. A toggle's write is a full rebuildProjections
+ * (Slice 4+), which resolves on a different timeline than the
+ * synchronous optimistic update a click triggers; a test that reloads
+ * right after seeing the optimistic UI can race ahead of the real write
+ * and see it vanish. Poll the actual IndexedDB the reload will re-read,
+ * not the DOM, before reloading.
+ */
+export async function waitForQuestInstanceState(
+  page: Page,
+  templateTitle: string,
+  localDate: string,
+  state: 'available' | 'complete'
+) {
+  await expect
+    .poll(() =>
+      page.evaluate(
+        ({ templateTitle, localDate, state }) =>
+          new Promise<boolean>((resolve, reject) => {
+            const openReq = indexedDB.open('system-arc');
+            openReq.onerror = () => reject(openReq.error);
+            openReq.onsuccess = () => {
+              const idb = openReq.result;
+              const tx = idb.transaction(['quest_template', 'quest_instance'], 'readonly');
+              const templateStore = tx.objectStore('quest_template');
+              const templateReq = templateStore.getAll();
+              templateReq.onsuccess = () => {
+                const template = (templateReq.result as { id: string; title: string }[]).find(
+                  (t) => t.title === templateTitle
+                );
+                if (!template) {
+                  resolve(false);
+                  return;
+                }
+                const instanceStore = tx.objectStore('quest_instance');
+                const instanceReq = instanceStore.getAll();
+                instanceReq.onsuccess = () => {
+                  const instances = instanceReq.result as {
+                    template_id: string;
+                    local_date: string;
+                    state: string;
+                  }[];
+                  const match = instances.find(
+                    (i) => i.template_id === template.id && i.local_date === localDate
+                  );
+                  resolve(match?.state === state);
+                };
+                instanceReq.onerror = () => reject(instanceReq.error);
+              };
+              templateReq.onerror = () => reject(templateReq.error);
+            };
+          }),
+        { templateTitle, localDate, state }
+      )
+    )
+    .toBe(true);
+}

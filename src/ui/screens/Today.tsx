@@ -9,11 +9,13 @@ import { loadTodayQuests, completeQuest, undoQuest } from '../../store/quests';
 import { getDayXpByInstance, getTotalXp } from '../../store/playerState';
 import { getStreakState, type LiveStreakState } from '../../store/streak';
 import { getRecoverableDay, claimRecovery, type RecoverableDay } from '../../store/recovery';
+import { hasReviewedToday } from '../../store/review';
 import { QuestRow } from '../today/QuestRow';
 import { QuestDetailSheet } from '../today/QuestDetailSheet';
 import { priorityLine } from '../today/priorityLine';
 import { LevelUpMoment } from '../moments/LevelUpMoment';
 import { unlockTextForRange } from '../moments/levelUnlocks';
+import { EveningReview } from '../review/EveningReview';
 
 const CONFIG = DEFAULT_CONFIG;
 
@@ -57,6 +59,8 @@ export function Today() {
   const [streak, setStreak] = useState<LiveStreakState | null>(null);
   const [recoverable, setRecoverable] = useState<RecoverableDay | null>(null);
   const [claimingRecovery, setClaimingRecovery] = useState(false);
+  const [reviewed, setReviewed] = useState(true); // true until refresh() proves otherwise — hides the entry on first paint
+  const [reviewOpen, setReviewOpen] = useState(false);
   const dayClosed = isDayClosed(realDeps.now(), CONFIG);
 
   const refreshXp = useCallback(async (date: string) => {
@@ -78,12 +82,14 @@ export function Today() {
     setInstances(i);
     await refreshXp(date);
 
-    const [streakState, recoverableDay] = await Promise.all([
+    const [streakState, recoverableDay, alreadyReviewed] = await Promise.all([
       getStreakState(date, CONFIG),
       getRecoverableDay(date, CONFIG),
+      hasReviewedToday(date),
     ]);
     setStreak(streakState);
     setRecoverable(recoverableDay);
+    setReviewed(alreadyReviewed);
   }, [refreshXp]);
 
   useEffect(() => {
@@ -263,6 +269,16 @@ export function Today() {
         })}
       </div>
 
+      {!reviewed && (
+        <button
+          type="button"
+          onClick={() => setReviewOpen(true)}
+          className="mt-4 min-h-[44px] w-full rounded-md border border-border text-sm text-accent"
+        >
+          Evening review · 25 seconds
+        </button>
+      )}
+
       {notice && <p className="mt-3 text-sm text-text-dim">{notice}</p>}
 
       {openTemplate && openInstance && (
@@ -281,6 +297,18 @@ export function Today() {
           toLevel={moment.toLevel}
           unlockText={unlockTextForRange(moment.fromLevel, moment.toLevel)}
           onDismiss={() => setMoment(null)}
+        />
+      )}
+
+      {reviewOpen && arc && (
+        <EveningReview
+          today={today}
+          day={day}
+          arcId={arc.id}
+          onClose={() => {
+            setReviewOpen(false);
+            setReviewed(true);
+          }}
         />
       )}
     </div>

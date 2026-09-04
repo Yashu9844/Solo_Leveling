@@ -10,6 +10,7 @@ import type {
   QuestCompletedPayload,
   QuestRecoveredPayload,
   QuestUndonePayload,
+  ReviewCompletedPayload,
   SystemEvent,
 } from './types';
 
@@ -160,6 +161,11 @@ function applyOne(state: EngineState, event: SystemEvent): EngineState {
       return { ...state, recoveries: { ...state.recoveries, [payload.localDate]: true } };
     }
 
+    case 'REVIEW_COMPLETED': {
+      const payload = event.payload as unknown as ReviewCompletedPayload;
+      return { ...state, reviews: { ...state.reviews, [payload.localDate]: payload } };
+    }
+
     case 'APP_OPENED':
       // "Was this day opened" is read directly off the raw event log by
       // db/projections.ts (the set of local_dates with an APP_OPENED
@@ -193,6 +199,7 @@ function emptyEngineState(): EngineState {
     intentions: {},
     baselineMetrics: {},
     recoveries: {},
+    reviews: {},
     arc: null,
   };
 }

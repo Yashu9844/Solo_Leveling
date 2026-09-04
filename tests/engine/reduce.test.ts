@@ -11,6 +11,7 @@ import type {
   QuestCompletedPayload,
   QuestRecoveredPayload,
   QuestUndonePayload,
+  ReviewCompletedPayload,
   SystemEvent,
 } from '../../src/engine/types';
 
@@ -250,6 +251,38 @@ describe('applyEvents — QUEST_RECOVERED (Slice 4)', () => {
     );
     const state = applyEvents([arcStartedEvent(), recovered, { ...recovered }], DEFAULT_CONFIG);
     expect(Object.keys(state.recoveries)).toEqual(['2026-09-05']);
+  });
+});
+
+describe('applyEvents — REVIEW_COMPLETED (Slice 5)', () => {
+  it('records the review payload for the reviewed local_date', () => {
+    const reviewed = event(
+      'REVIEW_COMPLETED',
+      {
+        localDate: '2026-09-05',
+        energy: 3,
+        focus: 4,
+        blocker: 'tired',
+      } satisfies ReviewCompletedPayload,
+      'review:2026-09-05'
+    );
+    const state = applyEvents([arcStartedEvent(), reviewed], DEFAULT_CONFIG);
+    expect(state.reviews['2026-09-05']).toEqual({
+      localDate: '2026-09-05',
+      energy: 3,
+      focus: 4,
+      blocker: 'tired',
+    });
+  });
+
+  it('a duplicate review for the same day (same idem_key) is a no-op', () => {
+    const reviewed = event(
+      'REVIEW_COMPLETED',
+      { localDate: '2026-09-05', energy: 3, focus: 4, blocker: 'nothing' } satisfies ReviewCompletedPayload,
+      'review:2026-09-05'
+    );
+    const state = applyEvents([arcStartedEvent(), reviewed, { ...reviewed }], DEFAULT_CONFIG);
+    expect(Object.keys(state.reviews)).toEqual(['2026-09-05']);
   });
 });
 

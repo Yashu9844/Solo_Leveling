@@ -254,6 +254,7 @@ function buildProjections(events: SystemEvent[], config: EngineConfig, deps: Eng
     const coreCompleted = instances.filter((i) => i.local_date === localDate && i.state === 'complete').length;
     const streakDay = streakByDate.get(localDate);
     const base = emptyDayRollup(localDate, coreTotal);
+    const review = state.reviews[localDate];
     return {
       ...base,
       xp_earned: xpByDate.get(localDate) ?? 0,
@@ -262,6 +263,9 @@ function buildProjections(events: SystemEvent[], config: EngineConfig, deps: Eng
       mvd_met: streakDay?.mvd_met ?? false,
       grace_applied: streakDay?.grace_applied ?? false,
       reduced_mode: streakDay?.reduced_mode ?? false,
+      energy: review?.energy,
+      focus: review?.focus,
+      blocker: review?.blocker,
     };
   });
 

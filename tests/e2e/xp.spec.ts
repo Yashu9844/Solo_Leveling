@@ -48,7 +48,10 @@ test('completing a quest shows +XP and advances the bar', async ({ page }) => {
 
   await expect(page.getByRole('button', { name: 'Undo CAREER' })).toBeVisible();
   await expect(row).toContainText('+100');
-  expect(await barWidthPct(page)).toBeGreaterThan(0);
+  // Same reasoning as the undo test below: the button's optimistic flip
+  // and the confirmed write (a full rebuildProjections) resolve on
+  // different timelines, so poll rather than assume they're in sync.
+  await expect.poll(() => barWidthPct(page)).toBeGreaterThan(0);
 });
 
 test('tap -> XP feedback rendered in under 300ms', async ({ page }) => {

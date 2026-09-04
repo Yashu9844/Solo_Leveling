@@ -1,13 +1,21 @@
+import { addDays, format, parseISO } from 'date-fns';
 import type {
+  ArcPausedPayload,
+  ArcResumedPayload,
   ArcStartedPayload,
   EngineConfig,
   EngineState,
   MetricRecordedPayload,
   PlanAmendedPayload,
   QuestCompletedPayload,
+  QuestRecoveredPayload,
   QuestUndonePayload,
   SystemEvent,
 } from './types';
+
+function shiftDate(dateStr: string, days: number): string {
+  return format(addDays(parseISO(dateStr), days), 'yyyy-MM-dd');
+}
 
 /**
  * Pure. Replays the event log into the full derived state. Deterministic:
@@ -61,8 +69,41 @@ function applyOne(state: EngineState, event: SystemEvent): EngineState {
           main_quest_text: payload.mainQuestText,
           stake_text: payload.stakeText,
           status: 'active',
+          paused_dates: [],
         },
       };
+    }
+
+    case 'ARC_PAUSED': {
+      // Commits to a duration upfront (final/01 §6.5) — end_date shifts
+      // forward by the full planned length immediately; an early
+      // ARC_RESUMED doesn't claw that shift back (see its case below).
+      if (!state.arc) return state;
+      const payload = event.payload as unknown as ArcPausedPayload;
+      const newlyPaused: string[] = [];
+      for (let i = 0; i < payload.days; i++) {
+        newlyPaused.push(shiftDate(payload.localDate, i));
+      }
+      const pausedDates = Array.from(new Set([...state.arc.paused_dates, ...newlyPaused])).sort();
+      return {
+        ...state,
+        arc: {
+          ...state.arc,
+          status: 'paused',
+          end_date: shiftDate(state.arc.end_date, payload.days),
+          paused_dates: pausedDates,
+        },
+      };
+    }
+
+    case 'ARC_RESUMED': {
+      // Days before this event's local_date stay paused in history — a
+      // day that really was paused never retroactively becomes a miss.
+      // Days from local_date onward are un-paused (early resume).
+      if (!state.arc) return state;
+      const payload = event.payload as unknown as ArcResumedPayload;
+      const pausedDates = state.arc.paused_dates.filter((d) => d < payload.localDate);
+      return { ...state, arc: { ...state.arc, status: 'active', paused_dates: pausedDates } };
     }
 
     case 'PLAN_AMENDED': {
@@ -114,6 +155,11 @@ function applyOne(state: EngineState, event: SystemEvent): EngineState {
       return { ...state, quests };
     }
 
+    case 'QUEST_RECOVERED': {
+      const payload = event.payload as unknown as QuestRecoveredPayload;
+      return { ...state, recoveries: { ...state.recoveries, [payload.localDate]: true } };
+    }
+
     case 'APP_OPENED':
       // "Was this day opened" is read directly off the raw event log by
       // db/projections.ts (the set of local_dates with an APP_OPENED
@@ -146,6 +192,7 @@ function emptyEngineState(): EngineState {
     quests: {},
     intentions: {},
     baselineMetrics: {},
+    recoveries: {},
     arc: null,
   };
 }

@@ -1,12 +1,4 @@
-import type {
-  CoreQuestKey,
-  DayState,
-  EngineConfig,
-  QuestCompletedPayload,
-  SystemEvent,
-  XpCategory,
-  XpGrant,
-} from './types';
+import type { DayState, EngineConfig, QuestCompletedPayload, SystemEvent, XpCategory, XpGrant } from './types';
 
 /**
  * Pure. Computes XP grants for an event given the day's state so far.
@@ -27,6 +19,12 @@ function baseGrantsFor(event: SystemEvent, config: EngineConfig): XpGrant[] {
       if (!core) return [];
       return [{ category: core.category, amount: core.xp, reason: `core:${payload.questKey}` }];
     }
+    case 'QUEST_RECOVERED':
+      // Flat, frequency-limited (max 1/day, enforced by the idem_key,
+      // not here), BONUS-category, exempt from both caps — final/01
+      // §2.1.1, §6.3. Worth less than a real completion so recovering is
+      // never better than not missing.
+      return [{ category: 'BONUS', amount: config.recoveryXp, reason: 'recovery' }];
     // Every other event type — including body METRIC_RECORDED, external
     // CAREER_EVENT_LOGGED, APP_OPENED, REVIEW_COMPLETED, and
     // CHECKPOINT_SEALED — yields no XP. final/01 §2.3.
@@ -82,16 +80,9 @@ export function emptyDayState(localDate: string): DayState {
   };
 }
 
-export interface DayCompletion {
-  instanceId: string;
-  templateId: string;
-  questKey: CoreQuestKey;
-  completedAt: string;
-}
-
 export interface DayLedgerEntry {
-  instanceId: string;
-  templateId: string;
+  eventId: string;
+  instanceId?: string; // only set for QUEST_COMPLETED-derived entries
   category: XpCategory;
   amount: number;
   reason: string;
@@ -99,42 +90,35 @@ export interface DayLedgerEntry {
 }
 
 /**
- * Pure. Derives a full day's XP ledger from its completions, applying
- * caps in chronological order. This is the single implementation shared
- * by the live write path (store/quests.ts recomputes one day after a
- * complete/undo) and the full rebuild (db/projections.ts) — "recompute,
- * never subtract" (see the Slice 3 prompt's note on XP and undo): there
- * is exactly one way to turn "which instances are complete" into ledger
- * rows, and both callers use it.
+ * Pure. Derives a full day's XP ledger from its XP-relevant events
+ * (QUEST_COMPLETED, QUEST_RECOVERED — anything else computeXp returns []
+ * for), applying caps in chronological order. This is the single
+ * implementation shared by the live write path (store/quests.ts,
+ * store/recovery.ts) and the full rebuild (db/projections.ts) —
+ * "recompute, never subtract": there is exactly one way to turn "which
+ * events are in effect for this day" into ledger rows, and every caller
+ * uses it.
+ *
+ * `events` must already be filtered to exactly the events that are
+ * "in effect" (a QUEST_COMPLETED whose instance was later undone must be
+ * excluded by the caller — see db/projections.ts's use of the
+ * applyEvents completion overlay, not a raw event scan).
  */
-export function computeDayLedger(localDate: string, completions: DayCompletion[], config: EngineConfig): DayLedgerEntry[] {
-  const sorted = [...completions].sort((a, b) => a.completedAt.localeCompare(b.completedAt));
+export function computeDayLedger(localDate: string, events: SystemEvent[], config: EngineConfig): DayLedgerEntry[] {
+  const sorted = [...events].sort((a, b) => a.occurred_at.localeCompare(b.occurred_at));
   let dayState = emptyDayState(localDate);
   const entries: DayLedgerEntry[] = [];
 
-  for (const completion of sorted) {
-    const syntheticEvent: SystemEvent = {
-      id: completion.instanceId,
-      type: 'QUEST_COMPLETED',
-      occurred_at: completion.completedAt,
-      local_date: localDate,
-      arc_id: '',
-      payload: {
-        instanceId: completion.instanceId,
-        templateId: completion.templateId,
-        questKey: completion.questKey,
-        localDate,
-      } satisfies QuestCompletedPayload as unknown as Record<string, unknown>,
-      source: 'user',
-      idem_key: `quest-complete:${completion.instanceId}`,
-      schema_v: 1,
-    };
-
-    const grants = computeXp(syntheticEvent, dayState, config);
+  for (const event of sorted) {
+    const grants = computeXp(event, dayState, config);
     for (const grant of grants) {
+      const instanceId =
+        event.type === 'QUEST_COMPLETED'
+          ? (event.payload as unknown as QuestCompletedPayload).instanceId
+          : undefined;
       entries.push({
-        instanceId: completion.instanceId,
-        templateId: completion.templateId,
+        eventId: event.id,
+        instanceId,
         category: grant.category,
         amount: grant.amount,
         reason: grant.reason,

@@ -1,12 +1,17 @@
-import { useEffect, useState } from 'react';
+import { useCallback, useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { DEFAULT_CONFIG } from '../../engine/config';
 import { levelFor } from '../../engine/level';
+import { localDate } from '../../engine/time';
+import { applyEvents } from '../../engine/reduce';
 import { resetArc } from '../../store/onboarding';
 import { realDeps } from '../../store/deps';
 import { useArcStatus } from '../../store/ArcStatusContext';
 import { getDayZeroCheckpoint, saveSelfEfficacy, selfEfficacyIsComplete } from '../../store/checkpoint';
 import { getTotalXp } from '../../store/playerState';
+import { pauseArc, resumeArc } from '../../store/pause';
+import { db } from '../../db/db';
+import { getAllEvents } from '../../db/events';
 import { verifyIntegrity, type IntegrityReport } from '../../db/projections';
 
 export function Profile() {
@@ -15,6 +20,7 @@ export function Profile() {
       <h1 className="text-lg font-semibold">PROFILE</h1>
       <LevelSummary />
       <DayZeroBaselineRow />
+      <ArcPauseControl />
       {import.meta.env.DEV && (
         <>
           <DevResetArc />
@@ -145,6 +151,82 @@ function DayZeroBaselineRow() {
             Save baseline
           </button>
         </div>
+      )}
+    </div>
+  );
+}
+
+/** One tap, up to 7 days. No quests generate, streak preserved, end date
+ * shifts. Zero penalty. final/01 §6.5. */
+function ArcPauseControl() {
+  const [arcId, setArcId] = useState<string | null>(null);
+  const [pausedToday, setPausedToday] = useState(false);
+  const [busy, setBusy] = useState(false);
+  const today = localDate(realDeps.now(), DEFAULT_CONFIG.arc.timezone, DEFAULT_CONFIG.arc.dayBoundaryHour);
+
+  const refresh = useCallback(async () => {
+    const arc = await db.arc.toCollection().first();
+    if (!arc) return;
+    setArcId(arc.id);
+    const events = await getAllEvents();
+    const state = applyEvents(events, DEFAULT_CONFIG);
+    setPausedToday(state.arc?.paused_dates.includes(today) ?? false);
+  }, [today]);
+
+  useEffect(() => {
+    void refresh();
+  }, [refresh]);
+
+  async function handlePause(days: number) {
+    if (!arcId || busy) return;
+    setBusy(true);
+    await pauseArc(today, days, arcId, DEFAULT_CONFIG, realDeps);
+    await refresh();
+    setBusy(false);
+  }
+
+  async function handleResume() {
+    if (!arcId || busy) return;
+    setBusy(true);
+    await resumeArc(today, arcId, DEFAULT_CONFIG, realDeps);
+    await refresh();
+    setBusy(false);
+  }
+
+  if (arcId === null) return null;
+
+  return (
+    <div className="mt-6 rounded-md border border-border p-3">
+      <div className="text-xxs uppercase tracking-wide text-text-dim">Arc pause</div>
+      {pausedToday ? (
+        <>
+          <p className="mt-1 text-sm text-text-dim">Paused. No quests generate. Zero penalty.</p>
+          <button
+            type="button"
+            disabled={busy}
+            onClick={() => void handleResume()}
+            className="mt-2 min-h-[44px] w-full rounded-md border border-border text-sm text-text disabled:opacity-40"
+          >
+            Resume now
+          </button>
+        </>
+      ) : (
+        <>
+          <p className="mt-1 text-sm text-text-dim">Illness, travel, a work crisis. One tap, up to 7 days.</p>
+          <div className="mt-2 flex gap-2">
+            {[1, 3, 7].map((days) => (
+              <button
+                key={days}
+                type="button"
+                disabled={busy}
+                onClick={() => void handlePause(days)}
+                className="min-h-[44px] flex-1 rounded-md border border-border text-sm text-text disabled:opacity-40"
+              >
+                {days}d
+              </button>
+            ))}
+          </div>
+        </>
       )}
     </div>
   );

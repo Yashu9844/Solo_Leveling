@@ -7,6 +7,8 @@ import { realDeps } from '../../store/deps';
 import { db } from '../../db/db';
 import { loadTodayQuests, completeQuest, undoQuest } from '../../store/quests';
 import { getDayXpByInstance, getTotalXp } from '../../store/playerState';
+import { getStreakState, type LiveStreakState } from '../../store/streak';
+import { getRecoverableDay, claimRecovery, type RecoverableDay } from '../../store/recovery';
 import { QuestRow } from '../today/QuestRow';
 import { QuestDetailSheet } from '../today/QuestDetailSheet';
 import { priorityLine } from '../today/priorityLine';
@@ -52,6 +54,9 @@ export function Today() {
   const [notice, setNotice] = useState<string | null>(null);
   const [moment, setMoment] = useState<LevelUpEvent | null>(null);
   const [banner, setBanner] = useState<LevelUpEvent | null>(null);
+  const [streak, setStreak] = useState<LiveStreakState | null>(null);
+  const [recoverable, setRecoverable] = useState<RecoverableDay | null>(null);
+  const [claimingRecovery, setClaimingRecovery] = useState(false);
   const dayClosed = isDayClosed(realDeps.now(), CONFIG);
 
   const refreshXp = useCallback(async (date: string) => {
@@ -72,6 +77,13 @@ export function Today() {
     setTemplates(t);
     setInstances(i);
     await refreshXp(date);
+
+    const [streakState, recoverableDay] = await Promise.all([
+      getStreakState(date, CONFIG),
+      getRecoverableDay(date, CONFIG),
+    ]);
+    setStreak(streakState);
+    setRecoverable(recoverableDay);
   }, [refreshXp]);
 
   useEffect(() => {
@@ -146,6 +158,21 @@ export function Today() {
     }
   }
 
+  async function handleClaimRecovery() {
+    if (!arc || !recoverable || claimingRecovery) return;
+    setClaimingRecovery(true);
+    try {
+      await claimRecovery(recoverable.localDate, today, arc.id, CONFIG, realDeps);
+      setRecoverable(null);
+      await refreshXp(today);
+    } catch {
+      setNotice('Could not save — try again.');
+      setTimeout(() => setNotice(null), 3000);
+    } finally {
+      setClaimingRecovery(false);
+    }
+  }
+
   const openTemplate = templates.find(
     (t) => t.id === instances.find((i) => i.id === openInstanceId)?.template_id
   );
@@ -158,7 +185,7 @@ export function Today() {
       <div className="mb-1 text-xs uppercase tracking-wide text-text-dim">
         {day != null ? `DAY ${day} · ` : ''}LEVEL {levelState.level} · RANK E
       </div>
-      <div className="mb-4 h-1 w-full overflow-hidden rounded-pill bg-surface-2">
+      <div className="mb-1 h-1 w-full overflow-hidden rounded-pill bg-surface-2">
         <div
           className="h-full rounded-pill bg-accent transition-all duration-500"
           style={{ width: `${barPct}%` }}
@@ -166,10 +193,44 @@ export function Today() {
         />
       </div>
 
+      {/* Streak is displayed smaller than consistency — it's the number
+          that carries the real signal (final/01 §6.2). */}
+      {streak && (streak.consistency_7 > 0 || streak.consistency_28 > 0 || streak.arc_streak > 0) && (
+        <p className="mb-3 text-xxs text-text-faint">
+          {streak.consistency_7}% (7d) · {streak.consistency_28}% (28d) · streak {streak.arc_streak}
+        </p>
+      )}
+
       {banner && (
         <p className="mb-3 border-l-2 border-accent pl-2 text-sm text-text-dim">
           LEVEL {String(banner.fromLevel).padStart(2, '0')} → {String(banner.toLevel).padStart(2, '0')}
         </p>
+      )}
+
+      {streak?.reduced_mode && (
+        <p className="mb-3 border-l-2 border-state-recover pl-2 text-sm text-text-dim">
+          Reduced to the floor for two days. The arc continues.
+        </p>
+      )}
+
+      {recoverable && (
+        <div className="mb-3 rounded-md border border-border p-3" data-testid="recovery-card">
+          <p className="text-sm text-text">
+            Yesterday: {recoverable.coreCompleted} of {recoverable.coreTotal}.{' '}
+            {recoverable.missedTitles.join(' and ')} incomplete.
+          </p>
+          <p className="mt-1 text-xs text-text-faint">
+            Worth less than what you'd have earned — recovering is never better than not missing.
+          </p>
+          <button
+            type="button"
+            disabled={claimingRecovery}
+            onClick={() => void handleClaimRecovery()}
+            className="mt-2 min-h-[44px] w-full rounded-md border border-accent text-sm text-accent disabled:opacity-40"
+          >
+            Recovery quest · +{CONFIG.recoveryXp} XP
+          </button>
+        </div>
       )}
 
       {dayClosed && (

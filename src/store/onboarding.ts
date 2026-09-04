@@ -198,7 +198,7 @@ export async function initialiseArc(
 }
 
 /**
- * DEV-only. Deletes all Slice 0-2 data and returns the app to a fresh
+ * DEV-only. Deletes all Slice 0-4 data and returns the app to a fresh
  * pre-onboarding state. Gated behind import.meta.env.DEV at the call site
  * (Profile screen) — this function itself has no such guard, so never
  * call it from anything but that DEV-gated button.
@@ -206,12 +206,25 @@ export async function initialiseArc(
 export async function resetArc(): Promise<void> {
   await db.transaction(
     'rw',
-    [db.event, db.arc, db.quest_template, db.quest_instance, db.checkpoint, db.profile],
+    [
+      db.event,
+      db.arc,
+      db.quest_template,
+      db.quest_instance,
+      db.xp_ledger,
+      db.day_rollup,
+      db.player_state,
+      db.checkpoint,
+      db.profile,
+    ],
     async () => {
       await db.event.clear();
       await db.arc.clear();
       await db.quest_template.clear();
       await db.quest_instance.clear();
+      await db.xp_ledger.clear();
+      await db.day_rollup.clear();
+      await db.player_state.clear();
       await db.checkpoint.clear();
       await db.profile.clear();
     }

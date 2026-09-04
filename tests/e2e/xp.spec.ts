@@ -71,12 +71,15 @@ test('undo removes the XP; total returns to its prior value', async ({ page }) =
 
   await page.getByRole('button', { name: 'Complete BUILD' }).click();
   await expect(page.getByRole('button', { name: 'Undo BUILD' })).toBeVisible();
-  const afterComplete = await barWidthPct(page);
-  expect(afterComplete).toBeGreaterThan(0);
+  // The button's optimistic flip and the confirmed XP write (a full
+  // rebuildProjections since Slice 4) resolve on different timelines —
+  // poll rather than assume the bar has caught up the instant the
+  // button re-renders.
+  await expect.poll(() => barWidthPct(page)).toBeGreaterThan(0);
 
   await page.getByRole('button', { name: 'Undo BUILD' }).click();
   await expect(page.getByRole('button', { name: 'Complete BUILD' })).toBeVisible();
-  expect(await barWidthPct(page)).toBe(0);
+  await expect.poll(() => barWidthPct(page)).toBe(0);
 });
 
 test('crossing a level boundary fires the LEVEL UP Moment', async ({ page }) => {

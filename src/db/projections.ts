@@ -2,36 +2,151 @@
 // are now CACHES, fully derivable from the event log alone — the event
 // log is the only source of truth (final/07 §5, §6). This is what makes
 // an export-wipe-import backup complete, and what verifyIntegrity() has
-// something real to diff against.
+// something real to diff against. Slice 4 extends the same rebuild to
+// day_rollup and player_state, using engine/streak.ts's streakFrom.
 //
 // generateCoreQuestTemplates and generateQuests derive stable, composite-
 // key ids (not deps.newId()) specifically so a rebuild reproduces the
 // exact ids that QUEST_COMPLETED/QUEST_UNDONE events already reference —
 // see the doc comments on both in engine/quests.ts.
-import type { EngineConfig, EngineDeps, QuestInstance, SystemEvent } from '../engine/types';
+import { addDays, format, parseISO } from 'date-fns';
+import type {
+  EngineConfig,
+  EngineDeps,
+  QuestCompletedPayload,
+  QuestCompletionRecord,
+  QuestInstance,
+  QuestTemplate,
+  SystemEvent,
+} from '../engine/types';
 import { applyEvents } from '../engine/reduce';
 import { generateCoreQuestTemplates, generateQuests } from '../engine/quests';
-import { computeDayLedger, type DayCompletion } from '../engine/xp';
+import { computeDayLedger } from '../engine/xp';
+import { levelFor } from '../engine/level';
+import { streakFrom, type DayOutcome, type DayStreakOutcome } from '../engine/streak';
 import { db } from './db';
 import { getAllEvents } from './events';
-import type { QuestInstanceRow, QuestTemplateRow, XpLedgerRow } from './schema';
+import type { DayRollupRow, PlayerStateRow, QuestInstanceRow, QuestTemplateRow, XpLedgerRow } from './schema';
 
-interface BuiltProjections {
-  templates: QuestTemplateRow[];
-  instances: QuestInstanceRow[];
-  ledger: XpLedgerRow[];
+function shiftDate(dateStr: string, days: number): string {
+  return format(addDays(parseISO(dateStr), days), 'yyyy-MM-dd');
+}
+
+function enumerateDates(start: string, end: string): string[] {
+  const dates: string[] = [];
+  for (let d = start; d <= end; d = shiftDate(d, 1)) {
+    dates.push(d);
+  }
+  return dates;
 }
 
 /**
- * Pure assembly: event log -> the three cache tables' rows, in memory.
+ * Every calendar day from the arc's start through `uptoDate` (inclusive),
+ * as the DayOutcome[] engine/streak.ts's streakFrom needs — gaps
+ * (never-opened days) become misses, matching "a day with no instances
+ * is a day that was never opened" (final/11 Step 2). Shared by the full
+ * rebuild (db/projections.ts) and the live streak query (store/
+ * streak.ts) so there is exactly one place that turns "opened dates +
+ * completions + pauses" into day outcomes.
+ *
+ * `completions` must be `applyEvents(events, config).quests` — the
+ * completion overlay, not a raw scan of QUEST_COMPLETED events. A raw
+ * scan double-counts a quest that was completed, undone, and never
+ * redone (that instance's completion event is still in the log even
+ * though it no longer counts); the overlay already resolves that.
+ *
+ * MVD is approximated as "at least one core completion in effect that
+ * day" rather than "day's capped XP >= mvdXp" — every core quest is
+ * individually worth well over mvdXp (35) uncapped, and near the daily
+ * cap a genuine completion's XP can be trimmed below 35 even though real
+ * work happened; a presence check sidesteps that edge case rather than
+ * risking a false miss on an otherwise-full day.
+ */
+export function buildDayOutcomes(
+  events: SystemEvent[],
+  completions: Record<string, QuestCompletionRecord>,
+  arcStartDate: string,
+  pausedDates: string[],
+  uptoDate: string
+): DayOutcome[] {
+  if (uptoDate < arcStartDate) return [];
+
+  const openedDates = new Set<string>();
+  for (const event of events) {
+    if (event.type === 'APP_OPENED') openedDates.add(event.local_date);
+  }
+
+  const datesWithACompletion = new Set(Object.values(completions).map((c) => c.local_date));
+
+  const pausedSet = new Set(pausedDates);
+  return enumerateDates(arcStartDate, uptoDate).map((localDate) => ({
+    local_date: localDate,
+    mvd_met: openedDates.has(localDate) && datesWithACompletion.has(localDate),
+    paused: pausedSet.has(localDate),
+  }));
+}
+
+export interface BuiltProjections {
+  templates: QuestTemplateRow[];
+  instances: QuestInstanceRow[];
+  ledger: XpLedgerRow[];
+  dayRollups: DayRollupRow[];
+  playerState: PlayerStateRow | null;
+}
+
+function emptyDayRollup(localDate: string, coreTotal: number): DayRollupRow {
+  return {
+    local_date: localDate,
+    xp_earned: 0,
+    xp_capped_away: 0,
+    core_completed: 0,
+    core_total: coreTotal,
+    mvd_met: false,
+    grace_applied: false,
+    reduced_mode: false,
+    deep_minutes: 0,
+    longest_block_minutes: 0,
+    problems: { E: 0, M: 0, H: 0, first_attempt: 0 },
+    applications: 0,
+    quality_applications: 0,
+    learn_minutes: 0,
+    build_mode_split: { LEARN: 0, SHIP: 0 },
+    steps: 0,
+    app_seconds: 0,
+  };
+}
+
+function coreTotalOn(templates: QuestTemplate[], localDate: string): number {
+  return templates.filter(
+    (t) => t.type === 'core' && t.active_from <= localDate && (t.active_to === null || localDate < t.active_to)
+  ).length;
+}
+
+function consistencyOver(history: DayStreakOutcome[], windowDays: number): number {
+  const window = history.slice(-windowDays);
+  const eligible = window.filter((d) => !d.paused);
+  if (eligible.length === 0) return 0;
+  const hits = eligible.filter((d) => d.mvd_met).length;
+  return Math.round((hits / eligible.length) * 100);
+}
+
+/**
+ * Pure assembly: event log -> the five cache tables' rows, in memory.
  * The single place both rebuildProjections (writes them) and
  * verifyIntegrity (diffs them against the live tables) do this — one
  * implementation, so they can never quietly diverge from each other.
+ *
+ * day_rollup and player_state are built over EVERY day the log knows
+ * about, including the most recent one if it was opened — a full,
+ * point-in-time snapshot suited to backup/integrity. The live TODAY
+ * screen does NOT read these for its real-time streak display (a
+ * still-in-progress "today" would wrongly score as a miss); it uses
+ * store/streak.ts's getStreakState, which excludes today by construction.
  */
 function buildProjections(events: SystemEvent[], config: EngineConfig, deps: EngineDeps): BuiltProjections {
   const state = applyEvents(events, config);
   if (!state.arc) {
-    return { templates: [], instances: [], ledger: [] };
+    return { templates: [], instances: [], ledger: [], dayRollups: [], playerState: null };
   }
   const arc = state.arc;
 
@@ -56,27 +171,53 @@ function buildProjections(events: SystemEvent[], config: EngineConfig, deps: Eng
     return { ...instance, state: 'complete' as const, completed_at: record.completed_at };
   });
 
-  const completionsByDate = new Map<string, DayCompletion[]>();
-  const eventIdByInstance = new Map<string, string>();
+  // Every XP-relevant event, grouped by the day it actually lands on
+  // (caps are per real calendar day of activity). QUEST_COMPLETED comes
+  // from state.quests (the completion overlay) rather than a raw scan of
+  // the log, so an instance that was completed then undone doesn't
+  // contribute a stale grant. QUEST_RECOVERED is grouped by the event's
+  // own local_date (the day you tapped the button), not payload.localDate
+  // (the missed day it refers to) — XP lands, and caps apply, on the day
+  // it was actually granted.
+  const ledgerEventsByDate = new Map<string, SystemEvent[]>();
+  function addLedgerEvent(localDate: string, event: SystemEvent) {
+    const list = ledgerEventsByDate.get(localDate) ?? [];
+    list.push(event);
+    ledgerEventsByDate.set(localDate, list);
+  }
+
   for (const record of Object.values(state.quests)) {
-    eventIdByInstance.set(record.instance_id, record.event_id);
-    const list = completionsByDate.get(record.local_date) ?? [];
-    list.push({
+    const payload: QuestCompletedPayload = {
       instanceId: record.instance_id,
       templateId: record.template_id,
       questKey: record.quest_key,
-      completedAt: record.completed_at,
+      localDate: record.local_date,
+    };
+    addLedgerEvent(record.local_date, {
+      id: record.event_id,
+      type: 'QUEST_COMPLETED',
+      occurred_at: record.completed_at,
+      local_date: record.local_date,
+      arc_id: arc.id,
+      payload: payload as unknown as Record<string, unknown>,
+      source: 'user',
+      idem_key: `quest-complete:${record.instance_id}`,
+      schema_v: 1,
     });
-    completionsByDate.set(record.local_date, list);
+  }
+  for (const event of events) {
+    if (event.type === 'QUEST_RECOVERED') {
+      addLedgerEvent(event.local_date, event);
+    }
   }
 
   const ledger: XpLedgerRow[] = [];
-  for (const [localDate, completions] of completionsByDate) {
-    const entries = computeDayLedger(localDate, completions, config);
+  for (const [localDate, dayEvents] of ledgerEventsByDate) {
+    const entries = computeDayLedger(localDate, dayEvents, config);
     for (const entry of entries) {
       ledger.push({
-        id: `${entry.instanceId}::xp`,
-        event_id: eventIdByInstance.get(entry.instanceId) ?? entry.instanceId,
+        id: entry.instanceId ? `${entry.instanceId}::xp` : `${entry.eventId}::xp`,
+        event_id: entry.eventId,
         instance_id: entry.instanceId,
         local_date: localDate,
         amount: entry.amount,
@@ -87,26 +228,97 @@ function buildProjections(events: SystemEvent[], config: EngineConfig, deps: Eng
     }
   }
 
-  return { templates, instances, ledger };
+  const openedDatesSorted = [...appOpenedDates].sort();
+  const lastKnown = openedDatesSorted[openedDatesSorted.length - 1];
+
+  if (!lastKnown) {
+    return { templates, instances, ledger, dayRollups: [], playerState: null };
+  }
+
+  const dayOutcomes = buildDayOutcomes(events, state.quests, arc.start_date, arc.paused_dates, lastKnown);
+  const streakResult = streakFrom(dayOutcomes, config.streak);
+  const streakByDate = new Map(streakResult.history.map((h) => [h.local_date, h]));
+
+  const xpByDate = new Map<string, number>();
+  const cappedAwayByDate = new Map<string, number>();
+  for (const row of ledger) {
+    xpByDate.set(row.local_date, (xpByDate.get(row.local_date) ?? 0) + row.amount);
+    if (row.capped_from !== undefined) {
+      const trimmed = row.capped_from - row.amount;
+      cappedAwayByDate.set(row.local_date, (cappedAwayByDate.get(row.local_date) ?? 0) + trimmed);
+    }
+  }
+
+  const dayRollups: DayRollupRow[] = openedDatesSorted.map((localDate) => {
+    const coreTotal = coreTotalOn(templates, localDate);
+    const coreCompleted = instances.filter((i) => i.local_date === localDate && i.state === 'complete').length;
+    const streakDay = streakByDate.get(localDate);
+    const base = emptyDayRollup(localDate, coreTotal);
+    return {
+      ...base,
+      xp_earned: xpByDate.get(localDate) ?? 0,
+      xp_capped_away: cappedAwayByDate.get(localDate) ?? 0,
+      core_completed: coreCompleted,
+      mvd_met: streakDay?.mvd_met ?? false,
+      grace_applied: streakDay?.grace_applied ?? false,
+      reduced_mode: streakDay?.reduced_mode ?? false,
+    };
+  });
+
+  const totalXp = ledger.reduce((sum, row) => sum + row.amount, 0);
+  const level = levelFor(totalXp, config);
+  const playerState: PlayerStateRow = {
+    id: 'player',
+    total_xp: totalXp,
+    level: level.level,
+    xp_into_level: level.xpIntoLevel,
+    xp_for_next: level.xpForNext,
+    rank: 'E', // hardcoded until rank.ts — Slice 12
+    rank_since_day: 0,
+    arc_streak: streakResult.arc_streak,
+    consistency_7: consistencyOver(streakResult.history, 7),
+    consistency_28: consistencyOver(streakResult.history, 28),
+    grace_remaining: streakResult.grace_remaining,
+    schema_v: 1,
+  };
+
+  return { templates, instances, ledger, dayRollups, playerState };
 }
 
 /**
  * Rebuilds every derived table from the event log alone. Wipes and
- * repopulates quest_template, quest_instance, xp_ledger. Deterministic:
- * same log + same config -> identical tables (same rows, same ids).
+ * repopulates quest_template, quest_instance, xp_ledger, day_rollup and
+ * player_state. Deterministic: same log + same config -> identical
+ * tables (same rows, same ids). Returns what it wrote, so a caller that
+ * just appended an event (store/quests.ts, store/streak.ts) can rebuild
+ * as its ONE mechanism for staying correct and read the fresh result
+ * back without a second round-trip to the db.
  */
-export async function rebuildProjections(config: EngineConfig, deps: EngineDeps): Promise<void> {
+export async function rebuildProjections(
+  config: EngineConfig,
+  deps: EngineDeps
+): Promise<BuiltProjections> {
   const events = await getAllEvents();
   const built = buildProjections(events, config, deps);
 
-  await db.transaction('rw', [db.quest_template, db.quest_instance, db.xp_ledger], async () => {
-    await db.quest_template.clear();
-    await db.quest_instance.clear();
-    await db.xp_ledger.clear();
-    if (built.templates.length > 0) await db.quest_template.bulkAdd(built.templates);
-    if (built.instances.length > 0) await db.quest_instance.bulkAdd(built.instances);
-    if (built.ledger.length > 0) await db.xp_ledger.bulkAdd(built.ledger);
-  });
+  await db.transaction(
+    'rw',
+    [db.quest_template, db.quest_instance, db.xp_ledger, db.day_rollup, db.player_state],
+    async () => {
+      await db.quest_template.clear();
+      await db.quest_instance.clear();
+      await db.xp_ledger.clear();
+      await db.day_rollup.clear();
+      await db.player_state.clear();
+      if (built.templates.length > 0) await db.quest_template.bulkAdd(built.templates);
+      if (built.instances.length > 0) await db.quest_instance.bulkAdd(built.instances);
+      if (built.ledger.length > 0) await db.xp_ledger.bulkAdd(built.ledger);
+      if (built.dayRollups.length > 0) await db.day_rollup.bulkAdd(built.dayRollups);
+      if (built.playerState) await db.player_state.add(built.playerState);
+    }
+  );
+
+  return built;
 }
 
 export interface IntegrityReport {
@@ -126,11 +338,21 @@ export async function verifyIntegrity(config: EngineConfig, deps: EngineDeps): P
   const liveTemplates = await db.quest_template.toArray();
   const liveInstances = await db.quest_instance.toArray();
   const liveLedger = await db.xp_ledger.toArray();
+  const liveDayRollups = await db.day_rollup.toArray();
+  const livePlayerState = await db.player_state.toArray();
 
   const discrepancies: string[] = [];
   diffById('quest_template', liveTemplates, rebuilt.templates, discrepancies);
   diffById('quest_instance', liveInstances, rebuilt.instances, discrepancies);
   diffById('xp_ledger', liveLedger, rebuilt.ledger, discrepancies);
+  diffById(
+    'day_rollup',
+    liveDayRollups.map((r) => ({ ...r, id: r.local_date })),
+    rebuilt.dayRollups.map((r) => ({ ...r, id: r.local_date })),
+    discrepancies
+  );
+  const rebuiltPlayerState = rebuilt.playerState ? [rebuilt.playerState] : [];
+  diffById('player_state', livePlayerState, rebuiltPlayerState, discrepancies);
 
   return { clean: discrepancies.length === 0, discrepancies };
 }

@@ -1,19 +1,17 @@
 // Orchestrates the live TODAY loop: reads templates + today's instances,
-// generates any missing ones via the pure generateQuests, and writes
-// completion/undo as an event + a direct projection update + a
-// recomputed day ledger, all in one transaction — the same event+
-// projection pattern as store/onboarding.ts, extended in Slice 3 to
-// cover xp_ledger too.
+// generates any missing ones via the pure generateQuests, and — for
+// every write that changes what the derived tables should say —
+// appends the event and then calls db/projections.ts's rebuildProjections
+// as the ONE mechanism that turns the event log into quest_template,
+// quest_instance, xp_ledger, day_rollup and player_state.
 //
-// db.quest_instance and db.xp_ledger (not engine/reduce.ts's EngineState)
-// are the live projections this screen reads. Slice 3 made them fully
-// rebuildable from the event log (db/projections.ts) — see that file's
-// header comment for why they're caches now, not a second source of
-// truth. On undo, the day's ledger is fully recomputed from its current
-// completions rather than deleted/negated row-by-row (the "recompute,
-// never subtract" rule from the Slice 3 prompt).
+// This replaced a Slice 3 design that hand-recomputed just one day's
+// ledger per write. A full rebuild is simple, always correct by
+// construction (there is exactly one code path from events to derived
+// state, so it can't drift from itself), and — at this scale (a few
+// thousand events over a 120-day arc, final/07 §4.7) — cheap enough that
+// "do not optimise anything" wins over hand-rolled incrementality.
 import type {
-  CoreQuestKey,
   EngineConfig,
   EngineDeps,
   QuestCompletedPayload,
@@ -21,17 +19,28 @@ import type {
   QuestTemplate,
   QuestUndonePayload,
 } from '../engine/types';
-import { generateQuests } from '../engine/quests';
 import { isDayClosed } from '../engine/time';
-import { computeDayLedger, type DayCompletion } from '../engine/xp';
 import { db } from '../db/db';
 import { appendEvent } from '../db/events';
-import type { XpLedgerRow } from '../db/schema';
+import { rebuildProjections } from '../db/projections';
 
 export interface TodayQuests {
   templates: QuestTemplate[];
   instances: QuestInstance[];
 }
+
+// Every table an event-append + rebuild can touch, for the outer
+// transaction wrapping both — the same "one write, or none" atomicity
+// as store/onboarding.ts, just extended to cover the rebuild too.
+const REBUILD_TABLES = [
+  db.event,
+  db.arc,
+  db.quest_template,
+  db.quest_instance,
+  db.xp_ledger,
+  db.day_rollup,
+  db.player_state,
+];
 
 /** Loads (and, if needed, generates + persists) today's 6 core quest
  * instances, and records that this local day was opened. */
@@ -41,30 +50,34 @@ export async function loadTodayQuests(
   deps: EngineDeps
 ): Promise<TodayQuests> {
   const arc = await db.arc.toCollection().first();
-  if (arc) {
-    await appendEvent({
-      id: deps.newId(),
-      type: 'APP_OPENED',
-      occurred_at: deps.now(),
-      local_date: localDate,
-      arc_id: arc.id,
-      payload: { seconds: 0 },
-      source: 'system',
-      idem_key: `app-opened:${localDate}`,
-      schema_v: 1,
+  if (!arc) {
+    return { templates: [], instances: [] };
+  }
+
+  const alreadyOpened = await db.event.where('idem_key').equals(`app-opened:${localDate}`).first();
+  if (!alreadyOpened) {
+    const built = await db.transaction('rw', REBUILD_TABLES, async () => {
+      await appendEvent({
+        id: deps.newId(),
+        type: 'APP_OPENED',
+        occurred_at: deps.now(),
+        local_date: localDate,
+        arc_id: arc.id,
+        payload: { seconds: 0 },
+        source: 'system',
+        idem_key: `app-opened:${localDate}`,
+        schema_v: 1,
+      });
+      return rebuildProjections(config, deps);
     });
+    return {
+      templates: built.templates,
+      instances: built.instances.filter((i) => i.local_date === localDate),
+    };
   }
 
   const templates = await db.quest_template.toArray();
-  const existing = await db.quest_instance.where('local_date').equals(localDate).toArray();
-  const instances = generateQuests(localDate, templates, existing, config, deps);
-
-  const existingIds = new Set(existing.map((i) => i.id));
-  const newInstances = instances.filter((i) => !existingIds.has(i.id));
-  if (newInstances.length > 0) {
-    await db.quest_instance.bulkAdd(newInstances);
-  }
-
+  const instances = await db.quest_instance.where('local_date').equals(localDate).toArray();
   return { templates, instances };
 }
 
@@ -80,55 +93,6 @@ async function toggleSequence(instanceId: string): Promise<number> {
   return matches(completed) + matches(undone);
 }
 
-/** Recomputes local_date's entire xp_ledger from its current completions
- * — the mechanism for both a fresh completion and an undo. Never deletes
- * or negates a single row; always wipes-and-rewrites the whole day. */
-async function recomputeDayLedger(localDate: string, config: EngineConfig): Promise<void> {
-  const templates = await db.quest_template.toArray();
-  const templateById = new Map(templates.map((t) => [t.id, t]));
-
-  const dayInstances = await db.quest_instance.where('local_date').equals(localDate).toArray();
-  const completedInstances = dayInstances.filter(
-    (i): i is QuestInstance & { completed_at: string } => i.state === 'complete' && i.completed_at != null
-  );
-
-  const dayEvents = await db.event.where('local_date').equals(localDate).toArray();
-  const questCompletedEvents = dayEvents.filter((e) => e.type === 'QUEST_COMPLETED');
-  function findEventId(instanceId: string, completedAt: string): string {
-    const match = questCompletedEvents.find((e) => {
-      const payload = e.payload as { instanceId?: string };
-      return payload.instanceId === instanceId && e.occurred_at === completedAt;
-    });
-    return match?.id ?? instanceId;
-  }
-
-  const completions: DayCompletion[] = completedInstances.map((i) => ({
-    instanceId: i.id,
-    templateId: i.template_id,
-    questKey: (templateById.get(i.template_id)?.key ?? 'career') as CoreQuestKey,
-    completedAt: i.completed_at,
-  }));
-
-  const entries = computeDayLedger(localDate, completions, config);
-  const completedAtByInstance = new Map(completions.map((c) => [c.instanceId, c.completedAt]));
-
-  const ledgerRows: XpLedgerRow[] = entries.map((entry) => ({
-    id: `${entry.instanceId}::xp`,
-    event_id: findEventId(entry.instanceId, completedAtByInstance.get(entry.instanceId) ?? ''),
-    instance_id: entry.instanceId,
-    local_date: localDate,
-    amount: entry.amount,
-    category: entry.category,
-    reason: entry.reason,
-    capped_from: entry.cappedFrom,
-  }));
-
-  await db.xp_ledger.where('local_date').equals(localDate).delete();
-  if (ledgerRows.length > 0) {
-    await db.xp_ledger.bulkAdd(ledgerRows);
-  }
-}
-
 export async function completeQuest(
   instance: QuestInstance,
   templateKey: string,
@@ -141,32 +105,27 @@ export async function completeQuest(
     return;
   }
 
-  await db.transaction(
-    'rw',
-    [db.event, db.quest_instance, db.quest_template, db.xp_ledger],
-    async () => {
-      const seq = await toggleSequence(instance.id);
-      const payload: QuestCompletedPayload = {
-        instanceId: instance.id,
-        templateId: instance.template_id,
-        questKey: templateKey as QuestCompletedPayload['questKey'],
-        localDate: instance.local_date,
-      };
-      await appendEvent({
-        id: deps.newId(),
-        type: 'QUEST_COMPLETED',
-        occurred_at: now,
-        local_date: instance.local_date,
-        arc_id: arcId,
-        payload: payload as unknown as Record<string, unknown>,
-        source: 'user',
-        idem_key: `quest-complete:${instance.id}:${seq}`,
-        schema_v: 1,
-      });
-      await db.quest_instance.update(instance.id, { state: 'complete', completed_at: now });
-      await recomputeDayLedger(instance.local_date, config);
-    }
-  );
+  await db.transaction('rw', REBUILD_TABLES, async () => {
+    const seq = await toggleSequence(instance.id);
+    const payload: QuestCompletedPayload = {
+      instanceId: instance.id,
+      templateId: instance.template_id,
+      questKey: templateKey as QuestCompletedPayload['questKey'],
+      localDate: instance.local_date,
+    };
+    await appendEvent({
+      id: deps.newId(),
+      type: 'QUEST_COMPLETED',
+      occurred_at: now,
+      local_date: instance.local_date,
+      arc_id: arcId,
+      payload: payload as unknown as Record<string, unknown>,
+      source: 'user',
+      idem_key: `quest-complete:${instance.id}:${seq}`,
+      schema_v: 1,
+    });
+    await rebuildProjections(config, deps);
+  });
 }
 
 export async function undoQuest(
@@ -184,29 +143,23 @@ export async function undoQuest(
     return;
   }
 
-  await db.transaction(
-    'rw',
-    [db.event, db.quest_instance, db.quest_template, db.xp_ledger],
-    async () => {
-      const seq = await toggleSequence(instance.id);
-      const payload: QuestUndonePayload = { instanceId: instance.id, localDate: instance.local_date };
-      await appendEvent({
-        id: deps.newId(),
-        type: 'QUEST_UNDONE',
-        occurred_at: now,
-        local_date: instance.local_date,
-        arc_id: arcId,
-        payload: payload as unknown as Record<string, unknown>,
-        source: 'user',
-        idem_key: `quest-undo:${instance.id}:${seq}`,
-        schema_v: 1,
-      });
-      await db.quest_instance.update(instance.id, { state: 'available', completed_at: undefined });
-      // XP is never earned back by deleting a row and never clawed back
-      // by a negative one — recompute is the mechanism. Because this
-      // instance is no longer in the completed set, its grant simply
-      // doesn't appear when the day's ledger is rebuilt.
-      await recomputeDayLedger(instance.local_date, config);
-    }
-  );
+  await db.transaction('rw', REBUILD_TABLES, async () => {
+    const seq = await toggleSequence(instance.id);
+    const payload: QuestUndonePayload = { instanceId: instance.id, localDate: instance.local_date };
+    await appendEvent({
+      id: deps.newId(),
+      type: 'QUEST_UNDONE',
+      occurred_at: now,
+      local_date: instance.local_date,
+      arc_id: arcId,
+      payload: payload as unknown as Record<string, unknown>,
+      source: 'user',
+      idem_key: `quest-undo:${instance.id}:${seq}`,
+      schema_v: 1,
+    });
+    // XP is never earned back by deleting a row and never clawed back by
+    // a negative one — a full rebuild is the mechanism. This instance is
+    // no longer in the completed set, so its grant simply doesn't appear.
+    await rebuildProjections(config, deps);
+  });
 }

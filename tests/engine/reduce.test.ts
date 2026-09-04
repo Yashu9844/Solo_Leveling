@@ -3,10 +3,13 @@ import { applyEvents } from '../../src/engine/reduce';
 import { DEFAULT_CONFIG } from '../../src/engine/config';
 import { arcDay } from '../../src/engine/time';
 import type {
+  ArcPausedPayload,
+  ArcResumedPayload,
   ArcStartedPayload,
   MetricRecordedPayload,
   PlanAmendedPayload,
   QuestCompletedPayload,
+  QuestRecoveredPayload,
   QuestUndonePayload,
   SystemEvent,
 } from '../../src/engine/types';
@@ -192,6 +195,61 @@ describe('applyEvents — QUEST_COMPLETED / QUEST_UNDONE (Slice 2)', () => {
     const state = applyEvents(log, DEFAULT_CONFIG);
     expect(Object.keys(state.quests)).toEqual(['inst-1']);
     expect(state.quests['inst-1']).toBeDefined();
+  });
+});
+
+describe('applyEvents — ARC_PAUSED / ARC_RESUMED (Slice 4)', () => {
+  const pause = (localDate: string, days: number, idemKey: string) =>
+    event('ARC_PAUSED', { localDate, days } satisfies ArcPausedPayload, idemKey);
+  const resume = (localDate: string, idemKey: string) =>
+    event('ARC_RESUMED', { localDate } satisfies ArcResumedPayload, idemKey);
+
+  it('pausing marks the covered days and shifts end_date forward by the full length', () => {
+    const state = applyEvents([arcStartedEvent(), pause('2026-09-10', 5, 'pause:1')], DEFAULT_CONFIG);
+    expect(state.arc?.status).toBe('paused');
+    expect(state.arc?.paused_dates).toEqual([
+      '2026-09-10',
+      '2026-09-11',
+      '2026-09-12',
+      '2026-09-13',
+      '2026-09-14',
+    ]);
+    // original end_date 2026-12-29 + 5 days
+    expect(state.arc?.end_date).toBe('2027-01-03');
+  });
+
+  it('an early resume un-pauses only future planned days, keeping the shifted end_date', () => {
+    const log = [
+      arcStartedEvent(),
+      pause('2026-09-10', 5, 'pause:1'),
+      resume('2026-09-12', 'resume:1'), // back after 2 of the 5 planned days
+    ];
+    const state = applyEvents(log, DEFAULT_CONFIG);
+    expect(state.arc?.status).toBe('active');
+    expect(state.arc?.paused_dates).toEqual(['2026-09-10', '2026-09-11']);
+    expect(state.arc?.end_date).toBe('2027-01-03'); // shift is not clawed back
+  });
+});
+
+describe('applyEvents — QUEST_RECOVERED (Slice 4)', () => {
+  it('records a recovery claim for the missed local_date', () => {
+    const recovered = event(
+      'QUEST_RECOVERED',
+      { localDate: '2026-09-05' } satisfies QuestRecoveredPayload,
+      'recovery:2026-09-05'
+    );
+    const state = applyEvents([arcStartedEvent(), recovered], DEFAULT_CONFIG);
+    expect(state.recoveries['2026-09-05']).toBe(true);
+  });
+
+  it('a duplicate claim for the same day (same idem_key) is a no-op', () => {
+    const recovered = event(
+      'QUEST_RECOVERED',
+      { localDate: '2026-09-05' } satisfies QuestRecoveredPayload,
+      'recovery:2026-09-05'
+    );
+    const state = applyEvents([arcStartedEvent(), recovered, { ...recovered }], DEFAULT_CONFIG);
+    expect(Object.keys(state.recoveries)).toEqual(['2026-09-05']);
   });
 });
 

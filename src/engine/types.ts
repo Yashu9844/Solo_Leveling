@@ -201,17 +201,24 @@ export interface QuestTemplate {
   locked_until_checkpoint: boolean;
 }
 
-/** Derived arc state folded from ARC_STARTED. final/07 §4.2. */
+/** Derived arc state folded from ARC_STARTED (and ARC_PAUSED/ARC_RESUMED
+ * — Slice 4). final/07 §4.2. */
 export interface ArcState {
   id: string;
   start_date: string;
-  end_date: string;
+  end_date: string; // shifts forward on ARC_PAUSED — final/01 §6.5
   timezone: string;
   day_boundary_hour: number;
   day_close_hour: number;
   main_quest_text: string;
   stake_text?: string;
   status: 'active' | 'paused' | 'complete';
+  // Every local_date currently covered by an active or historical pause.
+  // A set, not a single "paused_until" pointer, so an early ARC_RESUMED
+  // can un-pause future planned days without losing the historical record
+  // of which past days were genuinely paused (needed for streak/MVD
+  // history — a paused day is neutral, not a miss, forever after).
+  paused_dates: string[];
 }
 
 export interface ArcStartedPayload {
@@ -248,6 +255,32 @@ export interface QuestUndonePayload {
   localDate: string;
 }
 
+/** Pause commits to a duration upfront (final/01 §6.5: "one tap, up to 7
+ * days") — `days` covers `localDate` through `localDate + days - 1`
+ * inclusive, and the arc's end_date shifts forward by `days` immediately. */
+export interface ArcPausedPayload {
+  localDate: string;
+  days: number; // 1-7
+}
+
+/** Ends a pause early. Days from `localDate` onward are active again;
+ * days before it stay marked paused in history. Does not claw back the
+ * end_date shift from the original ARC_PAUSED — see engine/reduce.ts. */
+export interface ArcResumedPayload {
+  localDate: string;
+}
+
+/** Recovery quest claim — final/01 §6.3, §2.1.1: BONUS category, flat
+ * 40 XP (config.recoveryXp), exempt from caps, max 1 per day. `reason`
+ * is the optional post-lapse diagnostic tap; deferred to a later slice
+ * (its only consumer, the weekly review's 3x-in-14-days detector,
+ * doesn't exist yet) — the field is modelled so a future slice doesn't
+ * need a payload migration, but nothing currently sets it. */
+export interface QuestRecoveredPayload {
+  localDate: string; // the missed day being recovered, not today
+  reason?: 'ran_out_of_time' | 'too_tired' | 'wrong_time' | 'didnt_want_to';
+}
+
 /**
  * A completion recorded purely from the event log. There is no
  * "instance created" event in the V1 catalogue (final/07 §4.1) — quest
@@ -281,5 +314,9 @@ export interface EngineState {
   // information the way reduce.ts actually can.
   intentions: Partial<Record<CoreQuestKey, ImplementationIntention>>;
   baselineMetrics: Record<string, number>; // kind -> value, from METRIC_RECORDED
+  // Days with a claimed recovery quest, keyed by the recovered local_date
+  // (not the claim date) — QUEST_RECOVERED's idem_key already enforces
+  // max-1-per-day, so a Set-like presence check is all this needs to be.
+  recoveries: Record<string, true>;
   arc: ArcState | null;
 }

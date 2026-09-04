@@ -179,20 +179,26 @@ describe('computeXp — properties', () => {
   it('property: total_xp === SUM(ledger.amount) for any set of completions in a day', () => {
     fc.assert(
       fc.property(fc.uniqueArray(questKeyArb, { minLength: 0, maxLength: 6 }), (keys) => {
-        const completions = keys.map((key, idx) => ({
-          instanceId: `inst-${key}`,
-          templateId: `tpl-${key}`,
-          questKey: key,
-          completedAt: `2026-09-05T10:0${idx}:00Z`,
-        }));
-        const entries = computeDayLedger('2026-09-05', completions, DEFAULT_CONFIG);
+        const dayEvents = keys.map((key, idx) =>
+          questCompletedEvent(key, { id: `evt-${key}`, occurred_at: `2026-09-05T10:0${idx}:00Z` })
+        );
+        const entries = computeDayLedger('2026-09-05', dayEvents, DEFAULT_CONFIG);
         const sum = entries.reduce((acc, e) => acc + e.amount, 0);
         expect(sum).toBeGreaterThanOrEqual(0);
         expect(sum).toBeLessThanOrEqual(DEFAULT_CONFIG.dailyCap);
         // Every completion produces exactly one ledger entry this slice
         // (one core quest -> one grant; no zero-grant paths for core keys).
-        expect(entries).toHaveLength(completions.length);
+        expect(entries).toHaveLength(dayEvents.length);
       })
     );
+  });
+
+  it('QUEST_RECOVERED yields a flat BONUS grant equal to config.recoveryXp, uncapped', () => {
+    const dayEvents = [questCompletedEvent('career'), otherEvent('QUEST_RECOVERED', { localDate: '2026-09-04' })];
+    const entries = computeDayLedger('2026-09-05', dayEvents, DEFAULT_CONFIG);
+    const recoveryEntry = entries.find((e) => e.reason === 'recovery');
+    expect(recoveryEntry?.amount).toBe(DEFAULT_CONFIG.recoveryXp);
+    expect(recoveryEntry?.category).toBe('BONUS');
+    expect(recoveryEntry?.cappedFrom).toBeUndefined();
   });
 });

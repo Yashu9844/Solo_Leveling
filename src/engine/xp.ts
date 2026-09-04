@@ -31,6 +31,23 @@ function baseGrantsFor(event: SystemEvent, config: EngineConfig): XpGrant[] {
       // problem, deliberately." Max 3/day is enforced by the revisit
       // scheduler (engine/srs.ts + store/dsa.ts), not by XP capping.
       return [{ category: 'MIND', amount: config.revisitXp, reason: 'revisit' }];
+    case 'ARTIFACT_SHIPPED':
+      // Ordinary CRAFT-category grant, subject to the normal 200 cap —
+      // final/03 §4.1: SHIP mode -> artifact row + 50 XP bonus. Not a
+      // BONUS-category exemption; final/01 §2.1's CRAFT cap table
+      // already prices this in ("BUILD 100 + shipped units" up to 200).
+      return [{ category: 'CRAFT', amount: config.shipBonusXp, reason: 'ship' }];
+    case 'LEARNING_BLOCK_LOGGED':
+      // Not a seventh core quest — LEARN XP comes directly from logging,
+      // at any time (final/03 §3). Flat 25 XP per block regardless of
+      // the exact minutes entered ("25 XP per 15-minute block" is a
+      // quantized unit, not a per-minute rate) — the 75 LEARN cap is
+      // exactly 3x this, so it enforces the 3-blocks/day limit itself.
+      return [{ category: 'LEARN', amount: config.learningBlockXp, reason: 'learning_block' }];
+    case 'SYSTEM_DESIGN_LOGGED':
+      // Shares LEARNING_BLOCK_LOGGED's rate and LEARN cap — final/03
+      // §3.3: "LEARN category + weekly quest + its own table."
+      return [{ category: 'LEARN', amount: config.learningBlockXp, reason: 'system_design' }];
     // Every other event type — including body METRIC_RECORDED, external
     // CAREER_EVENT_LOGGED, APP_OPENED, REVIEW_COMPLETED, and
     // CHECKPOINT_SEALED — yields no XP. final/01 §2.3.

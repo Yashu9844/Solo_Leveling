@@ -2,7 +2,7 @@ import { useCallback, useEffect, useState } from 'react';
 import { DEFAULT_CONFIG } from '../../engine/config';
 import { arcDay, isDayClosed, localDate } from '../../engine/time';
 import { levelFor, type LevelState } from '../../engine/level';
-import type { QuestInstance, QuestTemplate } from '../../engine/types';
+import type { CoreQuestKey, QuestInstance, QuestTemplate } from '../../engine/types';
 import { realDeps } from '../../store/deps';
 import { db } from '../../db/db';
 import { loadTodayQuests, completeQuest, undoQuest } from '../../store/quests';
@@ -19,6 +19,7 @@ import { EveningReview } from '../review/EveningReview';
 import { LogApplicationSheet } from '../career/LogApplicationSheet';
 import { LogProblemSheet } from '../dsa/LogProblemSheet';
 import { getRevisitsDue, logRevisit, type RevisitDue } from '../../store/dsa';
+import { LogBuildSessionSheet } from '../build/LogBuildSessionSheet';
 
 const CONFIG = DEFAULT_CONFIG;
 
@@ -66,6 +67,7 @@ export function Today() {
   const [reviewOpen, setReviewOpen] = useState(false);
   const [careerLogOpen, setCareerLogOpen] = useState(false);
   const [dsaLogOpen, setDsaLogOpen] = useState(false);
+  const [buildLogOpen, setBuildLogOpen] = useState(false);
   const [revisitsDue, setRevisitsDue] = useState<RevisitDue[]>([]);
   const [revisitingId, setRevisitingId] = useState<string | null>(null);
   const dayClosed = isDayClosed(realDeps.now(), CONFIG);
@@ -200,6 +202,23 @@ export function Today() {
       setTimeout(() => setNotice(null), 3000);
     } finally {
       setRevisitingId(null);
+    }
+  }
+
+  function domainLogFor(key: CoreQuestKey, closeSheet: () => void): { label: string; onOpen: () => void } | undefined {
+    function open(setter: (v: boolean) => void) {
+      closeSheet();
+      setter(true);
+    }
+    switch (key) {
+      case 'career':
+        return { label: 'Log application', onOpen: () => open(setCareerLogOpen) };
+      case 'dsa':
+        return { label: 'Log problem', onOpen: () => open(setDsaLogOpen) };
+      case 'build':
+        return { label: 'Log session', onOpen: () => open(setBuildLogOpen) };
+      default:
+        return undefined; // SLEEP/TRAINING/ATTENTION — Slice 9
     }
   }
 
@@ -343,22 +362,7 @@ export function Today() {
           dayClosed={dayClosed}
           onClose={() => setOpenInstanceId(null)}
           onToggle={() => void handleToggle(openInstance, openTemplate)}
-          onOpenCareerLog={
-            openTemplate.key === 'career'
-              ? () => {
-                  setOpenInstanceId(null);
-                  setCareerLogOpen(true);
-                }
-              : undefined
-          }
-          onOpenDsaLog={
-            openTemplate.key === 'dsa'
-              ? () => {
-                  setOpenInstanceId(null);
-                  setDsaLogOpen(true);
-                }
-              : undefined
-          }
+          domainLog={domainLogFor(openTemplate.key, () => setOpenInstanceId(null))}
         />
       )}
 
@@ -379,6 +383,17 @@ export function Today() {
           arcId={arc.id}
           onClose={() => {
             setDsaLogOpen(false);
+            void refresh();
+          }}
+        />
+      )}
+
+      {buildLogOpen && arc && (
+        <LogBuildSessionSheet
+          today={today}
+          arcId={arc.id}
+          onClose={() => {
+            setBuildLogOpen(false);
             void refresh();
           }}
         />

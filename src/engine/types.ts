@@ -156,6 +156,12 @@ export interface EngineConfig {
   recoveryXp: number;
   bossXp: number;
   revisitXp: number; // final/03 §2.2 — 20 XP each, MIND category, capped normally (not BONUS)
+  shipBonusXp: number; // final/03 §4.1 — 50 XP per shipped unit, CRAFT category, capped normally
+  // final/03 §3.1 — 25 XP per 15-minute block, LEARN category. The
+  // LEARN cap (75) is exactly 3x this, so the cap alone enforces
+  // "max 3 blocks/day" (final/03 §3.1) without separate logic. System
+  // design study (§3.3) shares this same rate and cap.
+  learningBlockXp: number;
   level: { base: number; coefficient: number; exponent: number; roundTo: number };
   streak: {
     graceDaysPer28: number;

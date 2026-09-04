@@ -32,6 +32,20 @@ function shiftDate(dateStr: string, days: number): string {
   return format(addDays(parseISO(dateStr), days), 'yyyy-MM-dd');
 }
 
+// Every XP-bearing event type OTHER than QUEST_COMPLETED (which is
+// folded via state.quests instead, so an undone completion doesn't
+// contribute a stale grant — see the comment where this is used). Must
+// stay in sync with engine/xp.ts's computeXp: any case added there
+// beyond QUEST_COMPLETED needs an entry here too, or a rebuild silently
+// drops its XP from the ledger.
+const NON_COMPLETION_XP_EVENT_TYPES: ReadonlySet<SystemEvent['type']> = new Set([
+  'QUEST_RECOVERED',
+  'PROBLEM_REVISITED',
+  'ARTIFACT_SHIPPED',
+  'LEARNING_BLOCK_LOGGED',
+  'SYSTEM_DESIGN_LOGGED',
+]);
+
 function enumerateDates(start: string, end: string): string[] {
   const dates: string[] = [];
   for (let d = start; d <= end; d = shiftDate(d, 1)) {
@@ -206,7 +220,7 @@ function buildProjections(events: SystemEvent[], config: EngineConfig, deps: Eng
     });
   }
   for (const event of events) {
-    if (event.type === 'QUEST_RECOVERED' || event.type === 'PROBLEM_REVISITED') {
+    if (NON_COMPLETION_XP_EVENT_TYPES.has(event.type)) {
       addLedgerEvent(event.local_date, event);
     }
   }

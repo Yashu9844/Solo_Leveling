@@ -201,6 +201,17 @@ function applyOne(state: EngineState, event: SystemEvent): EngineState {
     case 'PROBLEM_REVISITED':
       return state;
 
+    // Slice 8 — final/03-learning-systems.md §3-4. Learning blocks,
+    // system design study and BUILD sessions persist to their own
+    // tables (learning_block, system_design_study, build_session).
+    // ARTIFACT_SHIPPED grants XP the same way PROBLEM_REVISITED does —
+    // engine/xp.ts reads the raw event, no EngineState fold needed.
+    case 'LEARNING_BLOCK_LOGGED':
+    case 'SYSTEM_DESIGN_LOGGED':
+    case 'BUILD_SESSION_LOGGED':
+    case 'ARTIFACT_SHIPPED':
+      return state;
+
     default:
       throw new Error(`Not implemented — Slice N (unhandled event type: ${event.type})`);
   }

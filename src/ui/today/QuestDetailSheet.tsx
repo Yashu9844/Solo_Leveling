@@ -7,26 +7,26 @@ interface QuestDetailSheetProps {
   dayClosed: boolean;
   onClose: () => void;
   onToggle: () => void;
-  /** CAREER only (final/02 §2) — opens the application/substitute log,
-   * which auto-completes this quest at 3 quality applications or 25
-   * substitute minutes. The manual "Mark complete" button below still
-   * works as a fallback/override. */
-  onOpenCareerLog?: () => void;
-  /** DSA only (final/03 §2) — opens the problem log, which auto-
-   * completes this quest at 1 problem or 25 minutes. */
-  onOpenDsaLog?: () => void;
+  /**
+   * The per-domain logging sheet (final/02 §2 for CAREER, final/03 §2
+   * for DSA, final/03 §4 for BUILD) — logging real data is what
+   * auto-completes these quests; the "Mark complete" button below
+   * always stays available as a manual fallback/override. `label` names
+   * the action ("Log application", "Log problem", "Log session");
+   * omit both to fall back to manual-only (SLEEP/TRAINING/ATTENTION
+   * don't have a domain sheet yet — final/09's Slice 9).
+   */
+  domainLog?: { label: string; onOpen: () => void };
 }
 
-/** Minimal bottom sheet — final/06 §5.3. No 5/10-min button, no history
- * line, no mode selectors (those are Slices 8-9's domain sheets). */
+/** Minimal bottom sheet — final/06 §5.3. */
 export function QuestDetailSheet({
   template,
   instance,
   dayClosed,
   onClose,
   onToggle,
-  onOpenCareerLog,
-  onOpenDsaLog,
+  domainLog,
 }: QuestDetailSheetProps) {
   const complete = instance.state === 'complete';
 
@@ -53,25 +53,14 @@ export function QuestDetailSheet({
 
         <p className="text-sm text-text-dim">{CRITERION_TEXT[template.key]}</p>
 
-        {template.key === 'career' && !complete && onOpenCareerLog && (
+        {!complete && domainLog && (
           <button
             type="button"
-            onClick={onOpenCareerLog}
+            onClick={domainLog.onOpen}
             disabled={dayClosed}
             className="min-h-[44px] rounded-md border border-accent text-sm text-accent disabled:opacity-40"
           >
-            Log application
-          </button>
-        )}
-
-        {template.key === 'dsa' && !complete && onOpenDsaLog && (
-          <button
-            type="button"
-            onClick={onOpenDsaLog}
-            disabled={dayClosed}
-            className="min-h-[44px] rounded-md border border-accent text-sm text-accent disabled:opacity-40"
-          >
-            Log problem
+            {domainLog.label}
           </button>
         )}
 

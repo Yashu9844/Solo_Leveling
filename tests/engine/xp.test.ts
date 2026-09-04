@@ -120,6 +120,18 @@ describe('computeXp — never earns XP', () => {
     }
   });
 
+  it('INVARIANT: no body METRIC_RECORDED produces a ledger row, even for steps/screen_time/wake/sleep kinds routed through the same event type', () => {
+    // final/04 §1's "no XP for weight, waist, body fat, or any body
+    // measurement" only covers body composition — steps/screen-time/sleep
+    // are logged via their OWN event types (STEPS_LOGGED etc.), not
+    // METRIC_RECORDED, so this just confirms METRIC_RECORDED itself stays
+    // XP-inert regardless of what kind string it's ever given.
+    for (const kind of ['steps', 'screen_time_min', 'wake_time', 'sleep_time']) {
+      const event = otherEvent('METRIC_RECORDED', { kind, value: 1, unit: 'x' });
+      expect(computeXp(event, emptyDayState('2026-09-05'), DEFAULT_CONFIG)).toEqual([]);
+    }
+  });
+
   it('INVARIANT: no external CAREER_EVENT_LOGGED produces a ledger row', () => {
     for (const kind of ['response', 'call', 'interview', 'onsite', 'offer', 'rejection']) {
       const event = otherEvent('CAREER_EVENT_LOGGED', { kind });
@@ -191,6 +203,46 @@ describe('computeXp — properties', () => {
         expect(entries).toHaveLength(dayEvents.length);
       })
     );
+  });
+
+  it('STEPS_LOGGED yields no grant below the bonus threshold, and stepsBonusXp at/above it (Slice 9)', () => {
+    const below = otherEvent('STEPS_LOGGED', { localDate: '2026-09-05', steps: 9999 });
+    expect(computeXp(below, emptyDayState('2026-09-05'), DEFAULT_CONFIG)).toEqual([]);
+
+    const at = otherEvent('STEPS_LOGGED', { localDate: '2026-09-05', steps: 10000 });
+    const grants = computeXp(at, emptyDayState('2026-09-05'), DEFAULT_CONFIG);
+    expect(grants).toHaveLength(1);
+    expect(grants[0]?.amount).toBe(DEFAULT_CONFIG.stepsBonusXp);
+    expect(grants[0]?.category).toBe('BODY');
+  });
+
+  it('MAINTENANCE_LOGGED yields no grant unless allDone, then a flat maintenanceXp (Slice 9)', () => {
+    const partial = otherEvent('MAINTENANCE_LOGGED', {
+      localDate: '2026-09-05',
+      bath: true,
+      fuel: false,
+      laundry: true,
+      allDone: false,
+    });
+    expect(computeXp(partial, emptyDayState('2026-09-05'), DEFAULT_CONFIG)).toEqual([]);
+
+    const complete = otherEvent('MAINTENANCE_LOGGED', {
+      localDate: '2026-09-05',
+      bath: true,
+      fuel: true,
+      laundry: true,
+      allDone: true,
+    });
+    const grants = computeXp(complete, emptyDayState('2026-09-05'), DEFAULT_CONFIG);
+    expect(grants).toHaveLength(1);
+    expect(grants[0]?.amount).toBe(DEFAULT_CONFIG.maintenanceXp);
+    expect(grants[0]?.category).toBe('MAINT');
+  });
+
+  it('TRAINING_SESSION_LOGGED / SLEEP_LOGGED / SCREENTIME_LOGGED yield no XP of their own (Slice 9)', () => {
+    for (const type of ['TRAINING_SESSION_LOGGED', 'SLEEP_LOGGED', 'SCREENTIME_LOGGED'] as const) {
+      expect(computeXp(otherEvent(type), emptyDayState('2026-09-05'), DEFAULT_CONFIG)).toEqual([]);
+    }
   });
 
   it('QUEST_RECOVERED yields a flat BONUS grant equal to config.recoveryXp, uncapped', () => {

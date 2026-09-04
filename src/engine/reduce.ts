@@ -212,6 +212,21 @@ function applyOne(state: EngineState, event: SystemEvent): EngineState {
     case 'ARTIFACT_SHIPPED':
       return state;
 
+    // Slice 9 — final/04-physical-lifestyle.md. Training sessions, steps,
+    // sleep, screen time and the maintenance tick all persist to their own
+    // tables (training_session, metric_sample, maintenance_log) at write
+    // time, same pattern as career/DSA/BUILD above. STEPS_LOGGED and
+    // MAINTENANCE_LOGGED grant XP (engine/xp.ts reads the raw event
+    // directly) but still need no EngineState fold — same reasoning as
+    // QUEST_RECOVERED. METRIC_RECORDED (body weight/waist/bodyfat) is
+    // handled separately above and never grants XP — final/04 §1.
+    case 'TRAINING_SESSION_LOGGED':
+    case 'STEPS_LOGGED':
+    case 'SLEEP_LOGGED':
+    case 'SCREENTIME_LOGGED':
+    case 'MAINTENANCE_LOGGED':
+      return state;
+
     default:
       throw new Error(`Not implemented — Slice N (unhandled event type: ${event.type})`);
   }

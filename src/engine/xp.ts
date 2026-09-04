@@ -1,4 +1,13 @@
-import type { DayState, EngineConfig, QuestCompletedPayload, SystemEvent, XpCategory, XpGrant } from './types';
+import type {
+  DayState,
+  EngineConfig,
+  MaintenanceLoggedPayload,
+  QuestCompletedPayload,
+  StepsLoggedPayload,
+  SystemEvent,
+  XpCategory,
+  XpGrant,
+} from './types';
 
 /**
  * Pure. Computes XP grants for an event given the day's state so far.
@@ -48,6 +57,22 @@ function baseGrantsFor(event: SystemEvent, config: EngineConfig): XpGrant[] {
       // Shares LEARNING_BLOCK_LOGGED's rate and LEARN cap — final/03
       // §3.3: "LEARN category + weekly quest + its own table."
       return [{ category: 'LEARN', amount: config.learningBlockXp, reason: 'system_design' }];
+    case 'STEPS_LOGGED': {
+      // final/04 §3.1: "Bonus +20 at >= 10,000 steps." The steps count
+      // itself never completes TRAINING via this grant — that's a
+      // QUEST_COMPLETED the store issues separately at the 8,000
+      // threshold (engine/quests.ts's criterion). Below 10,000, no grant.
+      const payload = event.payload as unknown as StepsLoggedPayload;
+      if (payload.steps < config.stepsBonusThreshold) return [];
+      return [{ category: 'BODY', amount: config.stepsBonusXp, reason: 'steps_bonus' }];
+    }
+    case 'MAINTENANCE_LOGGED': {
+      // final/04 §6: one flat 20 XP grant, only when every one of today's
+      // applicable items is ticked — "zero pressure," no partial credit.
+      const payload = event.payload as unknown as MaintenanceLoggedPayload;
+      if (!payload.allDone) return [];
+      return [{ category: 'MAINT', amount: config.maintenanceXp, reason: 'maintenance' }];
+    }
     // Every other event type — including body METRIC_RECORDED, external
     // CAREER_EVENT_LOGGED, APP_OPENED, REVIEW_COMPLETED, and
     // CHECKPOINT_SEALED — yields no XP. final/01 §2.3.

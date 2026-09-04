@@ -162,6 +162,14 @@ export interface EngineConfig {
   // "max 3 blocks/day" (final/03 §3.1) without separate logic. System
   // design study (§3.3) shares this same rate and cap.
   learningBlockXp: number;
+  stepsBonusXp: number; // final/04 §3.1 — +20 at >= 10,000 steps, BODY category, normally capped
+  maintenanceXp: number; // final/04 §6 — 20 XP when all of today's maintenance items are ticked, MAINT category
+  stepsBonusThreshold: number; // final/04 §3.1 — stepsBonusXp grants at >= this many steps (the 8,000 TRAINING
+  // completion threshold itself already lives on the quest template's own criterion — engine/quests.ts's
+  // CORE_QUEST_CRITERIA — same as SLEEP's 30-min tolerance and ATTENTION's 60-min limit, so none of those
+  // three are duplicated here)
+  wakeTargetTime: string; // final/04 §4 / final/06 §5.2 — "08:00–09:00" — the center of SLEEP's wake window, HH:mm
+  maintenanceLaundryEveryDays: number; // final/04 §6 — laundry only appears (and counts toward all-done) this often
   level: { base: number; coefficient: number; exponent: number; roundTo: number };
   streak: {
     graceDaysPer28: number;
@@ -248,6 +256,50 @@ export interface MetricRecordedPayload {
   kind: string;
   value: number;
   unit: string;
+}
+
+/** final/04 §2 — no XP field on purpose: a session never grants XP itself,
+ * only the TRAINING quest completion (QUEST_COMPLETED) it triggers does. */
+export interface TrainingSessionLoggedPayload {
+  localDate: string;
+  type: string;
+  minutes: number;
+  rpe?: number;
+  lifts: { name: string; weight_kg: number; reps: number; est_1rm: number }[];
+}
+
+/** final/04 §3.1 — steps is entered once/day as a plain number. Crosses
+ * 8,000 to complete TRAINING (if not already complete via a session), and
+ * >= 10,000 grants config.stepsBonusXp on top, both handled by the store —
+ * this event's own XP grant (engine/xp.ts) is the bonus only. */
+export interface StepsLoggedPayload {
+  localDate: string;
+  steps: number;
+}
+
+/** final/04 §4 — completes SLEEP when the logged wake time is within the
+ * configured tolerance of the target; carries no XP of its own. */
+export interface SleepLoggedPayload {
+  localDate: string;
+  wakeTime: string; // HH:mm
+  sleepTime?: string; // HH:mm
+}
+
+/** final/04 §5 — numeric minutes only, never yes/no, never an estimate. */
+export interface ScreentimeLoggedPayload {
+  localDate: string;
+  minutes: number;
+}
+
+/** final/04 §6 — one row/day; `allDone` is computed by the store from the
+ * day's applicable items (laundry only every 3rd day) and is what
+ * engine/xp.ts reads to decide the flat 20 XP grant. */
+export interface MaintenanceLoggedPayload {
+  localDate: string;
+  bath: boolean;
+  fuel: boolean;
+  laundry: boolean;
+  allDone: boolean;
 }
 
 export interface QuestCompletedPayload {

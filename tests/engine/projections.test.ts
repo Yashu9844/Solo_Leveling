@@ -7,6 +7,8 @@ import { loadTodayQuests, completeQuest, undoQuest } from '../../src/store/quest
 import { rebuildProjections, verifyIntegrity } from '../../src/db/projections';
 import { DEFAULT_CONFIG } from '../../src/engine/config';
 import type { ArcStartedPayload, EngineDeps } from '../../src/engine/types';
+import { logTrainingSession, logSteps, logBodyMetric } from '../../src/store/training';
+import { logSleep, logScreentime, logMaintenance } from '../../src/store/lifestyle';
 
 function seededDeps(prefix = 'id'): EngineDeps {
   let counter = 0;
@@ -185,5 +187,35 @@ describe('db/projections — rebuild (Slice 3 Step 0)', () => {
     const report = await verifyIntegrity(DEFAULT_CONFIG, deps);
     expect(report.clean).toBe(true);
     expect(report.discrepancies).toEqual([]);
+  });
+
+  it('Slice 9 physical/lifestyle writes survive a full rebuild identically (regression guard for the Slice 6 unhandled-event-type bug)', async () => {
+    const deps = seededDeps();
+    const { arc, day1 } = await buildLiveArcWithActivity(deps);
+
+    await logTrainingSession(day1, arc.id, { type: 'Push', minutes: 40, rpe: 7 }, DEFAULT_CONFIG, deps);
+    await logSteps(day1, arc.id, 10500, DEFAULT_CONFIG, deps); // crosses both the completion and bonus thresholds
+    await logBodyMetric(day1, arc.id, 'weight_kg', 72.4, 'kg', DEFAULT_CONFIG, deps);
+    await logSleep(day1, arc.id, '08:15', DEFAULT_CONFIG, deps);
+    await logScreentime(day1, arc.id, 55, DEFAULT_CONFIG, deps);
+    await logMaintenance(day1, arc.id, { bath: true, fuel: true, laundry: true }, DEFAULT_CONFIG, deps);
+
+    const live = await snapshot();
+    const liveReport = await verifyIntegrity(DEFAULT_CONFIG, deps);
+    expect(liveReport.clean).toBe(true);
+
+    await db.quest_template.clear();
+    await db.quest_instance.clear();
+    await db.xp_ledger.clear();
+    await rebuildProjections(DEFAULT_CONFIG, deps);
+
+    expect(await snapshot()).toEqual(live);
+
+    // INVARIANT: the body-weight entry above never produced a ledger row.
+    const ledger = await db.xp_ledger.toArray();
+    expect(ledger.some((row) => row.reason === 'weight_kg' || row.category === 'BODY_METRIC')).toBe(false);
+    // But the steps bonus and the maintenance grant did.
+    expect(ledger.some((row) => row.reason === 'steps_bonus')).toBe(true);
+    expect(ledger.some((row) => row.reason === 'maintenance')).toBe(true);
   });
 });

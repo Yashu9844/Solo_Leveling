@@ -9,12 +9,11 @@ interface QuestDetailSheetProps {
   onToggle: () => void;
   /**
    * The per-domain logging sheet (final/02 §2 for CAREER, final/03 §2
-   * for DSA, final/03 §4 for BUILD) — logging real data is what
-   * auto-completes these quests; the "Mark complete" button below
-   * always stays available as a manual fallback/override. `label` names
-   * the action ("Log application", "Log problem", "Log session");
-   * omit both to fall back to manual-only (SLEEP/TRAINING/ATTENTION
-   * don't have a domain sheet yet — final/09's Slice 9).
+   * for DSA, final/03 §4 for BUILD, final/04 for TRAINING/SLEEP/
+   * ATTENTION) — logging real data is what auto-completes these quests;
+   * the "Mark complete" button below always stays available as a manual
+   * fallback/override. `label` names the action ("Log application",
+   * "Log problem", "Log session").
    */
   domainLog?: { label: string; onOpen: () => void };
 }

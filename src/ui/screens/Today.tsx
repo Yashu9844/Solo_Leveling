@@ -20,6 +20,10 @@ import { LogApplicationSheet } from '../career/LogApplicationSheet';
 import { LogProblemSheet } from '../dsa/LogProblemSheet';
 import { getRevisitsDue, logRevisit, type RevisitDue } from '../../store/dsa';
 import { LogBuildSessionSheet } from '../build/LogBuildSessionSheet';
+import { LogTrainingSheet } from '../training/LogTrainingSheet';
+import { LogSleepSheet } from '../lifestyle/LogSleepSheet';
+import { LogAttentionSheet } from '../lifestyle/LogAttentionSheet';
+import { MaintenanceCard } from '../lifestyle/MaintenanceCard';
 
 const CONFIG = DEFAULT_CONFIG;
 
@@ -68,6 +72,9 @@ export function Today() {
   const [careerLogOpen, setCareerLogOpen] = useState(false);
   const [dsaLogOpen, setDsaLogOpen] = useState(false);
   const [buildLogOpen, setBuildLogOpen] = useState(false);
+  const [trainingLogOpen, setTrainingLogOpen] = useState(false);
+  const [sleepLogOpen, setSleepLogOpen] = useState(false);
+  const [attentionLogOpen, setAttentionLogOpen] = useState(false);
   const [revisitsDue, setRevisitsDue] = useState<RevisitDue[]>([]);
   const [revisitingId, setRevisitingId] = useState<string | null>(null);
   const dayClosed = isDayClosed(realDeps.now(), CONFIG);
@@ -217,8 +224,12 @@ export function Today() {
         return { label: 'Log problem', onOpen: () => open(setDsaLogOpen) };
       case 'build':
         return { label: 'Log session', onOpen: () => open(setBuildLogOpen) };
-      default:
-        return undefined; // SLEEP/TRAINING/ATTENTION — Slice 9
+      case 'training':
+        return { label: 'Log training', onOpen: () => open(setTrainingLogOpen) };
+      case 'sleep':
+        return { label: 'Log wake time', onOpen: () => open(setSleepLogOpen) };
+      case 'attention':
+        return { label: 'Log screen time', onOpen: () => open(setAttentionLogOpen) };
     }
   }
 
@@ -312,6 +323,10 @@ export function Today() {
         })}
       </div>
 
+      {arc && (
+        <MaintenanceCard today={today} arcId={arc.id} arcStartDate={arc.start_date} onChanged={() => void refreshXp(today)} />
+      )}
+
       {revisitsDue.length > 0 && (
         <div className="mt-4" data-testid="revisits-due">
           <div className="mb-1 text-xxs uppercase tracking-wide text-text-dim">
@@ -394,6 +409,39 @@ export function Today() {
           arcId={arc.id}
           onClose={() => {
             setBuildLogOpen(false);
+            void refresh();
+          }}
+        />
+      )}
+
+      {trainingLogOpen && arc && (
+        <LogTrainingSheet
+          today={today}
+          arcId={arc.id}
+          onClose={() => {
+            setTrainingLogOpen(false);
+            void refresh();
+          }}
+        />
+      )}
+
+      {sleepLogOpen && arc && (
+        <LogSleepSheet
+          today={today}
+          arcId={arc.id}
+          onClose={() => {
+            setSleepLogOpen(false);
+            void refresh();
+          }}
+        />
+      )}
+
+      {attentionLogOpen && arc && (
+        <LogAttentionSheet
+          today={today}
+          arcId={arc.id}
+          onClose={() => {
+            setAttentionLogOpen(false);
             void refresh();
           }}
         />

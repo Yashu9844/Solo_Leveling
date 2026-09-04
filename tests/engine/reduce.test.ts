@@ -303,6 +303,19 @@ describe('applyEvents — career logging events are handled no-ops (Slice 6)', (
   });
 });
 
+describe('applyEvents — physical/lifestyle logging events are handled no-ops (Slice 9)', () => {
+  it.each([
+    'TRAINING_SESSION_LOGGED',
+    'STEPS_LOGGED',
+    'SLEEP_LOGGED',
+    'SCREENTIME_LOGGED',
+    'MAINTENANCE_LOGGED',
+  ] as const)('%s does not throw during replay', (type) => {
+    const log = [arcStartedEvent(), event(type, {}, `${type}:1`)];
+    expect(() => applyEvents(log, DEFAULT_CONFIG)).not.toThrow();
+  });
+});
+
 describe('applyEvents — determinism and the boundary rule', () => {
   it('replaying the full log twice is deep-equal', () => {
     const log = onboardingEventLog();

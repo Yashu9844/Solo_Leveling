@@ -13,12 +13,14 @@ import { pauseArc, resumeArc } from '../../store/pause';
 import { db } from '../../db/db';
 import { getAllEvents } from '../../db/events';
 import { verifyIntegrity, type IntegrityReport } from '../../db/projections';
+import { AttributeBars } from '../components/AttributeBars';
 
 export function Profile() {
   return (
     <div className="p-4">
       <h1 className="text-lg font-semibold">PROFILE</h1>
       <LevelSummary />
+      <AttributeBars />
       <DayZeroBaselineRow />
       <ArcPauseControl />
       {import.meta.env.DEV && (

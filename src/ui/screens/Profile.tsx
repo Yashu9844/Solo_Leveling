@@ -18,6 +18,7 @@ import { AttributeBars } from '../components/AttributeBars';
 import { CheckpointScreen } from '../checkpoint/CheckpointScreen';
 import { BossList } from '../components/BossList';
 import { AchievementsList } from '../components/AchievementsList';
+import { InstallCard } from '../components/InstallCard';
 
 const CHECKPOINT_DAYS: Checkpoint['day'][] = [14, 30, 60, 90, 120];
 
@@ -32,6 +33,7 @@ export function Profile() {
       <AttributeBars />
       <DayZeroBaselineRow />
       <ArcPauseControl />
+      <InstallCard />
       {import.meta.env.DEV && (
         <>
           <DevResetArc />

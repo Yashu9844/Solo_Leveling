@@ -7,17 +7,22 @@ interface QuestDetailSheetProps {
   dayClosed: boolean;
   onClose: () => void;
   onToggle: () => void;
+  /** CAREER only (final/02 §2) — opens the application/substitute log,
+   * which auto-completes this quest at 3 quality applications or 25
+   * substitute minutes. The manual "Mark complete" button below still
+   * works as a fallback/override. */
+  onOpenCareerLog?: () => void;
 }
 
-/** Minimal bottom sheet — final/06 §5.3, Slice 2 scope only. No 5/10-min
- * button, no history line, no mode selectors or logging fields (those
- * arrive with MVD in Slice 4 and the domain slices in 6-9). */
+/** Minimal bottom sheet — final/06 §5.3. No 5/10-min button, no history
+ * line, no mode selectors (those are Slices 7-9's domain sheets). */
 export function QuestDetailSheet({
   template,
   instance,
   dayClosed,
   onClose,
   onToggle,
+  onOpenCareerLog,
 }: QuestDetailSheetProps) {
   const complete = instance.state === 'complete';
 
@@ -43,6 +48,17 @@ export function QuestDetailSheet({
         )}
 
         <p className="text-sm text-text-dim">{CRITERION_TEXT[template.key]}</p>
+
+        {template.key === 'career' && !complete && onOpenCareerLog && (
+          <button
+            type="button"
+            onClick={onOpenCareerLog}
+            disabled={dayClosed}
+            className="min-h-[44px] rounded-md border border-accent text-sm text-accent disabled:opacity-40"
+          >
+            Log application
+          </button>
+        )}
 
         <button
           type="button"

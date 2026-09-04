@@ -90,6 +90,7 @@ export default tseslint.config(
       'src/engine/level.ts',
       'src/engine/streak.ts',
       'src/engine/messages.ts',
+      'src/engine/career.ts',
     ],
     rules: {
       '@typescript-eslint/no-unused-vars': ['error', { args: 'none' }],

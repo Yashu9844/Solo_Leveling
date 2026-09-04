@@ -16,6 +16,7 @@ import { priorityLine } from '../today/priorityLine';
 import { LevelUpMoment } from '../moments/LevelUpMoment';
 import { unlockTextForRange } from '../moments/levelUnlocks';
 import { EveningReview } from '../review/EveningReview';
+import { LogApplicationSheet } from '../career/LogApplicationSheet';
 
 const CONFIG = DEFAULT_CONFIG;
 
@@ -61,6 +62,7 @@ export function Today() {
   const [claimingRecovery, setClaimingRecovery] = useState(false);
   const [reviewed, setReviewed] = useState(true); // true until refresh() proves otherwise — hides the entry on first paint
   const [reviewOpen, setReviewOpen] = useState(false);
+  const [careerLogOpen, setCareerLogOpen] = useState(false);
   const dayClosed = isDayClosed(realDeps.now(), CONFIG);
 
   const refreshXp = useCallback(async (date: string) => {
@@ -288,6 +290,25 @@ export function Today() {
           dayClosed={dayClosed}
           onClose={() => setOpenInstanceId(null)}
           onToggle={() => void handleToggle(openInstance, openTemplate)}
+          onOpenCareerLog={
+            openTemplate.key === 'career'
+              ? () => {
+                  setOpenInstanceId(null);
+                  setCareerLogOpen(true);
+                }
+              : undefined
+          }
+        />
+      )}
+
+      {careerLogOpen && arc && (
+        <LogApplicationSheet
+          today={today}
+          arcId={arc.id}
+          onClose={() => {
+            setCareerLogOpen(false);
+            void refresh();
+          }}
         />
       )}
 

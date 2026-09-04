@@ -174,6 +174,23 @@ function applyOne(state: EngineState, event: SystemEvent): EngineState {
       // deliberately handled and deliberately inert here.
       return state;
 
+    // Slice 6 — final/02-career-system.md. Applications, substitute
+    // work, career events (external outcomes AND the controlled
+    // conversation/mock/followup kinds), resume versions and follow-ups
+    // are all persisted directly to their own db tables (application,
+    // career_event, resume_version) at write time — the same "write
+    // event + write projection" pattern as onboarding's arc/quest_template
+    // rows. None of the five feed anything a rebuild needs to reconstruct
+    // (unlike quest completions, which route through XP and the streak),
+    // so EngineState has nothing to fold them into. Explicit no-op cases,
+    // not a silent default — each is deliberately handled and inert here.
+    case 'APPLICATION_LOGGED':
+    case 'CAREER_SUBSTITUTE_LOGGED':
+    case 'CAREER_EVENT_LOGGED':
+    case 'RESUME_VERSION_CREATED':
+    case 'FOLLOWUP_LOGGED':
+      return state;
+
     default:
       throw new Error(`Not implemented — Slice N (unhandled event type: ${event.type})`);
   }

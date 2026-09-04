@@ -286,6 +286,23 @@ describe('applyEvents — REVIEW_COMPLETED (Slice 5)', () => {
   });
 });
 
+describe('applyEvents — career logging events are handled no-ops (Slice 6)', () => {
+  // A regression guard: every one of these was written by store/career.ts
+  // before a case existed here, which meant db/projections.ts's
+  // rebuildProjections threw on replay every time — the exact bug this
+  // test would have caught. See the Slice 6 report.
+  it.each([
+    'APPLICATION_LOGGED',
+    'CAREER_SUBSTITUTE_LOGGED',
+    'CAREER_EVENT_LOGGED',
+    'RESUME_VERSION_CREATED',
+    'FOLLOWUP_LOGGED',
+  ] as const)('%s does not throw during replay', (type) => {
+    const log = [arcStartedEvent(), event(type, {}, `${type}:1`)];
+    expect(() => applyEvents(log, DEFAULT_CONFIG)).not.toThrow();
+  });
+});
+
 describe('applyEvents — determinism and the boundary rule', () => {
   it('replaying the full log twice is deep-equal', () => {
     const log = onboardingEventLog();

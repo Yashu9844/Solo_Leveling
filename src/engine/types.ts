@@ -302,6 +302,60 @@ export interface ReviewCompletedPayload {
   sleptAt?: string; // "HH:mm"
 }
 
+// final/02-career-system.md §1 — CONTROLLED (these five payload types)
+// vs EXTERNAL (CareerEventLoggedPayload's response/call/interview/onsite/
+// offer/rejection kinds only). Only CONTROLLED events ever appear in a
+// QUEST_COMPLETED payload's lineage; nothing here grants XP directly —
+// see engine/xp.ts and store/career.ts for how logging feeds completion.
+
+export interface ApplicationLoggedPayload {
+  applicationId: string;
+  company: string;
+  role: string;
+  roleCategory: string;
+  source: string;
+  resumeVersionId: string;
+  whyLine: string;
+  qualityPass: boolean;
+}
+
+export interface CareerSubstituteLoggedPayload {
+  minutes: number;
+  kind: 'resume_iteration' | 'followups' | 'networking' | 'portfolio' | 'writeup' | 'mock';
+}
+
+/** kind's first six values are EXTERNAL (final/02 §1) — never XP, never a
+ * rank gate. conversation/mock/followup are CONTROLLED substitute work,
+ * logged the same way for a single audit trail (final/02 §2.2). */
+export type CareerEventKind =
+  | 'response'
+  | 'call'
+  | 'interview'
+  | 'onsite'
+  | 'offer'
+  | 'rejection'
+  | 'conversation'
+  | 'mock'
+  | 'followup';
+
+export interface CareerEventLoggedPayload {
+  kind: CareerEventKind;
+  applicationId?: string;
+  company?: string;
+  stuckOn?: string;
+}
+
+export interface ResumeVersionCreatedPayload {
+  resumeVersionId: string;
+  label: string;
+  changedBecause: string;
+  externalReview?: boolean;
+}
+
+export interface FollowupLoggedPayload {
+  applicationId: string;
+}
+
 /**
  * A completion recorded purely from the event log. There is no
  * "instance created" event in the V1 catalogue (final/07 §4.1) — quest

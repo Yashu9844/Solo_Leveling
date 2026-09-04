@@ -48,6 +48,7 @@ export function QuestRow({ template, instance, dayClosed, xp, onToggle, onOpen }
         type="button"
         onClick={onOpen}
         disabled={disabled}
+        data-testid={`quest-row-${template.key}-open`}
         className="flex min-h-[44px] flex-1 items-center justify-between text-left"
       >
         <span className="flex flex-col items-start justify-center">

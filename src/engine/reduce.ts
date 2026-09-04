@@ -191,6 +191,16 @@ function applyOne(state: EngineState, event: SystemEvent): EngineState {
     case 'FOLLOWUP_LOGGED':
       return state;
 
+    // Slice 7 — final/03-learning-systems.md §2. DSA problems and
+    // revisits persist to their own tables (dsa_problem, dsa_attempt) at
+    // write time, same pattern as the career events above.
+    // PROBLEM_REVISITED grants XP (engine/xp.ts's computeXp reads the
+    // raw event directly, independent of this fold) but still needs no
+    // EngineState fold of its own — same reasoning as QUEST_RECOVERED.
+    case 'PROBLEM_LOGGED':
+    case 'PROBLEM_REVISITED':
+      return state;
+
     default:
       throw new Error(`Not implemented — Slice N (unhandled event type: ${event.type})`);
   }

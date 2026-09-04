@@ -25,6 +25,12 @@ function baseGrantsFor(event: SystemEvent, config: EngineConfig): XpGrant[] {
       // §2.1.1, §6.3. Worth less than a real completion so recovering is
       // never better than not missing.
       return [{ category: 'BONUS', amount: config.recoveryXp, reason: 'recovery' }];
+    case 'PROBLEM_REVISITED':
+      // Ordinary MIND-category grant, subject to the normal caps (not a
+      // BONUS exemption) — final/03 §2.2: "20 XP each — less than a new
+      // problem, deliberately." Max 3/day is enforced by the revisit
+      // scheduler (engine/srs.ts + store/dsa.ts), not by XP capping.
+      return [{ category: 'MIND', amount: config.revisitXp, reason: 'revisit' }];
     // Every other event type — including body METRIC_RECORDED, external
     // CAREER_EVENT_LOGGED, APP_OPENED, REVIEW_COMPLETED, and
     // CHECKPOINT_SEALED — yields no XP. final/01 §2.3.

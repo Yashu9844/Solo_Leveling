@@ -12,10 +12,13 @@ interface QuestDetailSheetProps {
    * substitute minutes. The manual "Mark complete" button below still
    * works as a fallback/override. */
   onOpenCareerLog?: () => void;
+  /** DSA only (final/03 §2) — opens the problem log, which auto-
+   * completes this quest at 1 problem or 25 minutes. */
+  onOpenDsaLog?: () => void;
 }
 
 /** Minimal bottom sheet — final/06 §5.3. No 5/10-min button, no history
- * line, no mode selectors (those are Slices 7-9's domain sheets). */
+ * line, no mode selectors (those are Slices 8-9's domain sheets). */
 export function QuestDetailSheet({
   template,
   instance,
@@ -23,6 +26,7 @@ export function QuestDetailSheet({
   onClose,
   onToggle,
   onOpenCareerLog,
+  onOpenDsaLog,
 }: QuestDetailSheetProps) {
   const complete = instance.state === 'complete';
 
@@ -57,6 +61,17 @@ export function QuestDetailSheet({
             className="min-h-[44px] rounded-md border border-accent text-sm text-accent disabled:opacity-40"
           >
             Log application
+          </button>
+        )}
+
+        {template.key === 'dsa' && !complete && onOpenDsaLog && (
+          <button
+            type="button"
+            onClick={onOpenDsaLog}
+            disabled={dayClosed}
+            className="min-h-[44px] rounded-md border border-accent text-sm text-accent disabled:opacity-40"
+          >
+            Log problem
           </button>
         )}
 

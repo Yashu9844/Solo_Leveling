@@ -17,6 +17,8 @@ import { LevelUpMoment } from '../moments/LevelUpMoment';
 import { unlockTextForRange } from '../moments/levelUnlocks';
 import { EveningReview } from '../review/EveningReview';
 import { LogApplicationSheet } from '../career/LogApplicationSheet';
+import { LogProblemSheet } from '../dsa/LogProblemSheet';
+import { getRevisitsDue, logRevisit, type RevisitDue } from '../../store/dsa';
 
 const CONFIG = DEFAULT_CONFIG;
 
@@ -63,6 +65,9 @@ export function Today() {
   const [reviewed, setReviewed] = useState(true); // true until refresh() proves otherwise — hides the entry on first paint
   const [reviewOpen, setReviewOpen] = useState(false);
   const [careerLogOpen, setCareerLogOpen] = useState(false);
+  const [dsaLogOpen, setDsaLogOpen] = useState(false);
+  const [revisitsDue, setRevisitsDue] = useState<RevisitDue[]>([]);
+  const [revisitingId, setRevisitingId] = useState<string | null>(null);
   const dayClosed = isDayClosed(realDeps.now(), CONFIG);
 
   const refreshXp = useCallback(async (date: string) => {
@@ -84,14 +89,16 @@ export function Today() {
     setInstances(i);
     await refreshXp(date);
 
-    const [streakState, recoverableDay, alreadyReviewed] = await Promise.all([
+    const [streakState, recoverableDay, alreadyReviewed, dueRevisits] = await Promise.all([
       getStreakState(date, CONFIG),
       getRecoverableDay(date, CONFIG),
       hasReviewedToday(date),
+      getRevisitsDue(date, CONFIG),
     ]);
     setStreak(streakState);
     setRecoverable(recoverableDay);
     setReviewed(alreadyReviewed);
+    setRevisitsDue(dueRevisits);
   }, [refreshXp]);
 
   useEffect(() => {
@@ -178,6 +185,21 @@ export function Today() {
       setTimeout(() => setNotice(null), 3000);
     } finally {
       setClaimingRecovery(false);
+    }
+  }
+
+  async function handleLogRevisit(problemId: string, outcome: 'first_attempt' | 'hint' | 'editorial' | 'unsolved') {
+    if (!arc || revisitingId) return;
+    setRevisitingId(problemId);
+    try {
+      await logRevisit(today, arc.id, problemId, outcome, 10, CONFIG, realDeps);
+      setRevisitsDue((prev) => prev.filter((r) => r.problemId !== problemId));
+      await refreshXp(today);
+    } catch {
+      setNotice('Could not save — try again.');
+      setTimeout(() => setNotice(null), 3000);
+    } finally {
+      setRevisitingId(null);
     }
   }
 
@@ -271,6 +293,37 @@ export function Today() {
         })}
       </div>
 
+      {revisitsDue.length > 0 && (
+        <div className="mt-4" data-testid="revisits-due">
+          <div className="mb-1 text-xxs uppercase tracking-wide text-text-dim">
+            Revisits due · +{CONFIG.revisitXp} XP each
+          </div>
+          {revisitsDue.map((r) => (
+            <div key={r.problemId} className="flex items-center justify-between border-b border-border py-2">
+              <span className="text-sm text-text">{r.title}</span>
+              <div className="flex gap-1">
+                <button
+                  type="button"
+                  disabled={revisitingId === r.problemId}
+                  onClick={() => void handleLogRevisit(r.problemId, 'first_attempt')}
+                  className="min-h-[44px] rounded-md border border-accent px-2 text-xs text-accent disabled:opacity-40"
+                >
+                  Solved
+                </button>
+                <button
+                  type="button"
+                  disabled={revisitingId === r.problemId}
+                  onClick={() => void handleLogRevisit(r.problemId, 'unsolved')}
+                  className="min-h-[44px] rounded-md border border-border px-2 text-xs text-text-dim disabled:opacity-40"
+                >
+                  Unsolved
+                </button>
+              </div>
+            </div>
+          ))}
+        </div>
+      )}
+
       {!reviewed && (
         <button
           type="button"
@@ -298,6 +351,14 @@ export function Today() {
                 }
               : undefined
           }
+          onOpenDsaLog={
+            openTemplate.key === 'dsa'
+              ? () => {
+                  setOpenInstanceId(null);
+                  setDsaLogOpen(true);
+                }
+              : undefined
+          }
         />
       )}
 
@@ -307,6 +368,17 @@ export function Today() {
           arcId={arc.id}
           onClose={() => {
             setCareerLogOpen(false);
+            void refresh();
+          }}
+        />
+      )}
+
+      {dsaLogOpen && arc && (
+        <LogProblemSheet
+          today={today}
+          arcId={arc.id}
+          onClose={() => {
+            setDsaLogOpen(false);
             void refresh();
           }}
         />

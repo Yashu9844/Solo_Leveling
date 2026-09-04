@@ -155,6 +155,7 @@ export interface EngineConfig {
   mvdXp: number;
   recoveryXp: number;
   bossXp: number;
+  revisitXp: number; // final/03 §2.2 — 20 XP each, MIND category, capped normally (not BONUS)
   level: { base: number; coefficient: number; exponent: number; roundTo: number };
   streak: {
     graceDaysPer28: number;

@@ -206,7 +206,7 @@ function buildProjections(events: SystemEvent[], config: EngineConfig, deps: Eng
     });
   }
   for (const event of events) {
-    if (event.type === 'QUEST_RECOVERED') {
+    if (event.type === 'QUEST_RECOVERED' || event.type === 'PROBLEM_REVISITED') {
       addLedgerEvent(event.local_date, event);
     }
   }

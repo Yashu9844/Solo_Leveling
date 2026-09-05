@@ -41,6 +41,11 @@ export interface ProfileRow {
   arc_timezone: string;
   height_cm?: number;
   settings: Record<string, unknown>;
+  // docs/07-data-model.md's backup nudge: "a local-only app on one phone
+  // is one broken screen away from losing the arc." Updated by every
+  // real export (store/checkpoint.ts's exportSnapshotJson), read by
+  // Profile's backup-status line and the weekly review's export prompt.
+  last_export_at?: string;
 }
 
 export interface ArcRow {

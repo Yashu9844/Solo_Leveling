@@ -116,11 +116,16 @@ describe('export -> wipe -> import round-trip', () => {
     await markExported(30, deps);
     await sealCheckpoint(30, day, DEFAULT_CONFIG, deps);
 
+    // Snapshotted AFTER exporting, not before: exportSnapshotJson itself
+    // records the backup-nudge marker onto the profile row (last_export_at),
+    // so "the state this backup captured" already includes that write —
+    // comparing against a pre-export snapshot would spuriously fail on
+    // exactly that one field once it's restored.
+    const json = await exportSnapshotJson(deps);
     const before = await fullSnapshot();
     const beforeIntegrity = await verifyIntegrity(DEFAULT_CONFIG, deps);
     expect(beforeIntegrity.clean).toBe(true);
 
-    const json = await exportSnapshotJson();
     await clearEverything();
     expect(await db.event.count()).toBe(0);
 

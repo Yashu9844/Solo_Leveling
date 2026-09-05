@@ -296,19 +296,57 @@ export async function getCheckpointReport(day: Checkpoint['day'], today: string,
  * automaticity, enjoyment and the sealed gate snapshot are freeform
  * instrument data, deliberately kept outside event-sourcing since
  * Slice 12 — see store/checkpoint.ts's file header).
+ *
+ * Also records this moment as the backup nudge's "last export" —
+ * docs/07-data-model.md: "shows export status on the Profile screen...
+ * if no export exists in 14 days, the Profile screen says so in red."
+ * Calling this function IS taking a backup, so it updates that marker
+ * itself rather than leaving every call site responsible for
+ * remembering to.
  */
-export async function exportSnapshotJson(): Promise<string> {
-  const [events, arc, profile, checkpoints] = await Promise.all([
+export async function exportSnapshotJson(deps: { now(): string }): Promise<string> {
+  const now = deps.now();
+  const [events, arc, profileBefore, checkpoints] = await Promise.all([
     getAllEvents(),
     db.arc.toCollection().first(),
     db.profile.toCollection().first(),
     db.checkpoint.toArray(),
   ]);
+
+  if (profileBefore) {
+    await db.profile.update(profileBefore.id, { last_export_at: now });
+  }
+  const profile = profileBefore ? { ...profileBefore, last_export_at: now } : undefined;
+
   return JSON.stringify(
-    { exported_at: new Date().toISOString(), schema_v: 1, events, arc: arc ?? null, profile: profile ?? null, checkpoints },
+    { exported_at: now, schema_v: 1, events, arc: arc ?? null, profile: profile ?? null, checkpoints },
     null,
     2
   );
+}
+
+/**
+ * The backup-nudge status docs/07-data-model.md describes: how long
+ * since the last real export. `daysSince` falls back to days-since-arc-
+ * start when nothing has ever been exported — a fresh, one-day-old arc
+ * that has "never backed up" is not the same situation the 14-day red
+ * threshold is warning about, and treating them identically would flag
+ * red on Day 1 of every arc, exactly the anxiety-on-day-one this app
+ * avoids everywhere else (final/01 §6.6).
+ */
+export interface BackupStatus {
+  lastExportAt: string | null;
+  daysSince: number;
+}
+
+export async function getBackupStatus(deps: { now(): string }): Promise<BackupStatus> {
+  const [profile, arc] = await Promise.all([db.profile.toCollection().first(), db.arc.toCollection().first()]);
+  const lastExportAt = profile?.last_export_at ?? null;
+  const since = lastExportAt ?? arc?.start_date;
+  const daysSince = since
+    ? Math.max(0, Math.floor((new Date(deps.now()).getTime() - new Date(since).getTime()) / (1000 * 60 * 60 * 24)))
+    : 0;
+  return { lastExportAt, daysSince };
 }
 
 export class ImportValidationError extends Error {}

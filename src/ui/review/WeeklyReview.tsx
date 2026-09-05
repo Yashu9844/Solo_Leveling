@@ -1,7 +1,26 @@
 import { useEffect, useState, type ReactNode } from 'react';
 import { DEFAULT_CONFIG } from '../../engine/config';
 import { getWeeklyReview, type WeeklyReviewReport } from '../../store/weeklyReview';
+import { exportSnapshotJson, getBackupStatus, type BackupStatus } from '../../store/checkpoint';
+import { realDeps } from '../../store/deps';
 import type { Attribute } from '../../engine/types';
+
+function triggerDownload(filename: string, contents: string) {
+  const blob = new Blob([contents], { type: 'application/json' });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = filename;
+  a.click();
+  URL.revokeObjectURL(url);
+}
+
+/** docs/07-data-model.md: "prompts for an export every Sunday at the
+ * weekly review." `today` is a plain YYYY-MM-DD; parsed as UTC midnight
+ * so the day-of-week doesn't shift with the viewer's own timezone. */
+function isSunday(today: string): boolean {
+  return new Date(`${today}T00:00:00Z`).getUTCDay() === 0;
+}
 
 const ATTRIBUTE_LABELS: Record<Attribute, string> = {
   DISCIPLINE: 'Discipline',
@@ -35,16 +54,34 @@ function Delta({ current, previous, suffix = '' }: { current: number; previous: 
  * report); everything shown here is a real, computed number. */
 export function WeeklyReview({ today, onClose }: WeeklyReviewProps) {
   const [report, setReport] = useState<WeeklyReviewReport | null>(null);
+  const [backupStatus, setBackupStatus] = useState<BackupStatus | null>(null);
+  const [exporting, setExporting] = useState(false);
+  const [exported, setExported] = useState(false);
 
   useEffect(() => {
     let cancelled = false;
     void getWeeklyReview(today, DEFAULT_CONFIG).then((r) => {
       if (!cancelled) setReport(r);
     });
+    void getBackupStatus(realDeps).then((s) => {
+      if (!cancelled) setBackupStatus(s);
+    });
     return () => {
       cancelled = true;
     };
   }, [today]);
+
+  async function handleExport() {
+    setExporting(true);
+    try {
+      const json = await exportSnapshotJson(realDeps);
+      triggerDownload(`solo-leveling-backup-${today}.json`, json);
+      setBackupStatus(await getBackupStatus(realDeps));
+      setExported(true);
+    } finally {
+      setExporting(false);
+    }
+  }
 
   return (
     <div className="fixed inset-0 z-50 flex flex-col overflow-y-auto bg-bg p-4" data-testid="weekly-review">
@@ -102,6 +139,27 @@ export function WeeklyReview({ today, onClose }: WeeklyReviewProps) {
                   → {p.message}
                 </p>
               ))}
+            </div>
+          )}
+
+          {backupStatus && (
+            <div className="border-t border-border pt-3" data-testid="weekly-review-backup">
+              <p className="text-xs text-text-faint">
+                {isSunday(today) ? 'Sunday backup — ' : ''}
+                {backupStatus.lastExportAt === null
+                  ? `never backed up (arc started ${backupStatus.daysSince}d ago)`
+                  : backupStatus.daysSince === 0
+                    ? 'backed up today'
+                    : `last backup ${backupStatus.daysSince}d ago`}
+              </p>
+              <button
+                type="button"
+                disabled={exporting}
+                onClick={() => void handleExport()}
+                className="mt-2 min-h-[44px] w-full rounded-md border border-border text-sm text-text disabled:opacity-40"
+              >
+                {exporting ? 'Exporting…' : exported ? 'Exported ✓ — export again' : 'Export backup'}
+              </button>
             </div>
           )}
 

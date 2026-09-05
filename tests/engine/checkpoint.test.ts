@@ -6,6 +6,7 @@ import {
   computeGateEvidence,
   getCheckpointReport,
   exportSnapshotJson,
+  getBackupStatus,
   markExported,
   sealCheckpoint,
   CheckpointSealError,
@@ -155,10 +156,22 @@ describe('exportSnapshotJson', () => {
   it('produces valid JSON containing every event in the log', async () => {
     const deps = seededDeps();
     await initialiseArc({ ...ONBOARDING_INPUT, intentions: {}, baseline: {} }, DEFAULT_CONFIG, deps);
-    const json = await exportSnapshotJson();
+    const json = await exportSnapshotJson(deps);
     const parsed = JSON.parse(json);
     expect(Array.isArray(parsed.events)).toBe(true);
     expect(parsed.events.length).toBeGreaterThan(0);
     expect(parsed.events[0].type).toBe('ARC_STARTED');
+  });
+
+  it('records the backup-nudge marker (last_export_at) on the profile row', async () => {
+    const deps = seededDeps();
+    await initialiseArc({ ...ONBOARDING_INPUT, intentions: {}, baseline: {} }, DEFAULT_CONFIG, deps);
+    const before = await getBackupStatus(deps);
+    expect(before.lastExportAt).toBeNull();
+
+    await exportSnapshotJson(deps);
+    const after = await getBackupStatus(deps);
+    expect(after.lastExportAt).not.toBeNull();
+    expect(after.daysSince).toBe(0);
   });
 });

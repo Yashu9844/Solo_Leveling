@@ -1,7 +1,23 @@
-import { useRef, useState, type ChangeEvent } from 'react';
+import { useEffect, useRef, useState, type ChangeEvent } from 'react';
 import { DEFAULT_CONFIG } from '../../engine/config';
 import { realDeps } from '../../store/deps';
-import { exportSnapshotJson, importSnapshotJson, ImportValidationError } from '../../store/checkpoint';
+import { exportSnapshotJson, importSnapshotJson, getBackupStatus, ImportValidationError, type BackupStatus } from '../../store/checkpoint';
+
+// docs/07-data-model.md: "if no export exists in 14 days, the Profile
+// screen says so in red." The one place --state-alert red is allowed
+// outside an error state — everywhere else in this app red is reserved
+// for genuine errors/destructive confirmations, never for "you haven't
+// done X yet."
+const RED_THRESHOLD_DAYS = 14;
+
+function backupStatusLabel(status: BackupStatus): string {
+  if (status.lastExportAt === null) {
+    return status.daysSince === 0 ? 'Never backed up yet.' : `Never backed up — arc started ${status.daysSince} days ago.`;
+  }
+  if (status.daysSince === 0) return 'Last backup: today.';
+  if (status.daysSince === 1) return 'Last backup: yesterday.';
+  return `Last backup: ${status.daysSince} days ago.`;
+}
 
 function triggerDownload(filename: string, contents: string) {
   const blob = new Blob([contents], { type: 'application/json' });
@@ -20,21 +36,38 @@ function triggerDownload(filename: string, contents: string) {
  * replaces the entire local database — so it's a two-step flow: pick a
  * file, read and see a confirmation naming what's about to happen,
  * confirm or cancel. Nothing is written before that second tap. */
-export function BackupCard() {
+interface BackupCardProps {
+  /** Called after a successful export — lets the caller refresh the
+   * "Last backup: N days ago" line elsewhere on the same screen. */
+  onExported?: () => void;
+}
+
+export function BackupCard({ onExported }: BackupCardProps = {}) {
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [exporting, setExporting] = useState(false);
   const [pendingImport, setPendingImport] = useState<{ fileName: string; json: string; eventCount: number } | null>(null);
   const [importing, setImporting] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [done, setDone] = useState<string | null>(null);
+  const [status, setStatus] = useState<BackupStatus | null>(null);
+
+  async function refreshStatus() {
+    setStatus(await getBackupStatus(realDeps));
+  }
+
+  useEffect(() => {
+    void refreshStatus();
+  }, []);
 
   async function handleExport() {
     setExporting(true);
     setError(null);
     try {
-      const json = await exportSnapshotJson();
+      const json = await exportSnapshotJson(realDeps);
       triggerDownload(`solo-leveling-backup-${new Date().toISOString().slice(0, 10)}.json`, json);
       setDone('Exported.');
+      await refreshStatus();
+      onExported?.();
       setTimeout(() => setDone(null), 3000);
     } finally {
       setExporting(false);
@@ -75,6 +108,15 @@ export function BackupCard() {
   return (
     <div className="mt-3 rounded-md border border-border p-3" data-testid="backup-card">
       <div className="mb-2 text-xxs uppercase tracking-wide text-text-faint">Data safety</div>
+
+      {status && (
+        <p
+          className={`mb-2 text-xs ${status.daysSince >= RED_THRESHOLD_DAYS ? 'text-state-alert' : 'text-text-faint'}`}
+          data-testid="backup-status"
+        >
+          {backupStatusLabel(status)}
+        </p>
+      )}
 
       <button
         type="button"

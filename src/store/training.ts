@@ -157,7 +157,7 @@ export async function logBodyMetric(
       occurred_at: deps.now(),
       local_date: today,
       arc_id: arcId,
-      payload: { kind, value, unit },
+      payload: { kind, value, unit, note },
       source: 'user',
       idem_key: `metric:${id}`,
       schema_v: 1,

@@ -65,7 +65,7 @@ export function LogApplicationSheet({ today, arcId, onClose }: LogApplicationShe
 
   async function handleCreateVersion() {
     if (!newVersionLabel.trim()) return;
-    const id = await createResumeVersion(newVersionLabel.trim(), 'Created from the application log', arcId, realDeps);
+    const id = await createResumeVersion(today, newVersionLabel.trim(), 'Created from the application log', arcId, realDeps);
     const versions = await getResumeVersions();
     setResumeVersions(versions);
     setResumeVersionId(id);

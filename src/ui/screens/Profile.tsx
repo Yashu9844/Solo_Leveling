@@ -19,6 +19,7 @@ import { CheckpointScreen } from '../checkpoint/CheckpointScreen';
 import { BossList } from '../components/BossList';
 import { AchievementsList } from '../components/AchievementsList';
 import { InstallCard } from '../components/InstallCard';
+import { BackupCard } from '../components/BackupCard';
 
 const CHECKPOINT_DAYS: Checkpoint['day'][] = [14, 30, 60, 90, 120];
 
@@ -33,6 +34,7 @@ export function Profile() {
       <AttributeBars />
       <DayZeroBaselineRow />
       <ArcPauseControl />
+      <BackupCard />
       <InstallCard />
       {import.meta.env.DEV && (
         <>

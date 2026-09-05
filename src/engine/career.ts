@@ -2,6 +2,7 @@
 // structural rule: nothing past `applied` ever earns XP or gates rank.
 // That invariant is enforced in engine/xp.ts (CAREER_EVENT_LOGGED yields
 // no grant for any kind) and asserted directly in career.test.ts.
+import type { CareerEventKind } from './types';
 
 export type ApplicationStatus =
   | 'applied'
@@ -123,4 +124,30 @@ export function substituteShare(careerCompletionKinds: ('application' | 'substit
   if (careerCompletionKinds.length === 0) return 0;
   const substitutes = careerCompletionKinds.filter((k) => k === 'substitute').length;
   return substitutes / careerCompletionKinds.length;
+}
+
+/** Pure. Maps a CAREER_EVENT_LOGGED kind to the application status it
+ * moves to, or undefined for kinds that don't represent a funnel-stage
+ * outcome ('conversation', 'mock', 'followup' — the CONTROLLED
+ * substitute-work kinds that share this event type's audit trail).
+ * Used both by the live write path (store/career.ts) and
+ * db/domainProjections.ts's rebuild fold — one mapping, so they can
+ * never quietly diverge. */
+export function careerEventKindToStatus(kind: CareerEventKind): ApplicationStatus | undefined {
+  switch (kind) {
+    case 'response':
+      return 'responded';
+    case 'call':
+      return 'call';
+    case 'interview':
+      return 'interview';
+    case 'onsite':
+      return 'onsite';
+    case 'offer':
+      return 'offer';
+    case 'rejection':
+      return 'rejected';
+    default:
+      return undefined;
+  }
 }

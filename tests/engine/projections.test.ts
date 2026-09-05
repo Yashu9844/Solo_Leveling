@@ -19,7 +19,7 @@ function seededDeps(prefix = 'id'): EngineDeps {
       clockMs += 1000;
       return iso;
     },
-    newId: () => `${prefix}-${counter++}`,
+    newId: () => `${prefix}-${String(counter++).padStart(6, '0')}`,
   };
 }
 

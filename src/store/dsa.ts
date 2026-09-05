@@ -5,7 +5,7 @@
 // by engine/srs.ts, not tied to DSA quest completion.
 import type { AttemptOutcome, ReviewHistoryEntry } from '../engine/srs';
 import { nextReview } from '../engine/srs';
-import type { EngineConfig, EngineDeps } from '../engine/types';
+import type { EngineConfig, EngineDeps, ProblemLoggedPayload, ProblemRevisitedPayload } from '../engine/types';
 import { db } from '../db/db';
 import { appendEvent } from '../db/events';
 import { completeQuest } from './quests';
@@ -63,6 +63,12 @@ export async function logProblem(
   deps: EngineDeps
 ): Promise<void> {
   const attemptId = deps.newId();
+  // A single clock read for this whole call — reused for the event's
+  // occurred_at and (on a new problem) first_logged_at, so
+  // db/domainProjections.ts's rebuild fold can reproduce first_logged_at
+  // exactly from the earliest PROBLEM_LOGGED event alone, rather than
+  // approximating it from a second, slightly later deps.now() call.
+  const now = deps.now();
 
   await db.transaction('rw', REBUILD_ADJACENT_TABLES, async () => {
     let problem = await db.dsa_problem.where('slug').equals(input.slug).first();
@@ -73,7 +79,7 @@ export async function logProblem(
         title: input.title,
         topic: input.topic,
         difficulty: input.difficulty,
-        first_logged_at: deps.now(),
+        first_logged_at: now,
         insight: input.insight,
       };
       await db.dsa_problem.add(problemRow);
@@ -89,9 +95,10 @@ export async function logProblem(
     ];
     const nextReviewAt = nextReview(input.outcome, history, config.srs);
 
-    const payload = {
+    const payload: ProblemLoggedPayload = {
       problemId: problem.id,
       slug: input.slug,
+      title: input.title,
       topic: input.topic,
       difficulty: input.difficulty,
       outcome: input.outcome,
@@ -99,12 +106,12 @@ export async function logProblem(
       insight: input.insight,
     };
     await appendEvent({
-      id: deps.newId(),
+      id: attemptId,
       type: 'PROBLEM_LOGGED',
-      occurred_at: deps.now(),
+      occurred_at: now,
       local_date: today,
       arc_id: arcId,
-      payload,
+      payload: payload as unknown as Record<string, unknown>,
       source: 'user',
       idem_key: `problem:${attemptId}`,
       schema_v: 1,
@@ -198,7 +205,7 @@ export async function logRevisit(
       occurred_at: deps.now(),
       local_date: today,
       arc_id: arcId,
-      payload: { problemId, outcome, minutes },
+      payload: { problemId, outcome, minutes } satisfies ProblemRevisitedPayload,
       source: 'user',
       idem_key: `revisit:${attemptId}`,
       schema_v: 1,

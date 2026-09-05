@@ -26,9 +26,11 @@ import { followThroughRate, type ApplicationFixture, type ApplicationStatus } fr
 import { getStreakState } from './streak';
 import { getBossStatus } from './boss';
 import { getAllEvents } from '../db/events';
+import { rebuildProjections } from '../db/projections';
+import { buildDomainTables } from '../db/domainProjections';
 import { db } from '../db/db';
-import type { CheckpointRow } from '../db/schema';
-import type { EngineConfig, Rank } from '../engine/types';
+import type { ArcRow, CheckpointRow, EventRow, ProfileRow } from '../db/schema';
+import type { EngineConfig, EngineDeps, Rank, SystemEvent } from '../engine/types';
 
 function shiftDate(dateStr: string, days: number): string {
   return format(addDays(parseISO(dateStr), days), 'yyyy-MM-dd');
@@ -276,16 +278,149 @@ export async function getCheckpointReport(day: Checkpoint['day'], today: string,
   return { checkpoint, result, verdictText: verdictTextFor(result) };
 }
 
-/** A full, real export of the event log — the single source of truth —
- * as pretty-printed JSON. Not the eventual full backup format (Slice 13
- * also covers profile/settings and a restore path), but a real,
- * complete, re-importable snapshot of everything that matters: replaying
- * these events through engine/reduce.ts's applyEvents reproduces every
- * derived table exactly (the same guarantee db/projections.ts's
- * rebuildProjections relies on). */
+/**
+ * A full, real export — pretty-printed JSON, re-importable via
+ * importSnapshotJson below. Most of the app really is "the event log
+ * alone is a complete backup" (final/07 §6): replaying `events` through
+ * engine/reduce.ts's applyEvents + db/projections.ts's rebuildProjections
+ * + db/domainProjections.ts's buildDomainTables reproduces quest state,
+ * XP, streaks and every domain detail table (applications, DSA problems,
+ * training sessions, etc.) exactly. Three things genuinely aren't
+ * event-sourced in this app and are included verbatim instead, not
+ * derived: `arc` (the row is written once at onboarding and never
+ * updated by ARC_PAUSED/ARC_RESUMED — pause state is always read fresh
+ * from the events by every consumer, so the row itself is just an
+ * anchor: id/start_date/timezone/boundary-hour), `profile` (name and
+ * settings have no event backing them at all — there is no
+ * PROFILE_CREATED event type), and `checkpoints` (self_efficacy,
+ * automaticity, enjoyment and the sealed gate snapshot are freeform
+ * instrument data, deliberately kept outside event-sourcing since
+ * Slice 12 — see store/checkpoint.ts's file header).
+ */
 export async function exportSnapshotJson(): Promise<string> {
-  const events = await getAllEvents();
-  return JSON.stringify({ exported_at: new Date().toISOString(), schema_v: 1, events }, null, 2);
+  const [events, arc, profile, checkpoints] = await Promise.all([
+    getAllEvents(),
+    db.arc.toCollection().first(),
+    db.profile.toCollection().first(),
+    db.checkpoint.toArray(),
+  ]);
+  return JSON.stringify(
+    { exported_at: new Date().toISOString(), schema_v: 1, events, arc: arc ?? null, profile: profile ?? null, checkpoints },
+    null,
+    2
+  );
+}
+
+export class ImportValidationError extends Error {}
+
+interface SnapshotShape {
+  events: unknown[];
+  arc?: unknown;
+  profile?: unknown;
+  checkpoints?: unknown[];
+}
+
+function validateSnapshot(json: string): SnapshotShape {
+  let parsed: unknown;
+  try {
+    parsed = JSON.parse(json);
+  } catch {
+    throw new ImportValidationError('Not valid JSON.');
+  }
+  if (typeof parsed !== 'object' || parsed === null || !Array.isArray((parsed as { events?: unknown }).events)) {
+    throw new ImportValidationError('Not a Solo Leveling export — missing an events array.');
+  }
+  return parsed as SnapshotShape;
+}
+
+/**
+ * Wipes every table in the database and restores it from an
+ * exportSnapshotJson() export: events replayed through
+ * rebuildProjections + db/domainProjections.ts's buildDomainTables, plus
+ * arc/profile/checkpoints restored verbatim (see exportSnapshotJson's
+ * doc comment for why those three aren't event-derivable). Throws
+ * ImportValidationError — never silently imports a malformed or
+ * unrelated file — and never partially imports: validation happens
+ * entirely before the first write.
+ */
+export async function importSnapshotJson(json: string, config: EngineConfig, deps: EngineDeps): Promise<void> {
+  const snapshot = validateSnapshot(json);
+
+  await db.transaction(
+    'rw',
+    [
+      db.event,
+      db.arc,
+      db.profile,
+      db.checkpoint,
+      db.quest_template,
+      db.quest_instance,
+      db.xp_ledger,
+      db.day_rollup,
+      db.player_state,
+      db.application,
+      db.career_event,
+      db.resume_version,
+      db.dsa_problem,
+      db.dsa_attempt,
+      db.learning_block,
+      db.system_design_study,
+      db.build_session,
+      db.artifact,
+      db.training_session,
+      db.metric_sample,
+      db.maintenance_log,
+    ],
+    async () => {
+      await Promise.all([
+        db.event.clear(),
+        db.arc.clear(),
+        db.profile.clear(),
+        db.checkpoint.clear(),
+        db.quest_template.clear(),
+        db.quest_instance.clear(),
+        db.xp_ledger.clear(),
+        db.day_rollup.clear(),
+        db.player_state.clear(),
+        db.application.clear(),
+        db.career_event.clear(),
+        db.resume_version.clear(),
+        db.dsa_problem.clear(),
+        db.dsa_attempt.clear(),
+        db.learning_block.clear(),
+        db.system_design_study.clear(),
+        db.build_session.clear(),
+        db.artifact.clear(),
+        db.training_session.clear(),
+        db.metric_sample.clear(),
+        db.maintenance_log.clear(),
+      ]);
+
+      const importedEvents = snapshot.events as SystemEvent[];
+      if (importedEvents.length > 0) await db.event.bulkAdd(importedEvents as unknown as EventRow[]);
+      if (snapshot.arc) await db.arc.add(snapshot.arc as ArcRow);
+      if (snapshot.profile) await db.profile.add(snapshot.profile as ProfileRow);
+      if (snapshot.checkpoints && snapshot.checkpoints.length > 0) {
+        await db.checkpoint.bulkAdd(snapshot.checkpoints as CheckpointRow[]);
+      }
+
+      const domain = buildDomainTables(importedEvents, config);
+      if (domain.applications.length > 0) await db.application.bulkAdd(domain.applications);
+      if (domain.careerEvents.length > 0) await db.career_event.bulkAdd(domain.careerEvents);
+      if (domain.resumeVersions.length > 0) await db.resume_version.bulkAdd(domain.resumeVersions);
+      if (domain.dsaProblems.length > 0) await db.dsa_problem.bulkAdd(domain.dsaProblems);
+      if (domain.dsaAttempts.length > 0) await db.dsa_attempt.bulkAdd(domain.dsaAttempts);
+      if (domain.learningBlocks.length > 0) await db.learning_block.bulkAdd(domain.learningBlocks);
+      if (domain.systemDesigns.length > 0) await db.system_design_study.bulkAdd(domain.systemDesigns);
+      if (domain.buildSessions.length > 0) await db.build_session.bulkAdd(domain.buildSessions);
+      if (domain.artifacts.length > 0) await db.artifact.bulkAdd(domain.artifacts);
+      if (domain.trainingSessions.length > 0) await db.training_session.bulkAdd(domain.trainingSessions);
+      if (domain.metricSamples.length > 0) await db.metric_sample.bulkAdd(domain.metricSamples);
+      if (domain.maintenanceLogs.length > 0) await db.maintenance_log.bulkAdd(domain.maintenanceLogs);
+    }
+  );
+
+  await rebuildProjections(config, deps);
 }
 
 /** Marks the day-`day` checkpoint as exported — final/08's "sealing

@@ -3,7 +3,14 @@
 // same pattern as career/DSA. Learning blocks and system design study
 // grant LEARN XP directly on logging (final/03 §3: "not a seventh core
 // quest") rather than through quest completion.
-import type { EngineConfig, EngineDeps } from '../engine/types';
+import type {
+  ArtifactShippedPayload,
+  BuildSessionLoggedPayload,
+  EngineConfig,
+  EngineDeps,
+  LearningBlockLoggedPayload,
+  SystemDesignLoggedPayload,
+} from '../engine/types';
 import { db } from '../db/db';
 import { appendEvent } from '../db/events';
 import { completeQuest } from './quests';
@@ -69,7 +76,12 @@ export async function logBuildSession(
       occurred_at: deps.now(),
       local_date: today,
       arc_id: arcId,
-      payload: { mode: input.mode, minutes: input.minutes, projectKey: input.projectKey, note: input.note },
+      payload: {
+        mode: input.mode,
+        minutes: input.minutes,
+        projectKey: input.projectKey,
+        note: input.note,
+      } satisfies BuildSessionLoggedPayload,
       source: 'user',
       idem_key: `build-session:${sessionId}`,
       schema_v: 1,
@@ -92,7 +104,11 @@ export async function logBuildSession(
         occurred_at: deps.now(),
         local_date: today,
         arc_id: arcId,
-        payload: { artifactId, ...input.shippedArtifact, projectKey: input.projectKey },
+        payload: {
+          artifactId,
+          ...input.shippedArtifact,
+          projectKey: input.projectKey,
+        } satisfies ArtifactShippedPayload,
         source: 'user',
         idem_key: `artifact:${artifactId}`,
         schema_v: 1,
@@ -136,7 +152,7 @@ export async function logLearningBlock(
       occurred_at: deps.now(),
       local_date: today,
       arc_id: arcId,
-      payload: { topic, minutes, note },
+      payload: { topic, minutes, note } satisfies LearningBlockLoggedPayload,
       source: 'user',
       idem_key: `learning-block:${id}`,
       schema_v: 1,
@@ -166,7 +182,7 @@ export async function logSystemDesignStudy(
       occurred_at: deps.now(),
       local_date: today,
       arc_id: arcId,
-      payload: { system, mode, minutes, artifactUrl, notes },
+      payload: { system, mode, minutes, artifactUrl, notes } satisfies SystemDesignLoggedPayload,
       source: 'user',
       idem_key: `system-design:${id}`,
       schema_v: 1,

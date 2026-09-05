@@ -256,6 +256,7 @@ export interface MetricRecordedPayload {
   kind: string;
   value: number;
   unit: string;
+  note?: string;
 }
 
 /** final/04 §2 — no XP field on purpose: a session never grants XP itself,
@@ -421,6 +422,61 @@ export interface ResumeVersionCreatedPayload {
 
 export interface FollowupLoggedPayload {
   applicationId: string;
+}
+
+// final/03-learning-systems.md — DSA and BUILD/foundations payloads.
+// Named interfaces added when db/domainProjections.ts's rebuild fold was
+// built (a later slice): each carries everything its DsaProblemRow /
+// LearningBlockRow / SystemDesignStudyRow / BuildSessionRow / ArtifactRow
+// needs to be reconstructed from the event log alone, id and local_date
+// aside (those come from the event envelope itself). `title` was missing
+// from the original PROBLEM_LOGGED payload — a real gap this closes: a
+// dsa_problem's display title used to exist only in the live table, not
+// in its own event, so a full rebuild silently lost it.
+export interface ProblemLoggedPayload {
+  problemId: string;
+  slug: string;
+  title: string;
+  topic: string;
+  difficulty: 'E' | 'M' | 'H';
+  outcome: 'first_attempt' | 'hint' | 'editorial' | 'unsolved';
+  minutes: number;
+  insight?: string;
+}
+
+export interface ProblemRevisitedPayload {
+  problemId: string;
+  outcome: 'first_attempt' | 'hint' | 'editorial' | 'unsolved';
+  minutes: number;
+}
+
+export interface LearningBlockLoggedPayload {
+  topic: string;
+  minutes: number;
+  note?: string;
+}
+
+export interface SystemDesignLoggedPayload {
+  system: string;
+  mode: 'studied' | 'written_up' | 'explained_aloud';
+  minutes: number;
+  artifactUrl?: string;
+  notes?: string;
+}
+
+export interface BuildSessionLoggedPayload {
+  mode: 'LEARN' | 'SHIP';
+  minutes: number;
+  projectKey: string;
+  note?: string;
+}
+
+export interface ArtifactShippedPayload {
+  artifactId: string;
+  kind: 'feature' | 'eval' | 'project' | 'deployment' | 'writeup' | 'resume' | 'portfolio';
+  title: string;
+  url?: string;
+  projectKey: string;
 }
 
 /**

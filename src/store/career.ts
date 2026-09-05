@@ -15,7 +15,7 @@ import type {
   FollowupLoggedPayload,
   ResumeVersionCreatedPayload,
 } from '../engine/types';
-import { passesQualityGate, type ApplicationFixture } from '../engine/career';
+import { passesQualityGate, careerEventKindToStatus, type ApplicationFixture } from '../engine/career';
 import { db } from '../db/db';
 import { appendEvent } from '../db/events';
 import { completeQuest } from './quests';
@@ -207,7 +207,7 @@ export async function logCareerEvent(
   await db.transaction('rw', REBUILD_ADJACENT_TABLES, async () => {
     const eventId = deps.newId();
     await appendEvent({
-      id: deps.newId(),
+      id: eventId,
       type: 'CAREER_EVENT_LOGGED',
       occurred_at: deps.now(),
       local_date: today,
@@ -233,44 +233,33 @@ export async function logCareerEvent(
   });
 }
 
-function careerEventKindToStatus(kind: CareerEventKind) {
-  switch (kind) {
-    case 'response':
-      return 'responded' as const;
-    case 'call':
-      return 'call' as const;
-    case 'interview':
-      return 'interview' as const;
-    case 'onsite':
-      return 'onsite' as const;
-    case 'offer':
-      return 'offer' as const;
-    case 'rejection':
-      return 'rejected' as const;
-    default:
-      return undefined;
-  }
-}
-
 export async function logFollowup(today: string, arcId: string, applicationId: string, deps: EngineDeps): Promise<void> {
   await db.transaction('rw', REBUILD_ADJACENT_TABLES, async () => {
     const payload: FollowupLoggedPayload = { applicationId };
+    const id = deps.newId();
+    // A single clock read, reused for the event's occurred_at, the
+    // idem_key, and the application row's followed_up_at — three
+    // separate deps.now() calls used to read three slightly different
+    // instants, which meant a rebuild (db/domainProjections.ts) could
+    // never reproduce followed_up_at exactly from the event alone.
+    const now = deps.now();
     await appendEvent({
-      id: deps.newId(),
+      id,
       type: 'FOLLOWUP_LOGGED',
-      occurred_at: deps.now(),
+      occurred_at: now,
       local_date: today,
       arc_id: arcId,
       payload: payload as unknown as Record<string, unknown>,
       source: 'user',
-      idem_key: `followup:${applicationId}:${deps.now()}`,
+      idem_key: `followup:${id}`,
       schema_v: 1,
     });
-    await db.application.update(applicationId, { followed_up_at: deps.now() });
+    await db.application.update(applicationId, { followed_up_at: now });
   });
 }
 
 export async function createResumeVersion(
+  today: string,
   label: string,
   changedBecause: string,
   arcId: string,
@@ -278,20 +267,28 @@ export async function createResumeVersion(
   externalReview = false
 ): Promise<string> {
   const id = deps.newId();
+  // One clock read, reused for occurred_at and created_at — previously
+  // three separate deps.now() calls (plus a fourth deriving local_date
+  // from a raw UTC slice instead of `today`, ignoring the arc's
+  // timezone/day-boundary-hour entirely, unlike every other write in
+  // this file). Both fixed: `today` is the caller's already-computed
+  // local_date (same convention as logApplication), and event.id is
+  // reused as the row's own id.
+  const now = deps.now();
   await db.transaction('rw', REBUILD_ADJACENT_TABLES, async () => {
     const payload: ResumeVersionCreatedPayload = { resumeVersionId: id, label, changedBecause, externalReview };
     await appendEvent({
-      id: deps.newId(),
+      id,
       type: 'RESUME_VERSION_CREATED',
-      occurred_at: deps.now(),
-      local_date: deps.now().slice(0, 10),
+      occurred_at: now,
+      local_date: today,
       arc_id: arcId,
       payload: payload as unknown as Record<string, unknown>,
       source: 'user',
       idem_key: `resume-version:${id}`,
       schema_v: 1,
     });
-    const row: ResumeVersionRow = { id, label, created_at: deps.now(), changed_because: changedBecause, external_review: externalReview };
+    const row: ResumeVersionRow = { id, label, created_at: now, changed_because: changedBecause, external_review: externalReview };
     await db.resume_version.add(row);
   });
   return id;

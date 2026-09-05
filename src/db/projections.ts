@@ -26,6 +26,7 @@ import { levelFor } from '../engine/level';
 import { streakFrom, type DayOutcome, type DayStreakOutcome } from '../engine/streak';
 import { db } from './db';
 import { getAllEvents } from './events';
+import { buildDomainTables } from './domainProjections';
 import type { DayRollupRow, PlayerStateRow, QuestInstanceRow, QuestTemplateRow, XpLedgerRow } from './schema';
 
 function shiftDate(dateStr: string, days: number): string {
@@ -374,6 +375,31 @@ export async function verifyIntegrity(config: EngineConfig, deps: EngineDeps): P
   );
   const rebuiltPlayerState = rebuilt.playerState ? [rebuilt.playerState] : [];
   diffById('player_state', livePlayerState, rebuiltPlayerState, discrepancies);
+
+  // Slice 13 — the domain detail tables (applications, DSA problems,
+  // training sessions, etc.) are folded separately from the five tables
+  // above (db/domainProjections.ts), not as part of buildProjections —
+  // see that module's header for why they stay a separate fold. Verified
+  // here all the same, so "clean" means the whole database matches the
+  // event log, not just the quest/XP/streak slice of it.
+  const domain = buildDomainTables(events, config);
+  diffById('application', await db.application.toArray(), domain.applications, discrepancies);
+  diffById('career_event', await db.career_event.toArray(), domain.careerEvents, discrepancies);
+  diffById('resume_version', await db.resume_version.toArray(), domain.resumeVersions, discrepancies);
+  diffById('dsa_problem', await db.dsa_problem.toArray(), domain.dsaProblems, discrepancies);
+  diffById('dsa_attempt', await db.dsa_attempt.toArray(), domain.dsaAttempts, discrepancies);
+  diffById('learning_block', await db.learning_block.toArray(), domain.learningBlocks, discrepancies);
+  diffById('system_design_study', await db.system_design_study.toArray(), domain.systemDesigns, discrepancies);
+  diffById('build_session', await db.build_session.toArray(), domain.buildSessions, discrepancies);
+  diffById('artifact', await db.artifact.toArray(), domain.artifacts, discrepancies);
+  diffById('training_session', await db.training_session.toArray(), domain.trainingSessions, discrepancies);
+  diffById('metric_sample', await db.metric_sample.toArray(), domain.metricSamples, discrepancies);
+  diffById(
+    'maintenance_log',
+    (await db.maintenance_log.toArray()).map((r) => ({ ...r, id: r.local_date })),
+    domain.maintenanceLogs.map((r) => ({ ...r, id: r.local_date })),
+    discrepancies
+  );
 
   return { clean: discrepancies.length === 0, discrepancies };
 }

@@ -64,8 +64,13 @@ export async function logSleep(
     const wakeRow: MetricSampleRow = { id, local_date: today, kind: 'wake_time', value: toMinutesSinceMidnight(wakeTime), unit: 'min' };
     await db.metric_sample.add(wakeRow);
     if (sleepTime) {
+      // Deterministic from the event's own id (not a fresh deps.newId())
+      // so db/domainProjections.ts's rebuild fold — which only has the
+      // event, not a second generated id — can reproduce this row's pk
+      // exactly, the same reasoning as every composite-key id elsewhere
+      // in this codebase (engine/quests.ts's template/instance ids).
       const sleepRow: MetricSampleRow = {
-        id: deps.newId(),
+        id: `${id}::sleep`,
         local_date: today,
         kind: 'sleep_time',
         value: toMinutesSinceMidnight(sleepTime),

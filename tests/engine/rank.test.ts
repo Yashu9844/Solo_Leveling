@@ -1,5 +1,12 @@
 import { describe, it, expect } from 'vitest';
-import { evaluateGates, verdictTextFor, type GateEvidence } from '../../src/engine/rank';
+import {
+  evaluateGates,
+  verdictTextFor,
+  checkpointComparison,
+  checkpointImproved,
+  ZERO_EVIDENCE,
+  type GateEvidence,
+} from '../../src/engine/rank';
 
 function fullEvidence(overrides: Partial<GateEvidence> = {}): GateEvidence {
   return {
@@ -214,5 +221,66 @@ describe('verdictTextFor', () => {
   it('states the advance once every condition clears', () => {
     const result = evaluateGates({ day: 14, previousRank: 'E' }, fullEvidence({ mvdConsistency14d: 1 }));
     expect(verdictTextFor(result)).toBe('Rank D reached. 1 of 1 conditions met.');
+  });
+});
+
+describe('checkpointComparison / checkpointImproved', () => {
+  it('reports no improvement between two identical (zero-activity) snapshots', () => {
+    const rows = checkpointComparison(ZERO_EVIDENCE, ZERO_EVIDENCE);
+    expect(checkpointImproved(rows)).toBe(false);
+    // wakeSdMin is omitted entirely when the "before" value is the 999
+    // fail-safe -- there is no real prior measurement to compare against.
+    expect(rows.find((r) => r.label === 'Wake SD')).toBeUndefined();
+  });
+
+  it('flags real progress across the tracked fields', () => {
+    const after = fullEvidence({
+      problemsTotal: 61,
+      qualityApplicationsTotal: 74,
+      publicProjectsTotal: 1,
+      foundationTopicsIntroducedPlus: 3,
+      trainingSessionsTotal: 14,
+      firstAttemptRateM28d: 0.41,
+    });
+    const rows = checkpointComparison(ZERO_EVIDENCE, after);
+    expect(checkpointImproved(rows)).toBe(true);
+    expect(rows.find((r) => r.label === 'Problems solved')).toEqual({
+      label: 'Problems solved',
+      before: '0',
+      after: '61',
+      improved: true,
+    });
+    expect(rows.find((r) => r.label === 'Foundations >= Introduced')).toEqual({
+      label: 'Foundations >= Introduced',
+      before: '0/9',
+      after: '3/9',
+      improved: true,
+    });
+  });
+
+  it('includes Wake SD and treats a LOWER value as improvement once a real prior measurement exists', () => {
+    const before = fullEvidence({ wakeSdMin: 71 });
+    const better = fullEvidence({ wakeSdMin: 47 });
+    const worse = fullEvidence({ wakeSdMin: 90 });
+
+    const improvedRows = checkpointComparison(before, better);
+    expect(improvedRows.find((r) => r.label === 'Wake SD')).toEqual({
+      label: 'Wake SD',
+      before: '71min',
+      after: '47min',
+      improved: true,
+    });
+
+    const worseRows = checkpointComparison(before, worse);
+    expect(worseRows.find((r) => r.label === 'Wake SD')?.improved).toBe(false);
+    expect(checkpointImproved(worseRows)).toBe(false);
+  });
+
+  it('a regression on every field reports no improvement, not a negative one', () => {
+    const before = fullEvidence({ problemsTotal: 20, qualityApplicationsTotal: 30 });
+    const after = fullEvidence({ problemsTotal: 10, qualityApplicationsTotal: 10 });
+    const rows = checkpointComparison(before, after);
+    expect(checkpointImproved(rows)).toBe(false);
+    expect(rows.find((r) => r.label === 'Problems solved')?.improved).toBe(false);
   });
 });

@@ -1,8 +1,9 @@
 import { useEffect, useState } from 'react';
 import { DEFAULT_CONFIG } from '../../engine/config';
-import type { Checkpoint } from '../../engine/rank';
+import { verdictTextFor, type Checkpoint, type ComparisonRow, type GateCondition } from '../../engine/rank';
 import {
   getCheckpointReport,
+  getCheckpointComparison,
   exportSnapshotJson,
   markExported,
   sealCheckpoint,
@@ -11,6 +12,7 @@ import {
 } from '../../store/checkpoint';
 import { realDeps } from '../../store/deps';
 import { RankAdvancedMoment } from '../moments/RankAdvancedMoment';
+import { CheckpointMoment } from '../moments/CheckpointMoment';
 
 interface CheckpointScreenProps {
   day: Checkpoint['day'];
@@ -42,7 +44,15 @@ export function CheckpointScreen({ day, today, onClose }: CheckpointScreenProps)
   const [exporting, setExporting] = useState(false);
   const [sealing, setSealing] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const [rankAdvance, setRankAdvance] = useState<{ from: string; to: string } | null>(null);
+  interface PendingCheckpointMoment {
+    rows: ComparisonRow[];
+    conditions: GateCondition[];
+    verdictText: string;
+  }
+  const [rankAdvance, setRankAdvance] = useState<{ from: string; to: string; next: PendingCheckpointMoment | null } | null>(null);
+  const [checkpointMoment, setCheckpointMoment] = useState<
+    (PendingCheckpointMoment & { rankBefore: string; rankAfter: string }) | null
+  >(null);
 
   async function refresh() {
     setReport(await getCheckpointReport(day, today, DEFAULT_CONFIG));
@@ -71,8 +81,20 @@ export function CheckpointScreen({ day, today, onClose }: CheckpointScreenProps)
     try {
       const rankBefore = await getCurrentRank();
       const result = await sealCheckpoint(day, today, DEFAULT_CONFIG, realDeps);
-      if (result.rank === result.targetRank && result.rank !== rankBefore) {
-        setRankAdvance({ from: rankBefore, to: result.rank });
+      const rankAdvanced = result.rank === result.targetRank && result.rank !== rankBefore;
+      const comparison = await getCheckpointComparison(day, today, DEFAULT_CONFIG);
+      const pending: PendingCheckpointMoment | null = comparison.improved
+        ? { rows: comparison.rows, conditions: result.conditions, verdictText: verdictTextFor(result) }
+        : null;
+
+      // Both are real, distinct Moments (final/05 §2.1's own weights:
+      // RANK ADVANCED full-screen 1100ms, CHECKPOINT a self-paced
+      // sequence) — when a seal earns both, RANK ADVANCED plays first and
+      // CHECKPOINT follows on its dismiss, rather than stacking overlays.
+      if (rankAdvanced) {
+        setRankAdvance({ from: rankBefore, to: result.rank, next: pending });
+      } else if (pending) {
+        setCheckpointMoment({ rankBefore, rankAfter: result.rank, ...pending });
       }
       await refresh();
     } catch (e) {
@@ -134,7 +156,27 @@ export function CheckpointScreen({ day, today, onClose }: CheckpointScreenProps)
       )}
 
       {rankAdvance && (
-        <RankAdvancedMoment fromRank={rankAdvance.from} toRank={rankAdvance.to} onDismiss={() => setRankAdvance(null)} />
+        <RankAdvancedMoment
+          fromRank={rankAdvance.from}
+          toRank={rankAdvance.to}
+          onDismiss={() => {
+            const next = rankAdvance.next;
+            setRankAdvance(null);
+            if (next) setCheckpointMoment({ rankBefore: rankAdvance.from, rankAfter: rankAdvance.to, ...next });
+          }}
+        />
+      )}
+
+      {checkpointMoment && (
+        <CheckpointMoment
+          day={day}
+          rankBefore={checkpointMoment.rankBefore}
+          rankAfter={checkpointMoment.rankAfter}
+          rows={checkpointMoment.rows}
+          conditions={checkpointMoment.conditions}
+          verdictText={checkpointMoment.verdictText}
+          onDismiss={() => setCheckpointMoment(null)}
+        />
       )}
     </div>
   );

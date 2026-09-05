@@ -19,7 +19,17 @@
 // depending on them can never over-report a rank it hasn't actually
 // earned.
 import { addDays, format, parseISO } from 'date-fns';
-import { evaluateGates, verdictTextFor, type Checkpoint, type GateEvidence, type GateResult } from '../engine/rank';
+import {
+  evaluateGates,
+  verdictTextFor,
+  checkpointComparison,
+  checkpointImproved,
+  ZERO_EVIDENCE,
+  type Checkpoint,
+  type ComparisonRow,
+  type GateEvidence,
+  type GateResult,
+} from '../engine/rank';
 import type { DsaAttemptFixture } from '../engine/dsa';
 import { foundationMasteryFor, FOUNDATION_TOPICS } from '../engine/foundations';
 import { followThroughRate, type ApplicationFixture, type ApplicationStatus } from '../engine/career';
@@ -276,6 +286,36 @@ export async function getCheckpointReport(day: Checkpoint['day'], today: string,
   ]);
   const result = evaluateGates({ day, previousRank }, evidence);
   return { checkpoint, result, verdictText: verdictTextFor(result) };
+}
+
+export interface CheckpointComparisonResult {
+  rows: ComparisonRow[];
+  improved: boolean;
+}
+
+/**
+ * final/06 §5.8's "vs DAY 0" (really: vs the previous sealed
+ * checkpoint) comparison, and final/05 §2.1's gate for whether the
+ * CHECKPOINT Moment fires at all ("sealed with improvement"). The
+ * previous checkpoint's GateEvidence snapshot is read from its own
+ * `metrics` field, frozen there by sealCheckpoint at the time it was
+ * sealed — Day 0's `metrics` is a different shape (raw baseline body
+ * metrics, not GateEvidence, per store/onboarding.ts), so a Day-0-only
+ * arc falls back to engine/rank.ts's ZERO_EVIDENCE, which is exactly
+ * what Day 0's evidence would compute to for an arc with zero activity.
+ */
+export async function getCheckpointComparison(day: Checkpoint['day'], today: string, config: EngineConfig): Promise<CheckpointComparisonResult> {
+  const DAYS: Checkpoint['day'][] = [0, 14, 30, 60, 90, 120];
+  const allCheckpoints = await db.checkpoint.toArray();
+  const previousDay = DAYS.filter((d) => d < day).sort((a, b) => b - a)[0];
+  const previousSealed = previousDay !== undefined
+    ? allCheckpoints.find((c) => c.day === previousDay && c.sealed_at !== undefined && c.day !== 0)
+    : undefined;
+
+  const before = previousSealed ? (previousSealed.metrics as unknown as GateEvidence) : ZERO_EVIDENCE;
+  const after = await computeGateEvidence(today, config);
+  const rows = checkpointComparison(before, after);
+  return { rows, improved: checkpointImproved(rows) };
 }
 
 /**

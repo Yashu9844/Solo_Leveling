@@ -216,3 +216,128 @@ export function verdictTextFor(result: GateResult): string {
   }
   return `Rank ${result.rank} -> ${result.targetRank} requires ${total} conditions. You meet ${metCount}.`;
 }
+
+/**
+ * What a checkpoint's evidence would read at the very start of the arc —
+ * used as checkpointComparison's implicit "before" when no earlier
+ * checkpoint carries a real GateEvidence snapshot to diff against (Day
+ * 0's own `metrics` field holds raw baseline body metrics, a different
+ * shape entirely — see store/checkpoint.ts's sealCheckpoint vs
+ * store/onboarding.ts's Day-0 checkpoint row). Every field is the true
+ * value of an arc with zero activity, not a guess: wakeSdMin uses the
+ * same 999 fail-safe computeGateEvidence itself returns for "no wake
+ * data yet," so a later real measurement is never miscounted as an
+ * improvement over a sentinel.
+ */
+export const ZERO_EVIDENCE: GateEvidence = {
+  mvdConsistency14d: 0,
+  coreCompletion28d: 0,
+  problemsTotal: 0,
+  firstAttemptRateM28d: 0,
+  trainingSessionsTotal: 0,
+  meanSteps: 0,
+  wakeSdMin: 999,
+  screenTimeAvgMin: 0,
+  qualityApplicationsTotal: 0,
+  followThroughRate: 0,
+  networkingConversations: 0,
+  recordedMocks: 0,
+  aiFeaturePublicRepo: false,
+  publicProjectsTotal: 0,
+  publicProjectsWithEvalSuite: 0,
+  publicProjectsDeployedReachable: 0,
+  publishedWriteups: 0,
+  resumeVersionsTotal: 0,
+  resumeExternallyReviewed: false,
+  foundationTopicsIntroducedPlus: 0,
+  foundationTopicsFluentPlus: 0,
+  foundationTopicsRetainedPlus: 0,
+  systemDesignsStudied: 0,
+  systemDesignsWrittenUp: 0,
+  systemDesignsExplainedAloud: 0,
+  trainingEst1RmGainPct: 0,
+  costPerTaskMeasured: false,
+  interviewBenchmarkPassed: false,
+  bossICleared: false,
+  bossIICleared: false,
+  bossIIICleared: false,
+  bossIVCleared: false,
+  arcSealed: false,
+};
+
+export interface ComparisonRow {
+  label: string;
+  before: string;
+  after: string;
+  improved: boolean;
+}
+
+/**
+ * Pure. final/06 §5.8's "DAY 30 REPORT" comparison table, scoped to
+ * only the fields this build actually has a data source for (no
+ * fabricated weight/1RM/self-efficacy rows — see store/mastery.ts's
+ * comparable "resolved ambiguity" precedent). Each row's `improved`
+ * already encodes the right direction per metric (lower is better for
+ * wakeSdMin, higher for everything else), so a caller never needs its
+ * own per-field logic to decide what counts as progress.
+ */
+export function checkpointComparison(before: GateEvidence, after: GateEvidence): ComparisonRow[] {
+  const rows: ComparisonRow[] = [
+    {
+      label: 'Problems solved',
+      before: String(before.problemsTotal),
+      after: String(after.problemsTotal),
+      improved: after.problemsTotal > before.problemsTotal,
+    },
+    {
+      label: 'Quality applications',
+      before: String(before.qualityApplicationsTotal),
+      after: String(after.qualityApplicationsTotal),
+      improved: after.qualityApplicationsTotal > before.qualityApplicationsTotal,
+    },
+    {
+      label: 'Public projects',
+      before: String(before.publicProjectsTotal),
+      after: String(after.publicProjectsTotal),
+      improved: after.publicProjectsTotal > before.publicProjectsTotal,
+    },
+    {
+      label: 'Foundations >= Introduced',
+      before: `${before.foundationTopicsIntroducedPlus}/9`,
+      after: `${after.foundationTopicsIntroducedPlus}/9`,
+      improved: after.foundationTopicsIntroducedPlus > before.foundationTopicsIntroducedPlus,
+    },
+    {
+      label: 'Training sessions',
+      before: String(before.trainingSessionsTotal),
+      after: String(after.trainingSessionsTotal),
+      improved: after.trainingSessionsTotal > before.trainingSessionsTotal,
+    },
+    {
+      label: 'First-attempt rate (M)',
+      before: pct(before.firstAttemptRateM28d),
+      after: pct(after.firstAttemptRateM28d),
+      improved: after.firstAttemptRateM28d > before.firstAttemptRateM28d,
+    },
+  ];
+  // wakeSdMin's fail-safe is 999 ("no data") -- only a comparison
+  // starting from a real measurement is meaningful.
+  if (before.wakeSdMin < 999) {
+    rows.push({
+      label: 'Wake SD',
+      before: `${Math.round(before.wakeSdMin)}min`,
+      after: `${Math.round(after.wakeSdMin)}min`,
+      improved: after.wakeSdMin < before.wakeSdMin,
+    });
+  }
+  return rows;
+}
+
+/** Pure. final/05 §2.1's CHECKPOINT Moment fires only "with
+ * improvement" — a checkpoint sealed with zero real progress on every
+ * tracked metric (e.g. the very first checkpoint of an inactive arc)
+ * gets the plain verdict line only, never a self-congratulatory
+ * sequence (final/01 §6.6's no-manufactured-positivity rule). */
+export function checkpointImproved(rows: ComparisonRow[]): boolean {
+  return rows.some((r) => r.improved);
+}

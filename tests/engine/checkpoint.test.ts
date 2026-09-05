@@ -5,6 +5,7 @@ import { initialiseArc, type OnboardingInput } from '../../src/store/onboarding'
 import {
   computeGateEvidence,
   getCheckpointReport,
+  getCheckpointComparison,
   exportSnapshotJson,
   getBackupStatus,
   markExported,
@@ -12,6 +13,7 @@ import {
   CheckpointSealError,
 } from '../../src/store/checkpoint';
 import { logApplication } from '../../src/store/career';
+import { logProblem } from '../../src/store/dsa';
 import { DEFAULT_CONFIG } from '../../src/engine/config';
 import type { EngineDeps } from '../../src/engine/types';
 
@@ -38,6 +40,10 @@ async function clearAll() {
   await db.profile.clear();
   await db.application.clear();
   await db.resume_version.clear();
+  await db.dsa_problem.clear();
+  await db.dsa_attempt.clear();
+  await db.day_rollup.clear();
+  await db.player_state.clear();
 }
 
 const ONBOARDING_INPUT: Omit<OnboardingInput, 'intentions' | 'baseline'> = {
@@ -173,5 +179,81 @@ describe('exportSnapshotJson', () => {
     const after = await getBackupStatus(deps);
     expect(after.lastExportAt).not.toBeNull();
     expect(after.daysSince).toBe(0);
+  });
+});
+
+describe('getCheckpointComparison — final/05 §2.1s "sealed with improvement" gate', () => {
+  beforeEach(clearAll);
+
+  it('reports no improvement when nothing was logged before the first checkpoint', async () => {
+    const deps = seededDeps();
+    await initialiseArc({ ...ONBOARDING_INPUT, intentions: {}, baseline: {} }, DEFAULT_CONFIG, deps);
+    await markExported(14, deps);
+    await sealCheckpoint(14, DEFAULT_CONFIG.arc.startDate, DEFAULT_CONFIG, deps);
+
+    const comparison = await getCheckpointComparison(14, DEFAULT_CONFIG.arc.startDate, DEFAULT_CONFIG);
+    expect(comparison.improved).toBe(false);
+  });
+
+  it('reports improvement against the implicit Day-0 zero baseline once real problems are logged', async () => {
+    const deps = seededDeps();
+    const arcId = await initialiseArc({ ...ONBOARDING_INPUT, intentions: {}, baseline: {} }, DEFAULT_CONFIG, deps);
+    for (const slug of ['a', 'b', 'c']) {
+      await logProblem(
+        DEFAULT_CONFIG.arc.startDate,
+        arcId,
+        { slug, title: slug, topic: 'Arrays', difficulty: 'E', outcome: 'first_attempt', minutes: 20 },
+        DEFAULT_CONFIG,
+        deps
+      );
+    }
+    await markExported(14, deps);
+    await sealCheckpoint(14, DEFAULT_CONFIG.arc.startDate, DEFAULT_CONFIG, deps);
+
+    const comparison = await getCheckpointComparison(14, DEFAULT_CONFIG.arc.startDate, DEFAULT_CONFIG);
+    expect(comparison.improved).toBe(true);
+    expect(comparison.rows.find((r) => r.label === 'Problems solved')).toEqual({
+      label: 'Problems solved',
+      before: '0',
+      after: '3',
+      improved: true,
+    });
+  });
+
+  it("uses the previous SEALED checkpoint's frozen evidence as the baseline, not always Day 0", async () => {
+    const deps = seededDeps();
+    const arcId = await initialiseArc({ ...ONBOARDING_INPUT, intentions: {}, baseline: {} }, DEFAULT_CONFIG, deps);
+
+    await logProblem(
+      DEFAULT_CONFIG.arc.startDate,
+      arcId,
+      { slug: 'a', title: 'a', topic: 'Arrays', difficulty: 'E', outcome: 'first_attempt', minutes: 20 },
+      DEFAULT_CONFIG,
+      deps
+    );
+    await markExported(14, deps);
+    await sealCheckpoint(14, DEFAULT_CONFIG.arc.startDate, DEFAULT_CONFIG, deps);
+
+    // Two more problems between Day 14 and Day 30.
+    for (const slug of ['b', 'c']) {
+      await logProblem(
+        DEFAULT_CONFIG.arc.startDate,
+        arcId,
+        { slug, title: slug, topic: 'Arrays', difficulty: 'E', outcome: 'first_attempt', minutes: 20 },
+        DEFAULT_CONFIG,
+        deps
+      );
+    }
+    await markExported(30, deps);
+    await sealCheckpoint(30, DEFAULT_CONFIG.arc.startDate, DEFAULT_CONFIG, deps);
+
+    const comparison = await getCheckpointComparison(30, DEFAULT_CONFIG.arc.startDate, DEFAULT_CONFIG);
+    // Baseline is Day 14's frozen 1, not Day 0's 0 -- the delta is +2, not +3.
+    expect(comparison.rows.find((r) => r.label === 'Problems solved')).toEqual({
+      label: 'Problems solved',
+      before: '1',
+      after: '3',
+      improved: true,
+    });
   });
 });

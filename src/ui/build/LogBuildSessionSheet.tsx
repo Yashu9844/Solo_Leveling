@@ -4,6 +4,7 @@ import { realDeps } from '../../store/deps';
 import { logBuildSession } from '../../store/build';
 import { SingleChipSelect } from '../components/SingleChipSelect';
 import { Stepper } from '../components/Stepper';
+import { EvidenceAcceptedMoment } from '../moments/EvidenceAcceptedMoment';
 
 const MODES = ['LEARN', 'SHIP'] as const;
 
@@ -21,6 +22,7 @@ export function LogBuildSessionSheet({ today, arcId, onClose }: LogBuildSessionS
   const [projectKey, setProjectKey] = useState('');
   const [shippedTitle, setShippedTitle] = useState('');
   const [submitting, setSubmitting] = useState(false);
+  const [evidenceMoment, setEvidenceMoment] = useState<{ kind: string; title: string } | null>(null);
 
   const canLog = mode !== null && projectKey.trim().length > 0;
 
@@ -28,20 +30,16 @@ export function LogBuildSessionSheet({ today, arcId, onClose }: LogBuildSessionS
     if (!canLog || submitting) return;
     setSubmitting(true);
     try {
-      await logBuildSession(
-        today,
-        arcId,
-        {
-          mode: mode!,
-          minutes,
-          projectKey: projectKey.trim(),
-          shippedArtifact:
-            mode === 'SHIP' && shippedTitle.trim() ? { kind: 'feature', title: shippedTitle.trim() } : undefined,
-        },
-        DEFAULT_CONFIG,
-        realDeps
-      );
-      onClose();
+      const shippedArtifact = mode === 'SHIP' && shippedTitle.trim() ? { kind: 'feature' as const, title: shippedTitle.trim() } : undefined;
+      await logBuildSession(today, arcId, { mode: mode!, minutes, projectKey: projectKey.trim(), shippedArtifact }, DEFAULT_CONFIG, realDeps);
+      // final/05 §2.1's EVIDENCE ACCEPTED Moment — fires only when a
+      // public artefact was actually logged this session, not on every
+      // BUILD log.
+      if (shippedArtifact) {
+        setEvidenceMoment(shippedArtifact);
+      } else {
+        onClose();
+      }
     } finally {
       setSubmitting(false);
     }
@@ -99,6 +97,10 @@ export function LogBuildSessionSheet({ today, arcId, onClose }: LogBuildSessionS
           {submitting ? 'Logging…' : 'Log session'}
         </button>
       </div>
+
+      {evidenceMoment && (
+        <EvidenceAcceptedMoment kind={evidenceMoment.kind} title={evidenceMoment.title} onDismiss={onClose} />
+      )}
     </div>
   );
 }

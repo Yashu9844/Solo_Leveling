@@ -6,6 +6,7 @@ import { db } from '../../db/db';
 import { getBossStatus, clearBoss } from '../../store/boss';
 import type { BossId, BossResult } from '../../engine/boss';
 import { BOSSES } from '../../engine/boss';
+import { BossClearedMoment } from '../moments/BossClearedMoment';
 
 /** final/01 §7 — "Announced 7 days ahead with a live checklist. Cannot
  * be failed; a missed window reopens at the next checkpoint." The
@@ -15,6 +16,7 @@ import { BOSSES } from '../../engine/boss';
 export function BossList() {
   const [statuses, setStatuses] = useState<BossResult[] | null>(null);
   const [clearingId, setClearingId] = useState<BossId | null>(null);
+  const [clearedMoment, setClearedMoment] = useState<{ id: BossId; title: string } | null>(null);
   const today = localDate(realDeps.now(), DEFAULT_CONFIG.arc.timezone, DEFAULT_CONFIG.arc.dayBoundaryHour);
 
   async function refresh() {
@@ -32,7 +34,8 @@ export function BossList() {
     if (!arc || clearingId) return;
     setClearingId(bossId);
     try {
-      await clearBoss(bossId, arc.id, today, DEFAULT_CONFIG, realDeps);
+      const result = await clearBoss(bossId, arc.id, today, DEFAULT_CONFIG, realDeps);
+      if (result.cleared) setClearedMoment({ id: bossId, title: result.boss.title });
       await refresh();
     } finally {
       setClearingId(null);
@@ -68,6 +71,9 @@ export function BossList() {
           </div>
         );
       })}
+      {clearedMoment && (
+        <BossClearedMoment bossId={clearedMoment.id} bossTitle={clearedMoment.title} onDismiss={() => setClearedMoment(null)} />
+      )}
     </div>
   );
 }

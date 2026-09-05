@@ -2,9 +2,12 @@ import { useState } from 'react';
 import { DEFAULT_CONFIG } from '../../engine/config';
 import { realDeps } from '../../store/deps';
 import { logProblem } from '../../store/dsa';
+import { getDsaTopicMastery } from '../../store/mastery';
 import type { AttemptOutcome } from '../../engine/srs';
+import type { MasteryState } from '../../engine/types';
 import { SingleChipSelect } from '../components/SingleChipSelect';
 import { Stepper } from '../components/Stepper';
+import { MasteryMoment } from '../moments/MasteryMoment';
 
 const TOPICS = ['Arrays', 'Strings', 'Hashing', 'Two Pointers', 'Sliding Window', 'Stacks', 'Trees', 'Graphs', 'DP'] as const;
 const DIFFICULTIES = ['E', 'M', 'H'] as const;
@@ -31,13 +34,19 @@ export function LogProblemSheet({ today, arcId, onClose }: LogProblemSheetProps)
   const [minutes, setMinutes] = useState(25);
   const [insight, setInsight] = useState('');
   const [submitting, setSubmitting] = useState(false);
+  const [masteryMoment, setMasteryMoment] = useState<{ topic: string; state: 'introduced' | 'applied' | 'fluent' | 'retained' } | null>(
+    null
+  );
 
   const canLog = problem.trim().length > 0 && topic !== null && difficulty !== null && outcome !== null;
+
+  const MASTERY_ORDER: MasteryState[] = ['unseen', 'introduced', 'applied', 'fluent', 'retained'];
 
   async function handleLog() {
     if (!canLog || submitting) return;
     setSubmitting(true);
     try {
+      const before = await getDsaTopicMastery(topic!);
       await logProblem(
         today,
         arcId,
@@ -53,7 +62,15 @@ export function LogProblemSheet({ today, arcId, onClose }: LogProblemSheetProps)
         DEFAULT_CONFIG,
         realDeps
       );
-      onClose();
+      const after = await getDsaTopicMastery(topic!);
+      // final/05 §2.1's MASTERY Moment — fires only on a genuine
+      // state advance, not on every log (a log can also hold steady
+      // or, for fluent→retained, depend on a lapse-free window).
+      if (MASTERY_ORDER.indexOf(after) > MASTERY_ORDER.indexOf(before) && after !== 'unseen') {
+        setMasteryMoment({ topic: topic!, state: after });
+      } else {
+        onClose();
+      }
     } finally {
       setSubmitting(false);
     }
@@ -120,6 +137,10 @@ export function LogProblemSheet({ today, arcId, onClose }: LogProblemSheetProps)
           {submitting ? 'Logging…' : 'Log problem'}
         </button>
       </div>
+
+      {masteryMoment && (
+        <MasteryMoment topic={masteryMoment.topic} state={masteryMoment.state} onDismiss={onClose} />
+      )}
     </div>
   );
 }

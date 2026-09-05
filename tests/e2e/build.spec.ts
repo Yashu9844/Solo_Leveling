@@ -13,7 +13,7 @@ test('logging a 45-minute build session auto-completes the BUILD quest', async (
 
   await page.getByTestId('quest-row-build-open').click();
   await page.getByRole('button', { name: 'Log session' }).click();
-  await page.getByRole('button', { name: 'LEARN' }).click();
+  await page.getByRole('button', { name: 'LEARN', exact: true }).click();
   await page.getByLabel('Project').fill('agent-project');
   await page.getByRole('button', { name: 'Log session' }).click();
 

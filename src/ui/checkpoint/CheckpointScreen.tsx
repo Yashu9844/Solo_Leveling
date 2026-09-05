@@ -6,9 +6,11 @@ import {
   exportSnapshotJson,
   markExported,
   sealCheckpoint,
+  getCurrentRank,
   type CheckpointReport,
 } from '../../store/checkpoint';
 import { realDeps } from '../../store/deps';
+import { RankAdvancedMoment } from '../moments/RankAdvancedMoment';
 
 interface CheckpointScreenProps {
   day: Checkpoint['day'];
@@ -40,6 +42,7 @@ export function CheckpointScreen({ day, today, onClose }: CheckpointScreenProps)
   const [exporting, setExporting] = useState(false);
   const [sealing, setSealing] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [rankAdvance, setRankAdvance] = useState<{ from: string; to: string } | null>(null);
 
   async function refresh() {
     setReport(await getCheckpointReport(day, today, DEFAULT_CONFIG));
@@ -66,7 +69,11 @@ export function CheckpointScreen({ day, today, onClose }: CheckpointScreenProps)
     setSealing(true);
     setError(null);
     try {
-      await sealCheckpoint(day, today, DEFAULT_CONFIG, realDeps);
+      const rankBefore = await getCurrentRank();
+      const result = await sealCheckpoint(day, today, DEFAULT_CONFIG, realDeps);
+      if (result.rank === result.targetRank && result.rank !== rankBefore) {
+        setRankAdvance({ from: rankBefore, to: result.rank });
+      }
       await refresh();
     } catch (e) {
       setError(e instanceof Error ? e.message : 'Could not seal.');
@@ -124,6 +131,10 @@ export function CheckpointScreen({ day, today, onClose }: CheckpointScreenProps)
             {sealing ? 'Sealing…' : 'Seal checkpoint'}
           </button>
         </div>
+      )}
+
+      {rankAdvance && (
+        <RankAdvancedMoment fromRank={rankAdvance.from} toRank={rankAdvance.to} onDismiss={() => setRankAdvance(null)} />
       )}
     </div>
   );

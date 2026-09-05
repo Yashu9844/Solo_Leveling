@@ -25,6 +25,7 @@ import { LogTrainingSheet } from '../training/LogTrainingSheet';
 import { LogSleepSheet } from '../lifestyle/LogSleepSheet';
 import { LogAttentionSheet } from '../lifestyle/LogAttentionSheet';
 import { MaintenanceCard } from '../lifestyle/MaintenanceCard';
+import { LearningBlockSheet } from '../foundations/LearningBlockSheet';
 import { SingleChipSelect } from '../components/SingleChipSelect';
 import { getTodaySystemLine } from '../../store/messages';
 import { recordReflectionShown } from '../../store/reflections';
@@ -95,6 +96,7 @@ export function Today() {
   const [trainingLogOpen, setTrainingLogOpen] = useState(false);
   const [sleepLogOpen, setSleepLogOpen] = useState(false);
   const [attentionLogOpen, setAttentionLogOpen] = useState(false);
+  const [learningBlockOpen, setLearningBlockOpen] = useState(false);
   const [revisitsDue, setRevisitsDue] = useState<RevisitDue[]>([]);
   const [rank, setRank] = useState('E');
   const [systemLine, setSystemLine] = useState<string | null>(null);
@@ -377,6 +379,16 @@ export function Today() {
         <MaintenanceCard today={today} arcId={arc.id} arcStartDate={arc.start_date} onChanged={() => void refreshXp(today)} />
       )}
 
+      {/* final/03 §3 — LEARN is "not a seventh core quest," so its entry
+          point isn't a QuestRow; it's always available, any time. */}
+      <button
+        type="button"
+        onClick={() => setLearningBlockOpen(true)}
+        className="mt-3 min-h-[44px] w-full rounded-md border border-border text-sm text-text-dim"
+      >
+        Learning block · +{CONFIG.learningBlockXp} XP
+      </button>
+
       {revisitsDue.length > 0 && (
         <div className="mt-4" data-testid="revisits-due">
           <div className="mb-1 text-xxs uppercase tracking-wide text-text-dim">
@@ -492,6 +504,17 @@ export function Today() {
           arcId={arc.id}
           onClose={() => {
             setAttentionLogOpen(false);
+            void refresh();
+          }}
+        />
+      )}
+
+      {learningBlockOpen && arc && (
+        <LearningBlockSheet
+          today={today}
+          arcId={arc.id}
+          onClose={() => {
+            setLearningBlockOpen(false);
             void refresh();
           }}
         />

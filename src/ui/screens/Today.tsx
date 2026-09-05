@@ -26,6 +26,8 @@ import { LogSleepSheet } from '../lifestyle/LogSleepSheet';
 import { LogAttentionSheet } from '../lifestyle/LogAttentionSheet';
 import { MaintenanceCard } from '../lifestyle/MaintenanceCard';
 import { SingleChipSelect } from '../components/SingleChipSelect';
+import { getTodaySystemLine } from '../../store/messages';
+import { recordReflectionShown } from '../../store/reflections';
 
 const CONFIG = DEFAULT_CONFIG;
 
@@ -95,6 +97,7 @@ export function Today() {
   const [attentionLogOpen, setAttentionLogOpen] = useState(false);
   const [revisitsDue, setRevisitsDue] = useState<RevisitDue[]>([]);
   const [rank, setRank] = useState('E');
+  const [systemLine, setSystemLine] = useState<string | null>(null);
   const [revisitingId, setRevisitingId] = useState<string | null>(null);
   const dayClosed = isDayClosed(realDeps.now(), CONFIG);
 
@@ -129,6 +132,16 @@ export function Today() {
     setReviewed(alreadyReviewed);
     setRevisitsDue(dueRevisits);
     setRank(currentRank);
+
+    // final/06 §5.2's "reflection" line, right below the priority line.
+    // A missed day surfacing a recovery card IS the post-lapse moment
+    // final/05 §1.2 means — the reflection pool narrows to setbacks/
+    // calm/reflective for exactly as long as that card is showing.
+    const line = await getTodaySystemLine(date, arcDay(realDeps.now(), arcRow.start_date, arcRow.timezone, arcRow.day_boundary_hour), recoverableDay !== null, recoverableDay !== null ? 'POST_LAPSE' : 'MORNING', CONFIG);
+    setSystemLine(line.text);
+    if (line.source === 'reflection' && line.reflectionId) {
+      await recordReflectionShown(line.reflectionId, date);
+    }
   }, [refreshXp]);
 
   useEffect(() => {
@@ -330,9 +343,15 @@ export function Today() {
         </p>
       )}
 
-      <p className="mb-4 border-l-2 border-accent pl-2 text-sm text-text-dim">
+      <p className="mb-1 border-l-2 border-accent pl-2 text-sm text-text-dim">
         {priorityLine(templates, instances, today, arc)}
       </p>
+
+      {systemLine && (
+        <p className="mb-4 pl-2 text-xs italic text-text-faint" data-testid="system-line">
+          {systemLine}
+        </p>
+      )}
 
       <h1 className="sr-only">TODAY</h1>
 

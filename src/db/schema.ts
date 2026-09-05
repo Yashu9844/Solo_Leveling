@@ -279,6 +279,12 @@ export interface CheckpointRow {
   quest_templates_snapshot: Record<string, unknown>;
 }
 
+export interface ReflectionStateRow {
+  id: string; // pk — matches the reflection's static id in engine/reflections.ts
+  times_shown: number;
+  last_shown_at?: string;
+}
+
 /**
  * Dexie `.stores()` schema string per table. Passed to `db.version(1).stores(SCHEMA_V1)`.
  * Primary key first; `&` = unique index; `[a+b]` = compound index.
@@ -308,4 +314,20 @@ export const SCHEMA_V1 = {
   player_state: 'id',
   attribute_snapshot: 'id, local_date, attribute',
   checkpoint: 'id, day, sealed_at',
+} as const;
+
+// final/05 §1.2 — the reflection library's content (id, text, category,
+// tone, context, day range, cooldown) is static and lives in code
+// (engine/reflections.ts), not a table — it never changes at runtime,
+// same reasoning as engine/config.ts's constants. Only the mutable
+// per-reflection show-state needs a live row, added here as a real
+// Dexie version bump rather than folded into SCHEMA_V1: unlike every
+// other change this session (new optional fields on existing rows,
+// which Dexie never validates and so need no schema change at all),
+// this is a brand-new object store — a browser that already
+// materialized version 1 would never pick it up if it were only added
+// to that version's stores string, since Dexie only runs `.stores()`
+// upgrade logic when the version number itself increases.
+export const SCHEMA_V2_ADDITIONS = {
+  reflection_state: 'id, last_shown_at',
 } as const;

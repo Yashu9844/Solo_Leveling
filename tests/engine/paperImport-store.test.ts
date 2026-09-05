@@ -67,15 +67,16 @@ describe('store/paperImport — the daily and DSA logs end-to-end', () => {
     const summary = await importDailyLog(entries, arcId, DEFAULT_CONFIG, deps);
     expect(summary.daysImported).toBe(2);
     expect(summary.skippedDayClosed).toBe(0);
-    // Day 1: 5 core marks all complete. Day 2: dsa(floor)+trn+att = 3 (bld and fue are 'none'/skipped).
-    expect(summary.questsCompleted).toBe(8);
+    // Day 1: 5 core marks (dsa/bld/trn/slp/att) all complete = 5.
+    // Day 2: dsa(floor)+trn+slp+att = 4 (bld is '0', fue isn't a core mark).
+    expect(summary.questsCompleted).toBe(9);
 
     const day1Instances = await db.quest_instance.where('local_date').equals('2026-09-01').toArray();
     expect(day1Instances.filter((i) => i.state === 'complete')).toHaveLength(5);
 
     const day2Instances = await db.quest_instance.where('local_date').equals('2026-09-02').toArray();
     const day2Complete = day2Instances.filter((i) => i.state === 'complete');
-    expect(day2Complete).toHaveLength(3);
+    expect(day2Complete).toHaveLength(4);
 
     const maintenance = await db.maintenance_log.toArray();
     expect(maintenance.map((m) => m.local_date).sort()).toEqual(['2026-09-01']); // day 2's fue was '0'
@@ -111,5 +112,48 @@ describe('store/paperImport — the daily and DSA logs end-to-end', () => {
     const attempts = await db.dsa_attempt.toArray();
     expect(attempts).toHaveLength(2);
     expect(attempts.every((a) => !a.is_revisit)).toBe(true);
+  });
+
+  it('re-importing the same daily-log rows does not double-complete an already-complete quest', async () => {
+    const deps = seededDeps();
+    const arcId = await initialiseArc({ ...ONBOARDING_INPUT, intentions: {}, baseline: {} }, DEFAULT_CONFIG, deps);
+    const csv = 'date,dsa,bld,trn,slp,fue,att\n2026-09-01,1,1,1,1,1,1';
+    const { entries } = parseDailyLog(csv);
+
+    const first = await importDailyLog(entries, arcId, DEFAULT_CONFIG, deps);
+    expect(first.questsCompleted).toBe(5);
+
+    const second = await importDailyLog(entries, arcId, DEFAULT_CONFIG, deps);
+    expect(second.questsCompleted).toBe(0); // every instance was already complete, so completeQuest is never called again
+
+    const ledger = await db.xp_ledger.toArray();
+    const coreGrants = ledger.filter((r) => r.reason?.startsWith('core:'));
+    expect(coreGrants).toHaveLength(5); // XP was granted exactly once per quest, not twice
+  });
+
+  it('skips completion (and reports it) when the current instant falls in the day-close window, without throwing', async () => {
+    // A clock permanently fixed at 03:30 -- squarely inside the default
+    // 03:00-04:00 day-close window regardless of which historical date
+    // is being imported, exercising the caveat documented in
+    // store/paperImport.ts's file header.
+    const fixedInstant = '2026-09-05T22:00:00Z'; // 2026-09-06T03:30 IST
+    const deps: EngineDeps = {
+      now: () => fixedInstant,
+      newId: (() => {
+        let counter = 0;
+        return () => `dc-${String(counter++).padStart(6, '0')}`;
+      })(),
+    };
+    const arcId = await initialiseArc({ ...ONBOARDING_INPUT, intentions: {}, baseline: {} }, DEFAULT_CONFIG, deps);
+    const csv = 'date,dsa,bld,trn,slp,fue,att\n2026-09-01,1,1,1,1,1,1';
+    const { entries } = parseDailyLog(csv);
+
+    const summary = await importDailyLog(entries, arcId, DEFAULT_CONFIG, deps);
+    expect(summary.questsCompleted).toBe(0);
+    expect(summary.skippedDayClosed).toBe(5);
+    expect(summary.daysImported).toBe(1); // the day still counts as processed -- sleep/screentime/review aren't gated by day-close
+
+    const completed = (await db.quest_instance.toArray()).filter((i) => i.state === 'complete');
+    expect(completed).toHaveLength(0);
   });
 });

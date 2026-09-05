@@ -48,7 +48,7 @@ test('export downloads a real JSON backup, and importing it back restores state 
   await completeOnboarding(page, 'Temp');
   await page.getByRole('link', { name: 'PROFILE' }).click();
 
-  await page.locator('input[type="file"]').setInputFiles(tmpFile);
+  await page.getByTestId('backup-import-input').setInputFiles(tmpFile);
   const confirmBox = page.getByTestId('import-confirm');
   await expect(confirmBox).toBeVisible();
   await confirmBox.getByRole('button', { name: 'Replace and import' }).click();

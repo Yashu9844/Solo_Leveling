@@ -85,7 +85,14 @@ export function BackupCard() {
         {exporting ? 'Exporting…' : 'Export backup'}
       </button>
 
-      <input ref={fileInputRef} type="file" accept="application/json" hidden onChange={(e) => void handleFileSelected(e)} />
+      <input
+        ref={fileInputRef}
+        type="file"
+        accept="application/json"
+        hidden
+        data-testid="backup-import-input"
+        onChange={(e) => void handleFileSelected(e)}
+      />
       <button
         type="button"
         onClick={() => fileInputRef.current?.click()}

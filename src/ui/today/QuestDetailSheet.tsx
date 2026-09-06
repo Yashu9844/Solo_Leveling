@@ -1,4 +1,5 @@
 import type { QuestInstance, QuestTemplate } from '../../engine/types';
+import { FramedPanel, PrimaryButton, SecondaryButton, Sheet } from '../kit';
 import { CRITERION_TEXT } from './criterionText';
 
 interface QuestDetailSheetProps {
@@ -18,7 +19,15 @@ interface QuestDetailSheetProps {
   domainLog?: { label: string; onOpen: () => void };
 }
 
-/** Minimal bottom sheet — final/06 §5.3. */
+/**
+ * The quest's detail surface — final/06 §5.3.
+ *
+ * Deliberately quote-free. §5.3 says it outright: "No motivational quote
+ * here — competence evidence outperforms it at the point of action."
+ * This is the screen opened when someone is about to do the thing, and
+ * what belongs on it is their own commitment and the exact criterion,
+ * not encouragement.
+ */
 export function QuestDetailSheet({
   template,
   instance,
@@ -30,48 +39,38 @@ export function QuestDetailSheet({
   const complete = instance.state === 'complete';
 
   return (
-    <div className="fixed inset-0 z-50 flex items-end bg-black/50" onClick={onClose}>
-      <div
-        className="flex max-h-[60vh] w-full flex-col gap-4 rounded-t-md border-t border-border bg-surface p-4"
-        style={{ paddingBottom: 'calc(env(safe-area-inset-bottom) + 16px)' }}
-        onClick={(e) => e.stopPropagation()}
-      >
-        <div className="flex items-center justify-between">
-          <h2 className="text-lg font-semibold text-text">{template.title}</h2>
-          <button type="button" onClick={onClose} aria-label="Close" className="min-h-[44px] min-w-[44px] text-text-dim">
-            ✕
-          </button>
-        </div>
-
-        {template.implementation_intention && (
-          <div className="rounded-md border border-border p-3 text-sm text-text">
-            "At {template.implementation_intention.time} at {template.implementation_intention.place} I
-            will {template.implementation_intention.first_action}."
-          </div>
-        )}
-
-        <p className="text-sm text-text-dim">{CRITERION_TEXT[template.key]}</p>
-
-        {!complete && domainLog && (
-          <button
-            type="button"
-            onClick={domainLog.onOpen}
-            disabled={dayClosed}
-            className="min-h-[44px] rounded-md border border-accent text-sm text-accent disabled:opacity-40"
-          >
-            {domainLog.label}
-          </button>
-        )}
-
-        <button
-          type="button"
-          onClick={onToggle}
-          disabled={dayClosed}
-          className="min-h-[44px] rounded-md bg-accent text-sm font-medium text-bg disabled:opacity-40"
-        >
+    <Sheet
+      open
+      onClose={onClose}
+      title={template.title}
+      footer={
+        <PrimaryButton size="md" onClick={onToggle} disabled={dayClosed}>
           {complete ? 'Undo' : 'Mark complete'}
-        </button>
-      </div>
-    </div>
+        </PrimaryButton>
+      }
+    >
+      {template.implementation_intention && (
+        // The user's own sentence, framed and quoted back verbatim. It
+        // is the highest-leverage thing in onboarding (final/06 §5.1)
+        // and this is the moment it is supposed to pay off.
+        <FramedPanel className="mb-5 px-4 py-4">
+          <p className="font-display text-[calc(16px*var(--type-scale))] leading-[1.5] text-ink-100">
+            &ldquo;At {template.implementation_intention.time} at{' '}
+            {template.implementation_intention.place} I will{' '}
+            {template.implementation_intention.first_action}.&rdquo;
+          </p>
+        </FramedPanel>
+      )}
+
+      <p className="text-sm leading-[1.55] text-ink-500">{CRITERION_TEXT[template.key]}</p>
+
+      {!complete && domainLog && (
+        <div className="mt-5">
+          <SecondaryButton onClick={domainLog.onOpen} disabled={dayClosed}>
+            {domainLog.label}
+          </SecondaryButton>
+        </div>
+      )}
+    </Sheet>
   );
 }

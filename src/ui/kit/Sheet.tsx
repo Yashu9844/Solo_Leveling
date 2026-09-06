@@ -1,5 +1,6 @@
 import { AnimatePresence, motion, type PanInfo } from 'framer-motion';
-import { useCallback, useEffect, useId, useRef, type ReactNode } from 'react';
+import { useCallback, useEffect, useId, useRef, useState, type ReactNode } from 'react';
+import { createPortal } from 'react-dom';
 import { useBackDismiss } from '../routing/OverlayStack';
 
 const FOCUSABLE =
@@ -34,12 +35,25 @@ interface SheetProps {
  * OverlayStack (design/02-NAVIGATION-FLOW.md §5). The stack is central
  * rather than per-sheet because a sheet opened from another sheet would
  * otherwise push two history entries and race to unwind them.
+ *
+ * Rendered through a portal into <body>. A sheet is opened by a screen,
+ * so without one it lives inside the route wrapper — whose CSS animation
+ * creates a stacking context that a `position: fixed` child cannot
+ * escape however high its z-index. The bottom nav, a later sibling, then
+ * paints on top and silently swallows every tap aimed at the sheet.
+ * That happened once and cost fourteen e2e failures; a portal makes it
+ * structurally impossible rather than a question of z-index discipline.
  */
 export function Sheet({ open, onClose, title, children, footer, testId }: SheetProps) {
   const panelRef = useRef<HTMLDivElement>(null);
   const titleId = useId();
 
   useBackDismiss(open, onClose);
+
+  // Portals need a target, and SSR/first-paint has none. Mounting state
+  // keeps the first render null rather than reaching for document.
+  const [mounted, setMounted] = useState(false);
+  useEffect(() => setMounted(true), []);
 
   // Scroll lock. The scrim covers the page, but without this the page
   // behind still scrolls under a dragging thumb on iOS.
@@ -93,7 +107,9 @@ export function Sheet({ open, onClose, title, children, footer, testId }: SheetP
     if (info.offset.y > DISMISS_DISTANCE || info.velocity.y > DISMISS_VELOCITY) onClose();
   }
 
-  return (
+  if (!mounted) return null;
+
+  return createPortal(
     <AnimatePresence>
       {open && (
         <div className="fixed inset-0 z-50 flex items-end justify-center" onKeyDown={onKeyDown}>
@@ -178,6 +194,7 @@ export function Sheet({ open, onClose, title, children, footer, testId }: SheetP
           </motion.div>
         </div>
       )}
-    </AnimatePresence>
+    </AnimatePresence>,
+    document.body
   );
 }

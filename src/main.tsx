@@ -18,6 +18,8 @@ import '@fontsource/jetbrains-mono/latin-500.css';
 import './index.css';
 import { App } from './App';
 import { ArcStatusProvider } from './store/ArcStatusContext';
+import { SettingsProvider } from './store/SettingsContext';
+import { MotionRoot } from './ui/MotionRoot';
 
 if ('storage' in navigator && 'persist' in navigator.storage) {
   void navigator.storage.persist();
@@ -25,10 +27,14 @@ if ('storage' in navigator && 'persist' in navigator.storage) {
 
 createRoot(document.getElementById('root')!).render(
   <StrictMode>
-    <BrowserRouter>
-      <ArcStatusProvider>
-        <App />
-      </ArcStatusProvider>
-    </BrowserRouter>
+    <SettingsProvider>
+      <MotionRoot>
+        <BrowserRouter>
+          <ArcStatusProvider>
+            <App />
+          </ArcStatusProvider>
+        </BrowserRouter>
+      </MotionRoot>
+    </SettingsProvider>
   </StrictMode>
 );

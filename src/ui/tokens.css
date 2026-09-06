@@ -141,7 +141,10 @@
 
   --state-complete: #5cc79a;
   --state-pending: #8f8577;
-  --state-recover: #e0a33e;
+  /* Cool, not amber: this theme's accent IS amber, and a state colour
+   * must never be mistakable for the accent. States swing opposite the
+   * accent's temperature. */
+  --state-recover: #7fb0ff;
   --state-alert: #e07070;
   --boss: #ff6b5c;
 
@@ -320,6 +323,16 @@
 }
 [data-text-scale='xl'] {
   --type-scale: 1.25;
+}
+
+/* The same clash the dawn theme avoids, but reached from the other
+ * direction: a warm user-chosen accent on a cool theme would collide
+ * with the amber --state-recover. Swing the state cool for exactly
+ * those accents. Kept beside the themes rather than in the accent
+ * picker, so it holds no matter which theme is active. */
+[data-accent='ember'],
+[data-accent='gold'] {
+  --state-recover: #7fb0ff;
 }
 
 [data-density='compact'] {

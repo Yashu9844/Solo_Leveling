@@ -46,7 +46,7 @@ task and the fix would change engine/store behaviour, or a task would require de
 - [x] **0.3** `src/index.css`: `.cut-sm/.cut-md/.cut-lg`, `.glow-text`, `.no-scrollbar`,
       `.hairline`, focus-visible ring, `@keyframes pulse-glow / shimmer-sweep / ring-pop`.
       Wire the three font families in `main.tsx` (enumerated weights only). Gate: fast.
-- [ ] **0.4** Settings foundation: typed schema + `localStorage` codec at
+- [x] **0.4** Settings foundation: typed schema + `localStorage` codec at
       `src/store/settings.ts`, `SettingsProvider` + `useSettings()`, the inline bootstrap
       in `index.html`, and `<MotionConfig>` driven by the motion setting. No UI yet —
       just the mechanism, with unit tests for the codec's defaults and migration.
@@ -267,6 +267,7 @@ system §10 are required; neither may be traded for the other.
 | 0.1 | deps | framer-motion 11.18.2, phosphor 2.1.10, 3 font families, sharp. Gate green. |
 | 0.2 | tokens | Three-layer theme-able token system: 5 themes (arc/dawn/abyss/contrast/daylight), text-scale/density/art modifiers, v1 aliases retained. Tailwind wraps every size in calc(* --type-scale) and uses unitless leading so text size scales the whole scale. Build 19.6KB CSS, all 5 themes present. Gate green. |
 | 0.3 | global css | Utilities (.cut-*, .glow-text, .hairline, .no-scrollbar, .art-layer), focus-visible ring, keyframes, 3-state motion (reduced/full/system). 8 latin-subset font files, 192KB. Found and fixed: woff2 was missing from the PWA globPatterns, so fonts would NOT have been precached — an offline launch would have silently fallen back to system fonts. Precache 12→20 entries, 698KB. Gate green. |
+| 0.4 | settings | Pure codec (parse/serialize/applyToRoot) + SettingsProvider + pre-paint bootstrap in index.html + MotionRoot. 13 new tests, 358->371. Caught two colour clashes: dawn's accent and --state-recover were both amber, and a warm user accent would hit the same collision on cool themes; states now swing opposite the accent's temperature. Accent palette excludes green because a completed quest circle fills with accent and --state-complete is green. Gate green. |
 | — | plan v2 | User added: configurable settings/theming, explicit nav flowchart, mood-based art assignment. Saw all 11 plates — split into Blue Arc (effort) / Gold Horizon (evidence) / Boss. Added docs 02 and 03; replanned to 13 phases, 60 tasks. |
 
 ---

@@ -3,6 +3,7 @@ import { DEFAULT_CONFIG } from '../../engine/config';
 import { localDate } from '../../engine/time';
 import { realDeps } from '../../store/deps';
 import { getAchievementsReport, type AchievementsReport } from '../../store/achievements';
+import { SectionLabel } from '../kit';
 
 /** final/01 §8 — "each a statement of accumulated fact... no achievement
  * for perfect days, perfect weeks, or streak length." final/06's cut
@@ -22,19 +23,57 @@ export function AchievementsList() {
   if (earnedAchievements.length === 0 && earnedIdentities.length === 0) return null;
 
   return (
-    <div className="mt-3" data-testid="achievements-list">
+    <div className="mt-6" data-testid="achievements-list">
       {earnedAchievements.length > 0 && (
         <>
-          <div className="mb-1 text-xxs uppercase tracking-wide text-text-faint">Achievements</div>
-          <p className="text-sm text-text-dim">{earnedAchievements.map((a) => a.label).join(' · ')}</p>
+          <SectionLabel rule className="mb-2">
+            Achievements
+          </SectionLabel>
+          <Chips labels={earnedAchievements.map((a) => a.label)} />
         </>
       )}
       {earnedIdentities.length > 0 && (
         <>
-          <div className="mb-1 mt-2 text-xxs uppercase tracking-wide text-text-faint">Identities</div>
-          <p className="text-sm text-text-dim">{earnedIdentities.map((i) => i.label).join(' · ')}</p>
+          <SectionLabel rule className={earnedAchievements.length > 0 ? 'mb-2 mt-5' : 'mb-2'}>
+            Identities
+          </SectionLabel>
+          {/* Identities read louder than achievements on purpose: §8
+              makes them statements about who you have become, not about
+              what you did. */}
+          <Chips labels={earnedIdentities.map((i) => i.label)} tone="identity" />
         </>
       )}
+    </div>
+  );
+}
+
+/**
+ * One chip per earned item rather than a single dot-joined sentence.
+ *
+ * These are discrete facts, and running them together with separators
+ * made a five-item list read as one long clause — the eye could not find
+ * where one achievement ended and the next began.
+ */
+function Chips({ labels, tone = 'achievement' }: { labels: string[]; tone?: 'achievement' | 'identity' }) {
+  const identity = tone === 'identity';
+  return (
+    <div className="flex flex-wrap gap-1.5">
+      {labels.map((label) => (
+        <span
+          key={label}
+          className={[
+            'cut-sm px-3 py-1.5 text-xs',
+            identity ? 'text-ink-100' : 'text-ink-500',
+          ].join(' ')}
+          style={{
+            border: `1px solid ${identity ? 'var(--accent)' : 'var(--hair)'}`,
+            background: 'var(--surface)',
+            boxShadow: identity ? 'var(--glow-sm)' : 'none',
+          }}
+        >
+          {label}
+        </span>
+      ))}
     </div>
   );
 }

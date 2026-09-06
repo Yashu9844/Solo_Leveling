@@ -61,7 +61,7 @@ task and the fix would change engine/store behaviour, or a task would require de
 
 ## Phase 1 — The kit (`src/ui/kit/`)
 
-- [ ] **1.1** `ScreenShell`, `SafeTop` (real insets — **no fake status bar**),
+- [x] **1.1** `ScreenShell`, `SafeTop` (real insets — **no fake status bar**),
       `PageTransition` implementing the per-edge grammar in nav flow §4. Gate: fast.
 - [ ] **1.2** `ScreenHeader`, `SectionLabel`, `Panel`, `FramedPanel`, `QuoteCard`.
       Gate: fast.
@@ -270,6 +270,7 @@ system §10 are required; neither may be traded for the other.
 | 0.4 | settings | Pure codec (parse/serialize/applyToRoot) + SettingsProvider + pre-paint bootstrap in index.html + MotionRoot. 13 new tests, 358->371. Caught two colour clashes: dawn's accent and --state-recover were both amber, and a warm user accent would hit the same collision on cool themes; states now swing opposite the accent's temperature. Accent palette excludes green because a completed quest circle fills with accent and --state-complete is green. Gate green. |
 | 0.5 | art | All 20 plates reviewed and classified; 16 slots filled, 0 on gradient fallback. 2.2MB on disk, largest file 154KB. Budget guard fired at first run (2544KB) and forced a quality retune — then the total cap itself was corrected: per-file is the real budget (= per-screen weight), total is a sanity ceiling, since art will be runtime-cached not precached. 4 boss plates parked in overflow. |
 | 0.6 | pwa | Art excluded from precache; CacheFirst runtime rule instead. Precache holds at 20 entries / 702KB. FULL GATE GREEN: 62/62 e2e. Known intermittent: reflections.spec:20 and weekly-review.spec:44 (both recovery-card, 10s timeout) failed once under parallel load then passed 12/12 isolated and 62/62 in-suite. weekly-review:44 also fails on the untouched baseline, so it is pre-existing. Watch, do not chase. |
+| 1.1 | kit: shell | ScreenShell (dvh, radial ground, 430px device frame >=640px), SafeTop/SafeBottom (real insets, no fake status bar), PageTransition (4 edges: lateral/forward/back/boot). Kit barrel added. Gate green. |
 | — | plan v2 | User added: configurable settings/theming, explicit nav flowchart, mood-based art assignment. Saw all 11 plates — split into Blue Arc (effort) / Gold Horizon (evidence) / Boss. Added docs 02 and 03; replanned to 13 phases, 60 tasks. |
 
 ---

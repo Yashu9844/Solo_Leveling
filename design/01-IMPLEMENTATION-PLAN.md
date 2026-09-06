@@ -124,7 +124,7 @@ task and the fix would change engine/store behaviour, or a task would require de
 - [x] **5.3** Steps 4–6. Keep the main-quest placeholder and `Initialise system` verbatim.
       Step 5 is the product's most important screen — `FramedPanel` + accent rule.
       Gate: fast.
-- [ ] **5.4** ⛓ Gate: full (`onboarding.spec.ts`).
+- [x] **5.4** ⛓ Gate: full (`onboarding.spec.ts`). Phase 5 complete.
 
 ## Phase 6 — Today
 
@@ -262,6 +262,11 @@ system §10 are required; neither may be traded for the other.
 
 ## Standing rules
 
+- **Kill the preview server after every screenshot run.** Orphaned `vite preview`
+  processes accumulate across iterations and compete for CPU with the e2e suite. Twelve
+  of them once pushed the 300 ms tap→XP budget to 332 ms and produced a failure that
+  looked like a regression and was not.
+
 - **New art mid-flight is expected** — classify, manifest, `npm run art`, separate commit.
 - Never edit `src/engine/` or `src/store/` except where a task says to (0.4 adds
   `store/settings.ts`; 10.5 moves cards between screens). This is a rendering change.
@@ -299,6 +304,7 @@ system §10 are required; neither may be traded for the other.
 | 5.1 | onboarding chrome | 6-segment step rail replaces the bare "3/6", FramedPanel per step, footer pinned above the safe area, art bookending steps 1 and 6. Screenshot caught two composition problems: the quiet scrim buried the plate into murk (now moment), and top-aligning a short panel left a large dead zone (art steps now centre, form steps stay top-aligned so they scroll). Gate green + onboarding/boot e2e 12/12. |
 | 5.2 | onboarding 1-3 | Added Field/TextInput/TextArea/StepTitle to the kit (the log sheets in phase 7 need them too). Step 1's premise line set in display serif over the art; step 2's day count as a mono figure; step 3's wake/sleep paired. Replaced justify-center with my-auto on the panel — auto margins centre short steps and collapse on tall ones, where justify-center would clip an overflowing step's top. Gate green + onboarding e2e 6/6. |
 | 5.3 | onboarding 4-6 | Step 5 (final/06's "THE IMPORTANT ONE") gets an accent rule per intention. The inline sentence layout looked right on paper and failed on a phone — the time picker squeezed "my desk" to "my d" at 390px and orphaned the word "at" at 320px; now one clause per row on a fixed prefix column. Step 6's alarm times set in mono tabular since the user is about to copy them. Gate green + onboarding e2e 6/6. |
+| 5.4 | phase 5 gate | 78/78. The 300ms budget failed at 332ms first — traced to twelve orphaned vite preview servers left running by my own screenshot runs, competing for CPU with the suite. Killed them; clean re-run passed. Added a standing rule to kill previews. Phase 5 complete. |
 | — | plan v2 | User added: configurable settings/theming, explicit nav flowchart, mood-based art assignment. Saw all 11 plates — split into Blue Arc (effort) / Gold Horizon (evidence) / Boss. Added docs 02 and 03; replanned to 13 phases, 60 tasks. |
 
 ---

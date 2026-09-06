@@ -51,10 +51,11 @@ export function MaintenanceCard({ today, arcId, arcStartDate, onChanged }: Maint
 
   return (
     <div
-      className="mt-2 flex flex-wrap items-center gap-1.5 rounded-md border border-border px-2 py-1"
+      className="cut-sm mt-2 flex flex-wrap items-center gap-1.5 px-3 py-1.5"
       data-testid="maintenance-card"
+      style={{ border: '1px solid var(--hair)', background: 'var(--surface)' }}
     >
-      <span className="text-xxs uppercase tracking-wide text-text-dim">Maint</span>
+      <span className="text-xxs uppercase text-ink-700">Maint</span>
       {visibleItems.map(({ field, label }) => {
         const active = state[field];
         return (
@@ -64,10 +65,12 @@ export function MaintenanceCard({ today, arcId, arcStartDate, onChanged }: Maint
             onClick={() => void toggle(field)}
             disabled={saving}
             aria-pressed={active}
-            className={[
-              'rounded-pill border px-2 py-0.5 text-xs disabled:opacity-60',
-              active ? 'border-accent bg-accent-dim text-text' : 'border-border bg-surface-2 text-text-dim',
-            ].join(' ')}
+            className="rounded-pill px-2.5 py-0.5 text-xs transition-colors duration-150 disabled:opacity-60"
+            style={{
+              border: `1px solid ${active ? 'var(--accent)' : 'var(--hair)'}`,
+              background: active ? 'var(--fill-faint)' : 'var(--surface-2)',
+              color: active ? 'var(--accent-mid)' : 'var(--ink-900)',
+            }}
           >
             {label}
           </button>

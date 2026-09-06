@@ -28,7 +28,7 @@ import { LogAttentionSheet } from '../lifestyle/LogAttentionSheet';
 import { MaintenanceCard } from '../lifestyle/MaintenanceCard';
 import { LearningBlockSheet } from '../foundations/LearningBlockSheet';
 import { SingleChipSelect } from '../components/SingleChipSelect';
-import { ArtLayer, MeterBar, ScreenHeader } from '../kit';
+import { ArtLayer, MeterBar, ScreenHeader, SectionLabel } from '../kit';
 import { getTodaySystemLine } from '../../store/messages';
 import { recordReflectionShown } from '../../store/reflections';
 
@@ -431,39 +431,54 @@ export function Today() {
 
       {/* final/03 §3 — LEARN is "not a seventh core quest," so its entry
           point isn't a QuestRow; it's always available, any time. */}
+      {/* Kept at the 44px floor rather than promoted to the kit's 46px
+          button: Today is measured to zero overflow at 412x915, and the
+          two footer buttons are the cheapest place to lose 4px. */}
       <button
         type="button"
         onClick={() => setLearningBlockOpen(true)}
-        className="mt-2 min-h-[44px] w-full rounded-md border border-border text-sm text-text-dim"
+        className="cut-sm mt-2 min-h-tap w-full text-sm text-ink-500"
+        style={{ border: '1px solid var(--hair)', background: 'var(--surface)' }}
       >
         Learning block · +{CONFIG.learningBlockXp} XP
       </button>
 
       {weeklyQuest && (
-        <div className="mt-4 rounded-md border border-border p-3" data-testid="weekly-quest-progress">
-          <div className="mb-1 text-xxs uppercase tracking-wide text-text-dim">Weekly quest</div>
-          <p className="text-sm text-text">{weeklyQuest.row.description}</p>
-          <p className="mt-1 font-mono text-xs tabular-nums text-text-faint">
-            {weeklyQuest.progress}/{weeklyQuest.row.target}
+        <div
+          className="cut-sm mt-3 p-3"
+          data-testid="weekly-quest-progress"
+          style={{ border: '1px solid var(--hair)', background: 'var(--surface)' }}
+        >
+          <SectionLabel rule className="mb-2">
+            This week
+          </SectionLabel>
+          <p className="text-sm text-ink-300">{weeklyQuest.row.description}</p>
+          <p className="mt-1.5 font-mono text-xs tabular-nums text-faint">
+            <span className="text-accent-mid">{weeklyQuest.progress}</span>/{weeklyQuest.row.target}
             {weeklyQuest.justCompleted ? ` — complete! +${weeklyQuest.row.xp} XP` : ''}
           </p>
         </div>
       )}
 
       {revisitsDue.length > 0 && (
-        <div className="mt-4" data-testid="revisits-due">
-          <div className="mb-1 text-xxs uppercase tracking-wide text-text-dim">
-            Revisits due · +{CONFIG.revisitXp} XP each
-          </div>
+        <div className="mt-3" data-testid="revisits-due">
+          <SectionLabel rule className="mb-1">
+            Revisit · +{CONFIG.revisitXp} XP each
+          </SectionLabel>
           {revisitsDue.map((r) => (
-            <div key={r.problemId} className="flex items-center justify-between border-b border-border py-2">
-              <span className="text-sm text-text">{r.title}</span>
-              <div className="flex gap-1">
+            <div
+              key={r.problemId}
+              className="flex items-center justify-between gap-3 py-2"
+              style={{ borderBottom: '1px solid var(--hair-faint)' }}
+            >
+              <span className="min-w-0 flex-1 truncate text-sm text-ink-300">{r.title}</span>
+              <div className="flex shrink-0 gap-1.5">
                 <button
                   type="button"
                   disabled={revisitingId === r.problemId}
                   onClick={() => void handleLogRevisit(r.problemId, 'first_attempt')}
-                  className="min-h-[44px] rounded-md border border-accent px-2 text-xs text-accent disabled:opacity-40"
+                  className="cut-sm min-h-tap px-3 text-xs text-accent disabled:opacity-40"
+                  style={{ border: '1px solid var(--accent)' }}
                 >
                   Solved
                 </button>
@@ -471,7 +486,8 @@ export function Today() {
                   type="button"
                   disabled={revisitingId === r.problemId}
                   onClick={() => void handleLogRevisit(r.problemId, 'unsolved')}
-                  className="min-h-[44px] rounded-md border border-border px-2 text-xs text-text-dim disabled:opacity-40"
+                  className="cut-sm min-h-tap px-3 text-xs text-ink-700 disabled:opacity-40"
+                  style={{ border: '1px solid var(--hair)' }}
                 >
                   Unsolved
                 </button>
@@ -485,7 +501,11 @@ export function Today() {
         <button
           type="button"
           onClick={() => setReviewOpen(true)}
-          className="mt-3 min-h-[44px] w-full rounded-md border border-border text-sm text-accent"
+          className="cut-sm mt-2 min-h-tap w-full text-sm text-accent"
+          style={{
+            border: '1px solid var(--accent)',
+            background: 'linear-gradient(180deg, rgba(77,163,255,0.10), rgba(77,163,255,0.03)), var(--void)',
+          }}
         >
           Evening review · 25 seconds
         </button>

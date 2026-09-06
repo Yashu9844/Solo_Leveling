@@ -7,6 +7,7 @@ import { Progress } from './ui/screens/Progress';
 import { Skills } from './ui/screens/Skills';
 import { Profile } from './ui/screens/Profile';
 import { SHORTCUT_ROUTES, OPEN_PARAM, type OpenTarget } from './ui/routing/shortcuts';
+import { Splash, SPLASH_MIN_MS, useMinimumElapsed } from './ui/boot/Splash';
 
 function RequireArc({ arcExists }: { arcExists: boolean }) {
   if (!arcExists) {
@@ -31,9 +32,13 @@ function Shortcut({ target, arcExists }: { target: OpenTarget; arcExists: boolea
 
 export function App() {
   const { status, markArcCreated } = useArcStatus();
+  const bootHeld = useMinimumElapsed(SPLASH_MIN_MS);
 
-  if (status === 'loading') {
-    return <div className="flex h-full items-center justify-center bg-bg text-text-dim" />;
+  // The splash stays until the arc status resolves AND the minimum has
+  // elapsed. Waiting on both means a slow device never gets a truncated
+  // boot and a fast one never gets a flash.
+  if (status === 'loading' || !bootHeld) {
+    return <Splash />;
   }
 
   const arcExists = status === 'yes';

@@ -143,8 +143,8 @@ task and the fix would change engine/store behaviour, or a task would require de
 - [x] **6.4** Status surfaces: recovery card (`--state-recover`, never red, no quote),
       day-closed banner (string frozen), level-up inline banner, system line, notice.
       Gate: fast.
-- [ ] **6.5** ⛓ Gate: full — `core-loop`, `xp`, `streak`, `reflections`, `weekly-quest`,
-      `offline`. Re-confirm the **<300 ms tap→XP** budget explicitly.
+- [x] **6.5** ⛓ Gate: full. **tap→XP measured over 6 runs: 106/109/111/117/122/124 ms,
+      median 117, budget 300.** Phase 6 complete.
 
 ## Phase 7 — Sheets
 
@@ -309,6 +309,7 @@ system §10 are required; neither may be traded for the other.
 | 6.2 | quest rows | Domain IconTile leads (Briefcase/Code/Cpu/Barbell/MoonStars/Eye), completion circle moved to the right where a thumb rests. Complete = filled disc in a solid glowing ring, pending = empty ring: shape as well as colour, per final/06 §7. Tile also lights on complete, so state is legible from the left column too. Zero overflow on the real Pixel 7 descriptor with rows completed; holds at 320px with nothing truncated. |
 | 6.3 | today blocks | Maintenance, learning block, weekly quest, revisits and the evening-review entry all on cut-corner surfaces with SectionLabel headers; evening review accented as the day's closing action. Kept the two footer buttons at the 44px floor rather than the kit's 46px — Today measures to zero overflow and those 4px are not available. Zero overflow re-verified on the Pixel 7 descriptor. |
 | 6.4 | today status | Recovery card amber + intact + no quote; day-closed, reduced-mode, level-up banner and system line all on the left-rule treatment. Found and fixed TWO real bugs: route content was stuck at opacity 0 whenever rAF was starved (framer-motion -> CSS animation), and the resulting persistent stacking context made every full-screen overlay paint UNDER the bottom nav, which silently swallowed taps (14 e2e failures). main now z-10, nav z-0. 78/78. |
+| 6.5 | phase 6 gate | 78/78. tap->XP measured across 6 clean runs on the Pixel 7 descriptor: median 117ms, worst 124ms, budget 300ms — 2.4x headroom, so the earlier 332ms really was machine contention and not the app. Phase 6 complete: Today is done. |
 | — | plan v2 | User added: configurable settings/theming, explicit nav flowchart, mood-based art assignment. Saw all 11 plates — split into Blue Arc (effort) / Gold Horizon (evidence) / Boss. Added docs 02 and 03; replanned to 13 phases, 60 tasks. |
 
 ---

@@ -5,6 +5,7 @@ import { realDeps } from '../../store/deps';
 import { getAttributes } from '../../store/attributes';
 import type { AttributeResult } from '../../engine/attributes';
 import type { Attribute } from '../../engine/types';
+import { MeterBar, SectionLabel } from '../kit';
 
 const ATTRIBUTE_LABELS: Record<Attribute, string> = {
   DISCIPLINE: 'DISCIPLINE',
@@ -27,12 +28,21 @@ const GROUPS: { heading: string; attributes: Attribute[] }[] = [
 function Bar({ result }: { result: AttributeResult }) {
   const value = Math.round(result.value);
   return (
-    <div className="flex items-center gap-2 py-1">
-      <span className="w-32 shrink-0 text-xs text-text-dim">{ATTRIBUTE_LABELS[result.attribute]}</span>
-      <div className="h-1.5 flex-1 overflow-hidden rounded-pill bg-surface-2">
-        <div className="h-full rounded-pill bg-accent" style={{ width: `${value}%` }} />
-      </div>
-      <span className="w-8 text-right font-mono text-xs tabular-nums text-text">{value}</span>
+    <div className="flex items-center gap-3 py-1.5">
+      {/* Fixed label column so the bars align into one edge down the
+          screen — six attributes read as a set only if they share a
+          baseline. Wraps rather than truncating: "PROBLEM SOLVING" does
+          not fit on one line here, and an attribute whose name is cut to
+          "PROBLEM SOL…" has lost the only thing identifying its row.
+          A slightly taller row is the cheaper cost, and it holds at
+          every text scale rather than only at the default. */}
+      <span className="w-[104px] shrink-0 text-xs leading-[1.25] text-ink-700">
+        {ATTRIBUTE_LABELS[result.attribute]}
+      </span>
+      <MeterBar pct={value} height={6} label={ATTRIBUTE_LABELS[result.attribute]} className="min-w-0 flex-1" />
+      <span className="w-7 shrink-0 text-right font-mono text-xs tabular-nums text-ink-100">
+        {value}
+      </span>
     </div>
   );
 }
@@ -59,10 +69,10 @@ export function AttributeBars() {
   return (
     <div className="mt-6" data-testid="attribute-bars">
       {GROUPS.map((group) => (
-        <div key={group.heading} className="mb-3">
-          <div className="mb-1 border-b border-border pb-1 text-xxs uppercase tracking-wide text-text-faint">
+        <div key={group.heading} className="mb-4">
+          <SectionLabel rule className="mb-2">
             {group.heading}
-          </div>
+          </SectionLabel>
           {group.attributes.map((attribute) => {
             const result = byAttribute.get(attribute);
             return result ? <Bar key={attribute} result={result} /> : null;

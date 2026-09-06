@@ -97,10 +97,26 @@ export function AppShell() {
           move when the content does. */}
       <SafeTop />
 
+      {/*
+        `relative z-10` on main and `z-0` on the nav is what keeps a
+        full-screen overlay — a log sheet, the evening review, a Moment —
+        above the bottom navigation.
+
+        Those overlays are `position: fixed` and render inside whichever
+        screen opened them, so they sit inside main's subtree. The route
+        wrapper carries a CSS animation, which creates a stacking
+        context, so a fixed child cannot escape main's paint order no
+        matter how high its own z-index goes. Without an explicit order
+        the nav, being a later sibling, paints on top and silently
+        swallows taps on the overlay's buttons.
+        (Portalling overlays to the body would fix this more thoroughly;
+        that is a Phase 7 change, and this is the correct ordering
+        regardless.)
+      */}
       <main
         ref={scroller}
         onScroll={rememberScroll}
-        className="no-scrollbar min-h-0 flex-1 overflow-y-auto"
+        className="no-scrollbar relative z-10 min-h-0 flex-1 overflow-y-auto"
       >
         {/*
           Keyed on pathname so the entering screen re-mounts and plays its
@@ -117,7 +133,7 @@ export function AppShell() {
 
       <nav
         aria-label="Primary"
-        className="relative flex shrink-0"
+        className="relative z-0 flex shrink-0"
         style={{
           borderTop: '1px solid var(--hair)',
           background: 'color-mix(in srgb, var(--panel-bot) 92%, transparent)',

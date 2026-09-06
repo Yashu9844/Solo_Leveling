@@ -140,7 +140,7 @@ task and the fix would change engine/store behaviour, or a task would require de
       `aria-pressed`, `quest-row-<key>` and `-open`, the state glyphs. Gate: fast.
 - [x] **6.3** Secondary blocks as `Panel`s: weekly quest, revisits, `MaintenanceCard`,
       learning block, evening-review entry. Gate: fast.
-- [ ] **6.4** Status surfaces: recovery card (`--state-recover`, never red, no quote),
+- [x] **6.4** Status surfaces: recovery card (`--state-recover`, never red, no quote),
       day-closed banner (string frozen), level-up inline banner, system line, notice.
       Gate: fast.
 - [ ] **6.5** ⛓ Gate: full — `core-loop`, `xp`, `streak`, `reflections`, `weekly-quest`,
@@ -308,6 +308,7 @@ system §10 are required; neither may be traded for the other.
 | 6.1 | today hero | DAY nn in display serif, RANK opposite, LV + MeterBar + xp on one row, streak in mono. Art is a corner bleed masked radially — under mix-blend-lighten the scrim's dark stops vanish, so the bright streaks were being cut in a hard rectangle. The hero cost 30px and core-loop's zero-overflow assertion caught it exactly; reclaimed by trimming 8 margins rather than shrinking the hero's idea. 78/78. |
 | 6.2 | quest rows | Domain IconTile leads (Briefcase/Code/Cpu/Barbell/MoonStars/Eye), completion circle moved to the right where a thumb rests. Complete = filled disc in a solid glowing ring, pending = empty ring: shape as well as colour, per final/06 §7. Tile also lights on complete, so state is legible from the left column too. Zero overflow on the real Pixel 7 descriptor with rows completed; holds at 320px with nothing truncated. |
 | 6.3 | today blocks | Maintenance, learning block, weekly quest, revisits and the evening-review entry all on cut-corner surfaces with SectionLabel headers; evening review accented as the day's closing action. Kept the two footer buttons at the 44px floor rather than the kit's 46px — Today measures to zero overflow and those 4px are not available. Zero overflow re-verified on the Pixel 7 descriptor. |
+| 6.4 | today status | Recovery card amber + intact + no quote; day-closed, reduced-mode, level-up banner and system line all on the left-rule treatment. Found and fixed TWO real bugs: route content was stuck at opacity 0 whenever rAF was starved (framer-motion -> CSS animation), and the resulting persistent stacking context made every full-screen overlay paint UNDER the bottom nav, which silently swallowed taps (14 e2e failures). main now z-10, nav z-0. 78/78. |
 | — | plan v2 | User added: configurable settings/theming, explicit nav flowchart, mood-based art assignment. Saw all 11 plates — split into Blue Arc (effort) / Gold Horizon (evidence) / Boss. Added docs 02 and 03; replanned to 13 phases, 60 tasks. |
 
 ---

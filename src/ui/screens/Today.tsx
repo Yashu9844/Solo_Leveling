@@ -351,25 +351,47 @@ export function Today() {
       </div>
 
       {banner && (
-        <p className="mb-3 border-l-2 border-accent pl-2 text-sm text-text-dim">
+        <p
+          className="mb-3 pl-3 font-mono text-sm tabular-nums text-ink-300"
+          style={{ borderLeft: '2px solid var(--accent)' }}
+        >
           LEVEL {String(banner.fromLevel).padStart(2, '0')} → {String(banner.toLevel).padStart(2, '0')}
         </p>
       )}
 
       {streak?.reduced_mode && (
-        <p className="mb-3 border-l-2 border-state-recover pl-2 text-sm text-text-dim">
+        <p
+          className="mb-3 pl-3 text-sm text-ink-500"
+          style={{ borderLeft: '2px solid var(--state-recover)' }}
+        >
           Reduced to the floor for two days. The arc continues.
         </p>
       )}
 
+      {/*
+        The tone here is the whole point. final/06 §4.1 reserves red for
+        data loss and safety, and marking a missed day in red would make
+        the app punitive on exactly the morning the user is most likely
+        to abandon it. Amber, an intact panel, and no quote — design
+        system §7 forbids encouragement on a failure surface, where it
+        reads as a taunt.
+      */}
       {recoverable && (
-        <div className="mb-3 rounded-md border border-border p-3" data-testid="recovery-card">
-          <p className="text-sm text-text">
+        <div
+          className="cut-sm mb-3 p-3.5"
+          data-testid="recovery-card"
+          style={{
+            borderLeft: '2px solid var(--state-recover)',
+            background: 'var(--surface)',
+          }}
+        >
+          <p className="text-sm text-ink-300">
             Yesterday: {recoverable.coreCompleted} of {recoverable.coreTotal}.{' '}
             {recoverable.missedTitles.join(' and ')} incomplete.
           </p>
-          <p className="mt-1 text-xs text-text-faint">
-            Worth less than what you'd have earned — recovering is never better than not missing.
+          <p className="mt-1.5 text-xs text-faint">
+            Worth less than what you&rsquo;d have earned — recovering is never better than not
+            missing.
           </p>
           <div className="mt-2">
             <SingleChipSelect
@@ -384,7 +406,8 @@ export function Today() {
             type="button"
             disabled={claimingRecovery}
             onClick={() => void handleClaimRecovery()}
-            className="mt-2 min-h-[44px] w-full rounded-md border border-accent text-sm text-accent disabled:opacity-40"
+            className="cut-sm mt-3 min-h-tap w-full text-sm disabled:opacity-40"
+            style={{ border: '1px solid var(--state-recover)', color: 'var(--state-recover)' }}
           >
             Recovery quest · +{CONFIG.recoveryXp} XP
           </button>
@@ -392,17 +415,26 @@ export function Today() {
       )}
 
       {dayClosed && (
-        <p className="mb-3 border-l-2 border-state-recover pl-2 text-sm text-text-dim">
+        <p
+          className="mb-3 pl-3 text-sm text-ink-500"
+          style={{ borderLeft: '2px solid var(--state-recover)' }}
+        >
           Day closed. Next day begins at 04:00.
         </p>
       )}
 
-      <p className="mb-1 border-l-2 border-accent pl-2 text-sm text-text-dim">
+      {/* final/06 §4.4: a system message is a left accent rule, no box
+          and no icon. The reflection below shares the indent so the two
+          read as one voice rather than two components. */}
+      <p
+        className="mb-1 pl-3 text-sm text-ink-300"
+        style={{ borderLeft: '2px solid var(--accent)' }}
+      >
         {priorityLine(templates, instances, today, arc)}
       </p>
 
       {systemLine && (
-        <p className="mb-3 pl-2 text-xs italic text-text-faint" data-testid="system-line">
+        <p className="mb-3 pl-3 text-xs italic leading-[1.5] text-faint" data-testid="system-line">
           {systemLine}
         </p>
       )}
@@ -511,7 +543,15 @@ export function Today() {
         </button>
       )}
 
-      {notice && <p className="mt-3 text-sm text-text-dim">{notice}</p>}
+      {notice && (
+        <p
+          className="cut-sm mt-3 p-3 text-sm text-ink-300"
+          role="status"
+          style={{ borderLeft: '2px solid var(--state-alert)', background: 'var(--surface)' }}
+        >
+          {notice}
+        </p>
+      )}
 
       {openTemplate && openInstance && (
         <QuestDetailSheet

@@ -135,7 +135,7 @@ task and the fix would change engine/store behaviour, or a task would require de
       scrolling at 412x915. `final/06` §5.2 calls that the constraint capping the core set
       at six, so the hero must fit inside it — Today carries no title bar for the same
       reason. Gate: fast.
-- [ ] **6.2** `QuestRow`: `IconTile` per key, title + `ROW_SUMMARY`, mono XP, glowing
+- [x] **6.2** `QuestRow`: `IconTile` per key, title + `ROW_SUMMARY`, mono XP, glowing
       accent circle on complete. **Frozen:** two ≥44px targets, `Complete X`/`Undo X`,
       `aria-pressed`, `quest-row-<key>` and `-open`, the state glyphs. Gate: fast.
 - [ ] **6.3** Secondary blocks as `Panel`s: weekly quest, revisits, `MaintenanceCard`,
@@ -306,6 +306,7 @@ system §10 are required; neither may be traded for the other.
 | 5.3 | onboarding 4-6 | Step 5 (final/06's "THE IMPORTANT ONE") gets an accent rule per intention. The inline sentence layout looked right on paper and failed on a phone — the time picker squeezed "my desk" to "my d" at 390px and orphaned the word "at" at 320px; now one clause per row on a fixed prefix column. Step 6's alarm times set in mono tabular since the user is about to copy them. Gate green + onboarding e2e 6/6. |
 | 5.4 | phase 5 gate | 78/78. The 300ms budget failed at 332ms first — traced to twelve orphaned vite preview servers left running by my own screenshot runs, competing for CPU with the suite. Killed them; clean re-run passed. Added a standing rule to kill previews. Phase 5 complete. |
 | 6.1 | today hero | DAY nn in display serif, RANK opposite, LV + MeterBar + xp on one row, streak in mono. Art is a corner bleed masked radially — under mix-blend-lighten the scrim's dark stops vanish, so the bright streaks were being cut in a hard rectangle. The hero cost 30px and core-loop's zero-overflow assertion caught it exactly; reclaimed by trimming 8 margins rather than shrinking the hero's idea. 78/78. |
+| 6.2 | quest rows | Domain IconTile leads (Briefcase/Code/Cpu/Barbell/MoonStars/Eye), completion circle moved to the right where a thumb rests. Complete = filled disc in a solid glowing ring, pending = empty ring: shape as well as colour, per final/06 §7. Tile also lights on complete, so state is legible from the left column too. Zero overflow on the real Pixel 7 descriptor with rows completed; holds at 320px with nothing truncated. |
 | — | plan v2 | User added: configurable settings/theming, explicit nav flowchart, mood-based art assignment. Saw all 11 plates — split into Blue Arc (effort) / Gold Horizon (evidence) / Boss. Added docs 02 and 03; replanned to 13 phases, 60 tasks. |
 
 ---

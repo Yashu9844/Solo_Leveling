@@ -2,10 +2,11 @@
 // §4.1 — the rules engine proper. Deliberately narrow: two rules with a
 // crisp, literal firing condition from the spec text. The mockup weekly
 // review (final/05 §6) also shows a resume-nudge proposal and a
-// correlational "your DSA rate drops after a missed sleep window" insight
-// — both need either free-text authoring or real correlation analysis
-// this slice doesn't build; flagged as a deferred scope cut in the Slice
-// 11 report, same as Slice 8's deferred LEARN entry point.
+// correlational "your DSA rate drops after a missed sleep window"
+// insight — both real now too, just not modelled here: they're pure
+// functions of their own (engine/weeklyReview.ts's resumeNudgeFor and
+// sleepDsaCorrelation), computed alongside these two rules by
+// store/weeklyReview.ts's getWeeklyReview, not derived from evaluateRules.
 import { differenceInCalendarDays, parseISO } from 'date-fns';
 import { learnShipRuleFires, type BuildSessionFixture } from './build';
 import type { QuestRecoveredPayload, SystemEvent } from './types';

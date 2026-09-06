@@ -6,10 +6,10 @@
 // conversion this codebase doesn't have yet — see the Slice 4 report).
 //
 // The post-lapse diagnostic tap ("Ran out of time" / "Too tired" / ...)
-// is deliberately NOT implemented here — final/01 §6.3's only consumer
-// of that signal ("3x wrong time in 14 days -> schedule-change proposal
-// at the weekly review") doesn't exist yet. QuestRecoveredPayload.reason
-// is modelled so a later slice can add it without a payload migration.
+// is `reason` below, recorded on the QUEST_RECOVERED event itself (the
+// UI lives in ui/screens/Today.tsx's recovery card). Its only consumer,
+// final/01 §6.3's "3x wrong time in 14 days -> schedule-change proposal
+// at the weekly review," is engine/rules.ts's WRONG_TIME_PATTERN rule.
 import { addDays, format, parseISO } from 'date-fns';
 import type { EngineConfig, EngineDeps, QuestRecoveredPayload } from '../engine/types';
 import { applyEvents } from '../engine/reduce';

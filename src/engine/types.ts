@@ -358,10 +358,9 @@ export interface ArcResumedPayload {
 
 /** Recovery quest claim — final/01 §6.3, §2.1.1: BONUS category, flat
  * 40 XP (config.recoveryXp), exempt from caps, max 1 per day. `reason`
- * is the optional post-lapse diagnostic tap; deferred to a later slice
- * (its only consumer, the weekly review's 3x-in-14-days detector,
- * doesn't exist yet) — the field is modelled so a future slice doesn't
- * need a payload migration, but nothing currently sets it. */
+ * is the optional post-lapse diagnostic tap (ui/screens/Today.tsx's
+ * recovery card); its consumer is engine/rules.ts's WRONG_TIME_PATTERN
+ * rule (3x 'wrong_time' in 14 days -> a weekly-review proposal). */
 export interface QuestRecoveredPayload {
   localDate: string; // the missed day being recovered, not today
   reason?: 'ran_out_of_time' | 'too_tired' | 'wrong_time' | 'didnt_want_to';

@@ -164,11 +164,11 @@ export const ART: Record<ArtSlot, ArtAsset | null> = {
   'training': {
     src: training480,
     srcSet: `${training480} 480w, ${training960} 960w`,
-    lqip: 'data:image/webp;base64,UklGRoQAAABXRUJQVlA4IHgAAABwBQCdASoUACQAPu1mrE+ppSQiKqoBMB2JYwC+wBZtLGiJd2X2y6Wv2jMF+FPy9Xm9/ic4AP7xKBME4XwUnIz2Vk/eh0K1xvB51x4MyGoTeK6AonZReWnE/CpXgfKpbFaUqJSLcWcDxV/akNfw4v+iqqgAQieOAAA=',
+    lqip: 'data:image/webp;base64,UklGRmgAAABXRUJQVlA4IFwAAACwBACdASoUACQAPu1kr1EppSQiqrgKATAdiWUAxgQQa0KVAJEbyQpZsY5NPCugAP7wCP0/JqSoQK7/AtQQf8InWWh2+g1zHRzEEz2WrYoIY5sLx6nIqRTnYUwAAA==',
     width: 941,
     height: 1672,
     mood: 'blue',
-    focal: '50% 40%',
+    focal: '50% 45%',
     hasText: true,
   },
   'review': {
@@ -224,11 +224,11 @@ export const ART: Record<ArtSlot, ArtAsset | null> = {
   'quote': {
     src: quote480,
     srcSet: `${quote480} 480w, ${quote960} 960w`,
-    lqip: 'data:image/webp;base64,UklGRooAAABXRUJQVlA4IH4AAABQBQCdASoUAB4APu1oq0+ppiOiMBgIATAdiWgAtRsAQan8bE0PijccXYV7skmVOTEkygAA/vKiEwZw2woFYVO52wkObJIRkxjSS03I3nhvVX/v4OfAZPKT28qQvVUB2tv0EjgtyP3piNBILR2ZSGE2xvDeahiiDtEODF0VgAA=',
-    width: 1024,
-    height: 1536,
+    lqip: 'data:image/webp;base64,UklGRpYAAABXRUJQVlA4IIoAAAAwBgCdASoUACQAPulepU2pJSOiMBqtUSAdCWMAt+uKAi+jJgJtVX7Ow6kG6p3QPGBVMDH2aV0jnlIAAP7wyXCOfg3owEIgUBf+/n7Sa+bw5xg4L++H6CF2ar6mCr6DChmlLvrs1Hz5Duo92TZ2XdSkFhF82cuMs38HrIJPLJ8r8QPodUgtwcYAAAA=',
+    width: 941,
+    height: 1672,
     mood: 'blue',
-    focal: '50% 35%',
-    hasText: false,
+    focal: '50% 45%',
+    hasText: true,
   },
 };

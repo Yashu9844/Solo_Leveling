@@ -73,11 +73,11 @@
       "note": "Armoured monarch silhouette — mastery."
     },
     "training": {
-      "source": "ChatGPT Image Sep 6, 2026, 11_30_52 PM.png",
+      "source": "ChatGPT Image Sep 6, 2026, 11_44_12 PM.png",
       "mood": "blue",
-      "focal": "50% 40%",
+      "focal": "50% 45%",
       "text": true,
-      "note": "PROGRESS OVER COMFORT. The physique plate."
+      "note": "Full physique under banners that map body parts to attributes — CHEST BUILDS CONFIDENCE, BACK BUILDS STRENGTH, ABS BUILDS SELF CONTROL, LEGS BUILDS RESILIENCE. The app's own attribute model in a picture."
     },
     "review": {
       "source": "ChatGPT Image Sep 6, 2026, 10_59_54 PM.png",
@@ -115,11 +115,11 @@
       "note": "Enthroned. Gold, not red — clearing a boss is evidence, and the plate agrees."
     },
     "quote": {
-      "source": "ChatGPT Image Sep 6, 2026, 10_58_14 PM.png",
+      "source": "ChatGPT Image Sep 6, 2026, 11_33_22 PM.png",
       "mood": "blue",
-      "focal": "50% 35%",
-      "text": false,
-      "note": "Sits far back behind a quote card at low opacity."
+      "focal": "50% 45%",
+      "text": true,
+      "note": "Seated, resting, looking out. Contemplative rather than flexing — sits far back behind a quote card at low opacity."
     }
   },
   "overflow": {
@@ -127,6 +127,13 @@
     "ChatGPT Image Sep 6, 2026, 10_39_47 PM.png": "boss · wide demon banner",
     "ChatGPT Image Sep 6, 2026, 11_25_25 PM.png": "boss · stairs toward a red demon",
     "ChatGPT Image Sep 6, 2026, 11_27_15 PM.png": "boss · red demon portrait, no text",
-    "ChatGPT Image Sep 6, 2026, 11_29_35 PM.png": "boss · EVOLVE ADAPT ASCEND REPEAT, a tier ladder"
+    "ChatGPT Image Sep 6, 2026, 11_29_35 PM.png": "boss · EVOLVE ADAPT ASCEND REPEAT, a tier ladder",
+    "ChatGPT Image Sep 6, 2026, 10_58_14 PM.png": "blue · muscular back over ruins",
+    "ChatGPT Image Sep 6, 2026, 11_30_52 PM.png": "blue · muscular back, PROGRESS OVER COMFORT",
+    "$gymSeries": "blue · a chest/back/shoulders/arms set. Reserved for the Training log sheet to vary by session type in task 7.3, once the training_session.type values are known. Not slotted now — importing art nothing renders would just spend budget.",
+    "ChatGPT Image Sep 6, 2026, 11_35_24 PM.png": "blue · gym, chest/bench. WARNING: the bottle reads CHARRCTER — a misspelling baked into the plate. Never surface this one at a size where that is legible.",
+    "ChatGPT Image Sep 6, 2026, 11_36_42 PM.png": "blue · gym, back. A STRONGER BACK A GREATER YOU",
+    "ChatGPT Image Sep 6, 2026, 11_38_44 PM.png": "blue · gym, shoulders. CONSISTENCY CREATES CHANGE",
+    "ChatGPT Image Sep 6, 2026, 11_41_19 PM.png": "blue · gym, arms. STRONGER THAN YESTERDAY"
   }
 }

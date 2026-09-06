@@ -289,6 +289,31 @@ export interface ReflectionStateRow {
 }
 
 /**
+ * final/00 §C8 / final/01 §2.1.1's "weekly quest payout" — one accepted
+ * proposal per week, direct-write like `checkpoint`'s self_efficacy
+ * field (not event-sourced for its acceptance; only completion is,
+ * via WEEKLY_QUEST_COMPLETED, for the XP grant's audit trail).
+ * `progress` is never stored — store/weeklyQuest.ts always recomputes
+ * it live from the real underlying table (dsa_attempt, currently the
+ * only proposal kind), the same "derived, not cached" principle as
+ * every other live-computed status in this app (Boss windows, mastery
+ * states). `completed_at` is set once, the moment progress first
+ * reaches `target` — checked on every read, same idempotent-claim
+ * pattern as store/boss.ts's clearBoss.
+ */
+export interface WeeklyQuestRow {
+  id: string; // pk
+  week_start_date: string;
+  week_end_date: string;
+  kind: 'dsa_topic_volume' | 'ship_project';
+  description: string;
+  target: number;
+  topic?: string; // set for kind: 'dsa_topic_volume'
+  xp: number;
+  completed_at?: string;
+}
+
+/**
  * Dexie `.stores()` schema string per table. Passed to `db.version(1).stores(SCHEMA_V1)`.
  * Primary key first; `&` = unique index; `[a+b]` = compound index.
  */
@@ -333,4 +358,8 @@ export const SCHEMA_V1 = {
 // upgrade logic when the version number itself increases.
 export const SCHEMA_V2_ADDITIONS = {
   reflection_state: 'id, last_shown_at',
+} as const;
+
+export const SCHEMA_V3_ADDITIONS = {
+  weekly_quest: 'id, week_start_date, week_end_date, completed_at',
 } as const;

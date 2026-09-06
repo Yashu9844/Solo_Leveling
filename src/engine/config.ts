@@ -36,6 +36,7 @@ export const DEFAULT_CONFIG: EngineConfig = {
   mvdXp: 35,
   recoveryXp: 40,
   bossXp: 500,
+  weeklyQuestXp: 200,
   revisitXp: 20,
   shipBonusXp: 50,
   learningBlockXp: 25,

@@ -37,6 +37,7 @@ async function clearAll() {
   await db.metric_sample.clear();
   await db.dsa_problem.clear();
   await db.dsa_attempt.clear();
+  await db.weekly_quest.clear();
 }
 
 const ONBOARDING_INPUT: Omit<OnboardingInput, 'intentions' | 'baseline'> = {
@@ -61,7 +62,7 @@ describe('getWeeklyReview -- resumeNudge and sleepDsaCorrelation wiring', () => 
   it('resumeNudge is null with nothing shipped this week', async () => {
     const deps = seededDeps();
     await initialiseArc({ ...ONBOARDING_INPUT, intentions: {}, baseline: {} }, DEFAULT_CONFIG, deps);
-    const report = await getWeeklyReview(DEFAULT_CONFIG.arc.startDate, DEFAULT_CONFIG);
+    const report = await getWeeklyReview(DEFAULT_CONFIG.arc.startDate, DEFAULT_CONFIG, deps);
     expect(report.resumeNudge).toBeNull();
   });
 
@@ -76,14 +77,14 @@ describe('getWeeklyReview -- resumeNudge and sleepDsaCorrelation wiring', () => 
       DEFAULT_CONFIG,
       deps
     );
-    const report = await getWeeklyReview(day, DEFAULT_CONFIG);
+    const report = await getWeeklyReview(day, DEFAULT_CONFIG, deps);
     expect(report.resumeNudge).toBe('You shipped 1 artifact this week. Does your resume say so?');
   });
 
   it('sleepDsaCorrelation is null without enough real data to compare', async () => {
     const deps = seededDeps();
     await initialiseArc({ ...ONBOARDING_INPUT, intentions: {}, baseline: {} }, DEFAULT_CONFIG, deps);
-    const report = await getWeeklyReview(DEFAULT_CONFIG.arc.startDate, DEFAULT_CONFIG);
+    const report = await getWeeklyReview(DEFAULT_CONFIG.arc.startDate, DEFAULT_CONFIG, deps);
     expect(report.sleepDsaCorrelation).toBeNull();
   });
 
@@ -103,7 +104,7 @@ describe('getWeeklyReview -- resumeNudge and sleepDsaCorrelation wiring', () => 
     await logProblem(day2, arcId, { slug: 'a', title: 'a', topic: 'Arrays', difficulty: 'E', outcome: 'unsolved', minutes: 10 }, DEFAULT_CONFIG, deps);
     await logProblem(day4, arcId, { slug: 'b', title: 'b', topic: 'Arrays', difficulty: 'E', outcome: 'first_attempt', minutes: 10 }, DEFAULT_CONFIG, deps);
 
-    const report = await getWeeklyReview(day4, DEFAULT_CONFIG);
+    const report = await getWeeklyReview(day4, DEFAULT_CONFIG, deps);
     expect(report.sleepDsaCorrelation).not.toBeNull();
     expect(report.sleepDsaCorrelation!.missedNights).toBe(1);
     expect(report.sleepDsaCorrelation!.afterMissRate).toBe(0);

@@ -4,7 +4,11 @@
 /**
  * The complete V1 event catalogue (final/07 §4.1).
  * NOTE: the spec prose says "27 types" but the literal list enumerates 30 —
- * flagged as a spec discrepancy in the Phase 0 report. All 30 are modelled.
+ * flagged as a spec discrepancy in the Phase 0 report. All 30 are modelled,
+ * plus WEEKLY_QUEST_COMPLETED (Slice 14 — final/00 §C8's weekly quest
+ * payout, absent from every final/ enumeration the way BOSS_CLEARED's
+ * eventual handling was already anticipated by the original 30 but
+ * weekly quests' completion event was not).
  */
 export type EventType =
   | 'ARC_STARTED'
@@ -36,7 +40,12 @@ export type EventType =
   | 'CHECKPOINT_SEALED'
   | 'BOSS_CLEARED'
   | 'PLAN_AMENDED'
-  | 'APP_OPENED';
+  | 'APP_OPENED'
+  // final/00 §C8's "weekly quest payout" (final/01 §2.1.1's BONUS-
+  // category table row) — the 31st type, beyond the spec's original
+  // 30-type catalogue, added the same way BOSS_CLEARED's handling was
+  // added in Slice 13: a new domain capability needs a new event.
+  | 'WEEKLY_QUEST_COMPLETED';
 
 export type EventSource = 'user' | 'system' | 'import' | 'rule';
 
@@ -155,6 +164,15 @@ export interface EngineConfig {
   mvdXp: number;
   recoveryXp: number;
   bossXp: number;
+  // final/xp-simulation.py's `if d % 7 == 0` block is the only place any
+  // final/ source states a figure for this — final/01's prose only says
+  // "once per weekly quest, per week," never a number. 200 is what
+  // that simulation actually used to tune the Level-40 arc terminus
+  // (final/01 §3's revision note), so it's the one grounded in the
+  // numbers this app's other constants were calibrated against, not a
+  // guess — flagged here as a resolved ambiguity, same shape as every
+  // other one in this codebase.
+  weeklyQuestXp: number;
   revisitXp: number; // final/03 §2.2 — 20 XP each, MIND category, capped normally (not BONUS)
   shipBonusXp: number; // final/03 §4.1 — 50 XP per shipped unit, CRAFT category, capped normally
   // final/03 §3.1 — 25 XP per 15-minute block, LEARN category. The
@@ -368,6 +386,26 @@ export interface ReviewCompletedPayload {
   blocker: ReviewBlocker;
   tomorrowPriority?: CoreQuestKey;
   sleptAt?: string; // "HH:mm"
+}
+
+/** final/05 §6's weekly review "Accept" action — WEEK_REVIEWED was
+ * declared in the original event catalogue (final/07 §4.1) but never
+ * given a payload or a write path anywhere; this is that path.
+ * `acceptedWeeklyQuest` is set only when a proposal was accepted this
+ * review (not every week accepts one — the current one might still be
+ * running). Audit trail only: nothing here is folded into EngineState. */
+export interface WeekReviewedPayload {
+  weekStartDate: string;
+  weekEndDate: string;
+  acceptedWeeklyQuest?: { kind: 'dsa_topic_volume' | 'ship_project'; description: string; target: number; topic?: string };
+}
+
+/** final/00 §C8 / final/01 §2.1.1's weekly quest payout — flat,
+ * frequency-limited (once per accepted weekly quest, enforced by the
+ * idem_key), BONUS-category, exempt from both caps, same shape as
+ * QUEST_RECOVERED and BOSS_CLEARED. */
+export interface WeeklyQuestCompletedPayload {
+  weeklyQuestId: string;
 }
 
 // final/02-career-system.md §1 — CONTROLLED (these five payload types)

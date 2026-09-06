@@ -323,6 +323,13 @@ describe('applyEvents — BOSS_CLEARED is a handled no-op (Slice 13)', () => {
   });
 });
 
+describe('applyEvents — WEEK_REVIEWED and WEEKLY_QUEST_COMPLETED are handled no-ops (Slice 14)', () => {
+  it.each(['WEEK_REVIEWED', 'WEEKLY_QUEST_COMPLETED'] as const)('%s does not throw during replay', (type) => {
+    const log = [arcStartedEvent(), event(type, {}, `${type}:1`)];
+    expect(() => applyEvents(log, DEFAULT_CONFIG)).not.toThrow();
+  });
+});
+
 describe('applyEvents — determinism and the boundary rule', () => {
   it('replaying the full log twice is deep-equal', () => {
     const log = onboardingEventLog();

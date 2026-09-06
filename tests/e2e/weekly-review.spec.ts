@@ -19,7 +19,7 @@ test('Weekly review opens from Progress, shows real zeroed metrics on a fresh ar
   await expect(sheet.getByText('SYSTEM EVALUATION')).toBeVisible();
   await expect(sheet.getByText('Career')).toBeVisible();
 
-  await sheet.getByRole('button', { name: 'Accept' }).click();
+  await sheet.getByRole('button', { name: 'Accept', exact: true }).click();
   await expect(sheet).toHaveCount(0);
 });
 

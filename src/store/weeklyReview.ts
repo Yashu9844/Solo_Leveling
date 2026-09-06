@@ -5,7 +5,7 @@
 // had to omit them because Slices 6-9 (the domain data) didn't exist yet;
 // they do now.
 import { addDays, format, parseISO } from 'date-fns';
-import type { EngineConfig } from '../engine/types';
+import type { EngineConfig, EngineDeps, WeekReviewedPayload } from '../engine/types';
 import { evaluateRules, type RuleProposal } from '../engine/rules';
 import {
   attributeDeltas,
@@ -20,7 +20,9 @@ import {
 import { withinWakeWindowMinutes } from '../engine/sleep';
 import { SLEEP_TOLERANCE_MINUTES } from './lifestyle';
 import { getAttributes } from './attributes';
-import { getAllEvents } from '../db/events';
+import { getActiveWeeklyQuest, getWeeklyQuestProposal, type ActiveWeeklyQuest } from './weeklyQuest';
+import type { WeeklyQuestProposal } from '../engine/weeklyQuest';
+import { getAllEvents, appendEvent } from '../db/events';
 import { db } from '../db/db';
 
 function shiftDate(dateStr: string, days: number): string {
@@ -115,14 +117,20 @@ export interface WeeklyReviewReport {
   review: WeeklyReviewResult;
   resumeNudge: string | null;
   sleepDsaCorrelation: SleepDsaCorrelation | null;
+  /** Set when a weekly quest is already running — nothing new to
+   * propose this review, per "one at a time" (store/weeklyQuest.ts). */
+  activeWeeklyQuest: ActiveWeeklyQuest | null;
+  /** Set only when there's no active quest — a fresh proposal to accept. */
+  weeklyQuestProposal: WeeklyQuestProposal | null;
 }
 
-export async function getWeeklyReview(today: string, config: EngineConfig): Promise<WeeklyReviewReport> {
+export async function getWeeklyReview(today: string, config: EngineConfig, deps: EngineDeps): Promise<WeeklyReviewReport> {
   const thisWeekDates = weekDates(today);
   const lastWeekDates = weekDates(shiftDate(today, -7));
   const dateSet = new Set(thisWeekDates);
+  const arc = await db.arc.toCollection().first();
 
-  const [thisWeek, lastWeek, afterAttributes, beforeAttributes, events, artifacts, correlation] = await Promise.all([
+  const [thisWeek, lastWeek, afterAttributes, beforeAttributes, events, artifacts, correlation, activeWeeklyQuest] = await Promise.all([
     metricsFor(thisWeekDates),
     metricsFor(lastWeekDates),
     getAttributes(today, config),
@@ -130,11 +138,38 @@ export async function getWeeklyReview(today: string, config: EngineConfig): Prom
     getAllEvents(),
     db.artifact.toArray(),
     computeSleepDsaCorrelation(thisWeekDates, config),
+    arc ? getActiveWeeklyQuest(today, arc.id, config, deps) : Promise.resolve(null),
   ]);
 
   const proposals: RuleProposal[] = evaluateRules(events, today);
   const review = weeklyReviewFor(attributeDeltas(beforeAttributes, afterAttributes), proposals);
   const resumeNudge = resumeNudgeFor(artifacts.filter((a) => dateSet.has(a.local_date)).length);
+  const weeklyQuestProposal = activeWeeklyQuest ? null : await getWeeklyQuestProposal(today);
 
-  return { thisWeek, lastWeek, review, resumeNudge, sleepDsaCorrelation: correlation };
+  return { thisWeek, lastWeek, review, resumeNudge, sleepDsaCorrelation: correlation, activeWeeklyQuest, weeklyQuestProposal };
+}
+
+/** final/05 §6's "Accept" action — records the review as closed
+ * (WEEK_REVIEWED, an audit-only event: see engine/reduce.ts's doc
+ * comment) and, if a proposal was accepted this time, includes what it
+ * was. Call this, then store/weeklyQuest.ts's acceptWeeklyQuest
+ * separately if a proposal was actually accepted. */
+export async function recordWeekReviewed(
+  today: string,
+  arcId: string,
+  acceptedWeeklyQuest: WeekReviewedPayload['acceptedWeeklyQuest'],
+  deps: EngineDeps
+): Promise<void> {
+  const weekStartDate = shiftDate(today, -6);
+  await appendEvent({
+    id: deps.newId(),
+    type: 'WEEK_REVIEWED',
+    occurred_at: deps.now(),
+    local_date: today,
+    arc_id: arcId,
+    payload: { weekStartDate, weekEndDate: today, acceptedWeeklyQuest } satisfies WeekReviewedPayload,
+    source: 'user',
+    idem_key: `week-reviewed:${weekStartDate}`,
+    schema_v: 1,
+  });
 }

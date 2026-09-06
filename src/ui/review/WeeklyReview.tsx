@@ -1,8 +1,10 @@
 import { useEffect, useState, type ReactNode } from 'react';
 import { DEFAULT_CONFIG } from '../../engine/config';
-import { getWeeklyReview, type WeeklyReviewReport } from '../../store/weeklyReview';
+import { getWeeklyReview, recordWeekReviewed, type WeeklyReviewReport } from '../../store/weeklyReview';
+import { acceptWeeklyQuest } from '../../store/weeklyQuest';
 import { exportSnapshotJson, getBackupStatus, type BackupStatus } from '../../store/checkpoint';
 import { realDeps } from '../../store/deps';
+import { db } from '../../db/db';
 import type { Attribute } from '../../engine/types';
 
 function triggerDownload(filename: string, contents: string) {
@@ -55,14 +57,19 @@ export function WeeklyReview({ today, onClose }: WeeklyReviewProps) {
   const [backupStatus, setBackupStatus] = useState<BackupStatus | null>(null);
   const [exporting, setExporting] = useState(false);
   const [exported, setExported] = useState(false);
+  const [arcId, setArcId] = useState<string | null>(null);
+  const [weeklyQuestAccepted, setWeeklyQuestAccepted] = useState(false);
 
   useEffect(() => {
     let cancelled = false;
-    void getWeeklyReview(today, DEFAULT_CONFIG).then((r) => {
+    void getWeeklyReview(today, DEFAULT_CONFIG, realDeps).then((r) => {
       if (!cancelled) setReport(r);
     });
     void getBackupStatus(realDeps).then((s) => {
       if (!cancelled) setBackupStatus(s);
+    });
+    void db.arc.toCollection().first().then((arc) => {
+      if (!cancelled) setArcId(arc?.id ?? null);
     });
     return () => {
       cancelled = true;
@@ -79,6 +86,25 @@ export function WeeklyReview({ today, onClose }: WeeklyReviewProps) {
     } finally {
       setExporting(false);
     }
+  }
+
+  async function handleAcceptWeeklyQuest() {
+    if (!report?.weeklyQuestProposal) return;
+    const accepted = await acceptWeeklyQuest(today, report.weeklyQuestProposal, realDeps);
+    if (accepted) setWeeklyQuestAccepted(true);
+  }
+
+  async function handleAccept() {
+    if (arcId) {
+      const proposal = weeklyQuestAccepted ? report?.weeklyQuestProposal : undefined;
+      await recordWeekReviewed(
+        today,
+        arcId,
+        proposal ? { kind: proposal.kind, description: proposal.description, target: proposal.target, topic: proposal.topic } : undefined,
+        realDeps
+      );
+    }
+    onClose();
   }
 
   return (
@@ -150,6 +176,35 @@ export function WeeklyReview({ today, onClose }: WeeklyReviewProps) {
             </div>
           )}
 
+          {report.activeWeeklyQuest && (
+            <div className="border-t border-border pt-3" data-testid="weekly-quest-active">
+              <div className="mb-1 text-xxs uppercase tracking-wide text-text-faint">Weekly quest</div>
+              <p className="text-xs text-text-dim">{report.activeWeeklyQuest.row.description}</p>
+              <p className="text-xs text-text-faint">
+                {report.activeWeeklyQuest.progress}/{report.activeWeeklyQuest.row.target}
+                {report.activeWeeklyQuest.justCompleted ? ` — complete! +${report.activeWeeklyQuest.row.xp} XP` : ''}
+              </p>
+            </div>
+          )}
+
+          {!report.activeWeeklyQuest && report.weeklyQuestProposal && (
+            <div className="border-t border-border pt-3" data-testid="weekly-quest-proposal">
+              <div className="mb-1 text-xxs uppercase tracking-wide text-text-faint">Weekly quest — proposed</div>
+              <p className="text-xs text-text-dim">{report.weeklyQuestProposal.description}</p>
+              {weeklyQuestAccepted ? (
+                <p className="mt-2 text-xs text-accent">Accepted.</p>
+              ) : (
+                <button
+                  type="button"
+                  onClick={() => void handleAcceptWeeklyQuest()}
+                  className="mt-2 min-h-[44px] w-full rounded-md border border-accent text-sm text-accent"
+                >
+                  Accept weekly quest · +{DEFAULT_CONFIG.weeklyQuestXp} XP
+                </button>
+              )}
+            </div>
+          )}
+
           {backupStatus && (
             <div className="border-t border-border pt-3" data-testid="weekly-review-backup">
               <p className="text-xs text-text-faint">
@@ -173,7 +228,7 @@ export function WeeklyReview({ today, onClose }: WeeklyReviewProps) {
 
           <button
             type="button"
-            onClick={onClose}
+            onClick={() => void handleAccept()}
             className="mt-4 min-h-[44px] w-full rounded-md bg-accent text-sm font-medium text-bg"
           >
             Accept

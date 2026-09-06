@@ -234,6 +234,34 @@ export function randomEventLog(seed: number, dayCount?: number): SystemEvent[] {
         schema_v: 1,
       });
     }
+
+    if (rand() < 0.1) {
+      events.push({
+        id: nextId(),
+        type: 'WEEKLY_QUEST_COMPLETED',
+        occurred_at: occurredAt,
+        local_date: localDate,
+        arc_id: ARC_ID,
+        payload: { weeklyQuestId: nextId() },
+        source: 'user',
+        idem_key: nextId(),
+        schema_v: 1,
+      });
+    }
+
+    if (d % 7 === 6) {
+      events.push({
+        id: nextId(),
+        type: 'WEEK_REVIEWED',
+        occurred_at: occurredAt,
+        local_date: localDate,
+        arc_id: ARC_ID,
+        payload: { weekStartDate: localDateAt(d - 6), weekEndDate: localDate },
+        source: 'user',
+        idem_key: `week-reviewed:${localDateAt(d - 6)}`,
+        schema_v: 1,
+      });
+    }
   }
 
   return events;

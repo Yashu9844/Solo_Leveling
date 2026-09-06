@@ -71,6 +71,12 @@ function baseGrantsFor(event: SystemEvent, config: EngineConfig): XpGrant[] {
       // not here), BOSS-category, exempt from both caps — final/01
       // §2.1.1, §7.
       return [{ category: 'BOSS', amount: config.bossXp, reason: 'boss' }];
+    case 'WEEKLY_QUEST_COMPLETED':
+      // Flat, frequency-limited (once per accepted weekly quest,
+      // enforced by the idem_key), BONUS-category, exempt from both
+      // caps — final/00 §C8, final/01 §2.1.1's "weekly quest payout"
+      // row.
+      return [{ category: 'BONUS', amount: config.weeklyQuestXp, reason: 'weekly_quest' }];
     case 'MAINTENANCE_LOGGED': {
       // final/04 §6: one flat 20 XP grant, only when every one of today's
       // applicable items is ticked — "zero pressure," no partial credit.

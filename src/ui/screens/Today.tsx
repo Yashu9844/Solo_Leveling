@@ -19,6 +19,7 @@ import { EveningReview } from '../review/EveningReview';
 import { LogApplicationSheet } from '../career/LogApplicationSheet';
 import { LogProblemSheet } from '../dsa/LogProblemSheet';
 import { getRevisitsDue, logRevisit, type RevisitDue } from '../../store/dsa';
+import { getActiveWeeklyQuest, type ActiveWeeklyQuest } from '../../store/weeklyQuest';
 import { getCurrentRank } from '../../store/checkpoint';
 import { LogBuildSessionSheet } from '../build/LogBuildSessionSheet';
 import { LogTrainingSheet } from '../training/LogTrainingSheet';
@@ -98,6 +99,7 @@ export function Today() {
   const [attentionLogOpen, setAttentionLogOpen] = useState(false);
   const [learningBlockOpen, setLearningBlockOpen] = useState(false);
   const [revisitsDue, setRevisitsDue] = useState<RevisitDue[]>([]);
+  const [weeklyQuest, setWeeklyQuest] = useState<ActiveWeeklyQuest | null>(null);
   const [rank, setRank] = useState('E');
   const [systemLine, setSystemLine] = useState<string | null>(null);
   const [revisitingId, setRevisitingId] = useState<string | null>(null);
@@ -122,18 +124,21 @@ export function Today() {
     setInstances(i);
     await refreshXp(date);
 
-    const [streakState, recoverableDay, alreadyReviewed, dueRevisits, currentRank] = await Promise.all([
+    const [streakState, recoverableDay, alreadyReviewed, dueRevisits, currentRank, activeWeeklyQuest] = await Promise.all([
       getStreakState(date, CONFIG),
       getRecoverableDay(date, CONFIG),
       hasReviewedToday(date),
       getRevisitsDue(date, CONFIG),
       getCurrentRank(),
+      getActiveWeeklyQuest(date, arcRow.id, CONFIG, realDeps),
     ]);
     setStreak(streakState);
     setRecoverable(recoverableDay);
     setReviewed(alreadyReviewed);
     setRevisitsDue(dueRevisits);
     setRank(currentRank);
+    setWeeklyQuest(activeWeeklyQuest);
+    if (activeWeeklyQuest?.justCompleted) await refreshXp(date);
 
     // final/06 §5.2's "reflection" line, right below the priority line.
     // A missed day surfacing a recovery card IS the post-lapse moment
@@ -388,6 +393,17 @@ export function Today() {
       >
         Learning block · +{CONFIG.learningBlockXp} XP
       </button>
+
+      {weeklyQuest && (
+        <div className="mt-4 rounded-md border border-border p-3" data-testid="weekly-quest-progress">
+          <div className="mb-1 text-xxs uppercase tracking-wide text-text-dim">Weekly quest</div>
+          <p className="text-sm text-text">{weeklyQuest.row.description}</p>
+          <p className="mt-1 font-mono text-xs tabular-nums text-text-faint">
+            {weeklyQuest.progress}/{weeklyQuest.row.target}
+            {weeklyQuest.justCompleted ? ` — complete! +${weeklyQuest.row.xp} XP` : ''}
+          </p>
+        </div>
+      )}
 
       {revisitsDue.length > 0 && (
         <div className="mt-4" data-testid="revisits-due">

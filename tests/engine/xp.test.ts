@@ -262,4 +262,13 @@ describe('computeXp — properties', () => {
     expect(recoveryEntry?.category).toBe('BONUS');
     expect(recoveryEntry?.cappedFrom).toBeUndefined();
   });
+
+  it('WEEKLY_QUEST_COMPLETED yields a flat BONUS grant equal to config.weeklyQuestXp, uncapped (Slice 14)', () => {
+    const dayEvents = [questCompletedEvent('career'), otherEvent('WEEKLY_QUEST_COMPLETED', { weeklyQuestId: 'wq-1' })];
+    const entries = computeDayLedger('2026-09-05', dayEvents, DEFAULT_CONFIG);
+    const weeklyEntry = entries.find((e) => e.reason === 'weekly_quest');
+    expect(weeklyEntry?.amount).toBe(DEFAULT_CONFIG.weeklyQuestXp);
+    expect(weeklyEntry?.category).toBe('BONUS');
+    expect(weeklyEntry?.cappedFrom).toBeUndefined();
+  });
 });

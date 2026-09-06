@@ -235,6 +235,19 @@ function applyOne(state: EngineState, event: SystemEvent): EngineState {
     case 'BOSS_CLEARED':
       return state;
 
+    // Slice 14 — WEEK_REVIEWED was declared in the original catalogue
+    // (final/07 §4.1) but never given a payload or a fold; it's an
+    // audit record only (ui/review/WeeklyReview.tsx's Accept action),
+    // same shape as REVIEW_COMPLETED's daily counterpart except nothing
+    // reads it back for display, so nothing needs to be folded.
+    // WEEKLY_QUEST_COMPLETED grants XP the same way BOSS_CLEARED does
+    // (engine/xp.ts reads the event directly); "which weekly quest is
+    // active / its live progress" is read live by store/weeklyQuest.ts
+    // from the direct-write weekly_quest table, not folded here.
+    case 'WEEK_REVIEWED':
+    case 'WEEKLY_QUEST_COMPLETED':
+      return state;
+
     default:
       throw new Error(`Not implemented — Slice N (unhandled event type: ${event.type})`);
   }

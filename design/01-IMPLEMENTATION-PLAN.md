@@ -150,7 +150,7 @@ task and the fix would change engine/store behaviour, or a task would require de
 
 - [ ] **7.1** `QuestDetailSheet` on `Sheet`. If-then sentence in a `FramedPanel`. Stays
       quote-free. Gate: fast.
-- [ ] **7.2** `LogApplicationSheet`, `LogProblemSheet`, `LogBuildSessionSheet`.
+- [x] **7.2** `LogApplicationSheet`, `LogProblemSheet`, `LogBuildSessionSheet`.
       Gate: fast.
 - [ ] **7.3** `LogTrainingSheet` (uses `training` art), `LogSleepSheet`,
       `LogAttentionSheet`, `LearningBlockSheet`. Gate: fast.
@@ -311,6 +311,7 @@ system §10 are required; neither may be traded for the other.
 | 6.4 | today status | Recovery card amber + intact + no quote; day-closed, reduced-mode, level-up banner and system line all on the left-rule treatment. Found and fixed TWO real bugs: route content was stuck at opacity 0 whenever rAF was starved (framer-motion -> CSS animation), and the resulting persistent stacking context made every full-screen overlay paint UNDER the bottom nav, which silently swallowed taps (14 e2e failures). main now z-10, nav z-0. 78/78. |
 | 6.5 | phase 6 gate | 78/78. tap->XP measured across 6 clean runs on the Pixel 7 descriptor: median 117ms, worst 124ms, budget 300ms — 2.4x headroom, so the earlier 332ms really was machine contention and not the app. Phase 6 complete: Today is done. |
 | 7.1 | quest sheet | Sheet now portals to document.body — structurally prevents the stacking-context trap that cost 14 failures in 6.4, rather than relying on z-index discipline. QuestDetailSheet migrated: the user's if-then sentence quoted back verbatim in a FramedPanel, criterion text, Log X secondary, Mark complete pinned. Stays quote-free per final/06 §5.3. |
+| 7.2 | log sheets 1-3 | Career, DSA and build sheets migrated onto the kit Sheet. Found a DESTRUCTIVE bug: OverlayStack popped history on programmatic close, but history.back() is async while pushState is not, so a sheet opened from a sheet consumed the wrong entry — two rounds unwound past the app to about:blank (white screen). Rewritten to never call back(); spent entries are consumed on the next popstate. Two regression tests added. Also portalled the in-sheet Moments, and reverted a curly apostrophe that broke an asserted string. 80/80. |
 | — | plan v2 | User added: configurable settings/theming, explicit nav flowchart, mood-based art assignment. Saw all 11 plates — split into Blue Arc (effort) / Gold Horizon (evidence) / Boss. Added docs 02 and 03; replanned to 13 phases, 60 tasks. |
 
 ---

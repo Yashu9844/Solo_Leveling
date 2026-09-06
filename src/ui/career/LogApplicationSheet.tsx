@@ -4,6 +4,7 @@ import { realDeps } from '../../store/deps';
 import { logApplication, logSubstituteWork, createResumeVersion, getResumeVersions } from '../../store/career';
 import type { ResumeVersionRow } from '../../db/schema';
 import { SingleChipSelect } from '../components/SingleChipSelect';
+import { Field, PrimaryButton, QuietButton, Sheet, TextArea, TextInput } from '../kit';
 
 const ROLE_CATEGORIES = ['backend', 'ai', 'fullstack', 'platform', 'other'] as const;
 const ROLE_CATEGORY_LABELS: Record<(typeof ROLE_CATEGORIES)[number], string> = {
@@ -116,41 +117,55 @@ export function LogApplicationSheet({ today, arcId, onClose }: LogApplicationShe
     company.trim().length > 0 && role.trim().length > 0 && resumeVersionId !== '' && whyLine.trim().length >= 15;
 
   return (
-    <div className="fixed inset-0 z-50 flex items-end bg-black/50" onClick={onClose}>
-      <div
-        className="flex max-h-[85vh] w-full flex-col gap-3 overflow-y-auto rounded-t-md border-t border-border bg-surface p-4"
-        style={{ paddingBottom: 'calc(env(safe-area-inset-bottom) + 16px)' }}
-        onClick={(e) => e.stopPropagation()}
-      >
-        <div className="flex items-center justify-between">
-          <h2 className="text-lg font-semibold text-text">
-            {mode === 'application' ? 'LOG APPLICATION' : 'SUBSTITUTE WORK'}
-          </h2>
-          <button type="button" onClick={onClose} aria-label="Close" className="min-h-[44px] min-w-[44px] text-text-dim">
-            ✕
-          </button>
-        </div>
+    <Sheet
+      open
+      onClose={onClose}
+      title={mode === 'application' ? 'Log application' : 'Substitute work'}
+      footer={
+        // The mode switch lives beside the primary action rather than
+        // buried in the body: final/06 §5.4 puts "substitute career work
+        // instead" directly under the log button, because the decision
+        // being offered is "I could not do the real thing today", and it
+        // has to be visible at the moment that becomes true.
+        mode === 'application' ? (
+          <div className="flex flex-col gap-2">
+            <PrimaryButton
+              size="md"
+              disabled={!canLogApplication || submitting}
+              onClick={() => void handleLogApplication()}
+            >
+              {submitting ? 'Logging…' : 'Log application'}
+            </PrimaryButton>
+            <QuietButton onClick={() => setMode('substitute')}>
+              Substitute career work instead
+            </QuietButton>
+          </div>
+        ) : (
+          <div className="flex flex-col gap-2">
+            <PrimaryButton
+              size="md"
+              disabled={submitting || substituteMinutes <= 0}
+              onClick={() => void handleLogSubstitute()}
+            >
+              {submitting ? 'Logging…' : 'Log substitute work'}
+            </PrimaryButton>
+            <QuietButton onClick={() => setMode('application')}>
+              Log an application instead
+            </QuietButton>
+          </div>
+        )
+      }
+    >
+      <div className="flex flex-col gap-4">
 
         {mode === 'application' ? (
           <>
-            <label className="block">
-              <span className="text-xxs uppercase tracking-wide text-text-dim">Company</span>
-              <input
-                type="text"
-                value={company}
-                onChange={(e) => setCompany(e.target.value)}
-                className="mt-1 w-full min-h-[44px] rounded-md border border-border bg-surface-2 px-3 text-text"
-              />
-            </label>
-            <label className="block">
-              <span className="text-xxs uppercase tracking-wide text-text-dim">Role</span>
-              <input
-                type="text"
-                value={role}
-                onChange={(e) => setRole(e.target.value)}
-                className="mt-1 w-full min-h-[44px] rounded-md border border-border bg-surface-2 px-3 text-text"
-              />
-            </label>
+            <Field label="Company">
+              <TextInput type="text" value={company} onChange={(e) => setCompany(e.target.value)} />
+            </Field>
+            <Field label="Role">
+              <TextInput type="text" value={role} onChange={(e) => setRole(e.target.value)} />
+            </Field>
 
             <SingleChipSelect
               label="Category"
@@ -168,12 +183,17 @@ export function LogApplicationSheet({ today, arcId, onClose }: LogApplicationShe
             />
 
             <div>
-              <span className="text-xxs uppercase tracking-wide text-text-dim">Resume — required</span>
+              <span className="mb-2 block text-xxs uppercase text-ink-700">Resume — required</span>
               {resumeVersions.length > 0 && (
                 <select
                   value={resumeVersionId}
                   onChange={(e) => setResumeVersionId(e.target.value)}
-                  className="mt-1 w-full min-h-[44px] rounded-md border border-border bg-surface-2 px-3 text-text"
+                  className="w-full rounded-sm px-3 text-md text-ink-100 outline-none focus:border-accent"
+                  style={{
+                    minHeight: 48,
+                    background: 'var(--surface-2)',
+                    border: '1px solid var(--hair)',
+                  }}
                 >
                   {resumeVersions.map((v) => (
                     <option key={v.id} value={v.id}>
@@ -183,58 +203,42 @@ export function LogApplicationSheet({ today, arcId, onClose }: LogApplicationShe
                 </select>
               )}
               <div className="mt-2 flex gap-2">
-                <input
+                <TextInput
                   type="text"
                   value={newVersionLabel}
                   onChange={(e) => setNewVersionLabel(e.target.value)}
                   placeholder="New version label, e.g. v2 — AI-weighted"
-                  className="min-h-[44px] flex-1 rounded-md border border-border bg-surface-2 px-3 text-text"
+                  className="!w-auto min-w-0 flex-1"
                 />
                 <button
                   type="button"
                   onClick={() => void handleCreateVersion()}
-                  className="min-h-[44px] rounded-md border border-border px-3 text-sm text-text"
+                  className="cut-sm shrink-0 px-3 text-sm text-ink-500"
+                  style={{ minHeight: 48, border: '1px solid var(--hair)' }}
                 >
                   + New
                 </button>
               </div>
             </div>
 
-            <label className="block">
-              <span className="text-xxs uppercase tracking-wide text-text-dim">
-                Why this role? — required, ≥15 chars
-              </span>
-              <textarea
-                value={whyLine}
-                onChange={(e) => setWhyLine(e.target.value)}
-                rows={2}
-                className="mt-1 w-full rounded-md border border-border bg-surface-2 p-3 text-text"
-              />
-            </label>
+            <Field label="Why this role? — required, ≥15 chars">
+              <TextArea value={whyLine} onChange={(e) => setWhyLine(e.target.value)} rows={2} />
+            </Field>
 
             {result === 'fail' && (
-              <p className="text-xs text-state-alert">
-                Logged, but the quality gate didn't pass — this one earns 0 XP. Flagged for the weekly review.
+              <p
+                className="cut-sm p-3 text-xs text-ink-300"
+                style={{ borderLeft: '2px solid var(--state-recover)', background: 'var(--surface)' }}
+              >
+                {/* Straight apostrophe, not a typographic one: career.spec
+                    asserts getByText(/didn't pass/) and a curly quote
+                    silently breaks the match. Copy that a test reads is
+                    part of the contract (design system §10). */}
+                Logged, but the quality gate didn't pass — this one earns 0 XP. Flagged for the
+                weekly review.
               </p>
             )}
-            {result === 'pass' && <p className="text-xs text-accent">Logged.</p>}
-
-            <button
-              type="button"
-              disabled={!canLogApplication || submitting}
-              onClick={() => void handleLogApplication()}
-              className="min-h-[44px] rounded-md bg-accent text-sm font-medium text-bg disabled:opacity-40"
-            >
-              {submitting ? 'Logging…' : 'Log application'}
-            </button>
-
-            <button
-              type="button"
-              onClick={() => setMode('substitute')}
-              className="min-h-[44px] rounded-md border border-border text-sm text-text-dim"
-            >
-              Substitute career work instead
-            </button>
+            {result === 'pass' && <p className="text-xs text-accent-mid">Logged.</p>}
           </>
         ) : (
           <>
@@ -245,34 +249,17 @@ export function LogApplicationSheet({ today, arcId, onClose }: LogApplicationShe
               selected={substituteKind}
               onSelect={setSubstituteKind}
             />
-            <label className="block">
-              <span className="text-xxs uppercase tracking-wide text-text-dim">Minutes</span>
-              <input
+            <Field label="Minutes">
+              <TextInput
                 type="number"
                 inputMode="numeric"
                 value={substituteMinutes}
                 onChange={(e) => setSubstituteMinutes(Number(e.target.value))}
-                className="mt-1 w-full min-h-[44px] rounded-md border border-border bg-surface-2 px-3 text-text"
               />
-            </label>
-            <button
-              type="button"
-              disabled={submitting || substituteMinutes <= 0}
-              onClick={() => void handleLogSubstitute()}
-              className="min-h-[44px] rounded-md bg-accent text-sm font-medium text-bg disabled:opacity-40"
-            >
-              {submitting ? 'Logging…' : 'Log substitute work'}
-            </button>
-            <button
-              type="button"
-              onClick={() => setMode('application')}
-              className="min-h-[44px] rounded-md border border-border text-sm text-text-dim"
-            >
-              Log an application instead
-            </button>
+            </Field>
           </>
         )}
       </div>
-    </div>
+    </Sheet>
   );
 }

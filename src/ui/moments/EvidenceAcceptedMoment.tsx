@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react';
+import { Portal } from '../kit';
 
 interface EvidenceAcceptedMomentProps {
   kind: string;
@@ -38,8 +39,13 @@ export function EvidenceAcceptedMoment({ kind, title, onDismiss }: EvidenceAccep
   }, []);
 
   return (
-    <div
-      className="fixed inset-x-0 bottom-20 z-50 flex justify-center px-4"
+    // Portalled: this fires from inside a log sheet, and that sheet is
+    // itself portalled to <body>. Left in place it would render inside
+    // the screen's stacking context and lose to the sheet above it —
+    // the celebration would be covered by the form that triggered it.
+    <Portal>
+      <div
+        className="fixed inset-x-0 bottom-20 z-[60] flex justify-center px-4"
       onClick={onDismiss}
       role="button"
       tabIndex={0}
@@ -56,7 +62,8 @@ export function EvidenceAcceptedMoment({ kind, title, onDismiss }: EvidenceAccep
         <span className="font-mono text-sm text-text">
           {kind} · {title}
         </span>
+        </div>
       </div>
-    </div>
+    </Portal>
   );
 }

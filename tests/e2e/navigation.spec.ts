@@ -73,6 +73,48 @@ test.describe('unknown paths', () => {
   });
 });
 
+/**
+ * design/02-NAVIGATION-FLOW.md §5 — back closes an overlay, not the
+ * screen behind it.
+ *
+ * The second test here exists because of a real failure: an earlier
+ * implementation popped a history entry whenever an overlay closed by
+ * button, and since history.back() is async while pushState is not,
+ * opening a sheet from another sheet consumed the wrong entry. Two
+ * rounds later the app unwound past its own first entry and rendered a
+ * white about:blank. Never navigating away is the property under test.
+ */
+test.describe('overlays and the back gesture', () => {
+  test('back closes an open sheet instead of leaving the screen', async ({ page }) => {
+    await withSafeClock(page);
+    await completeOnboarding(page);
+
+    await page.getByTestId('quest-row-career-open').click();
+    await expect(page.getByRole('dialog')).toBeVisible();
+
+    await page.goBack();
+    await expect(page.getByRole('dialog')).toHaveCount(0);
+    await expect(page).toHaveURL(/\/today$/);
+    await expect(page.getByRole('button', { name: 'Complete CAREER' })).toBeVisible();
+  });
+
+  test('opening a sheet from a sheet, repeatedly, never leaves the app', async ({ page }) => {
+    await withSafeClock(page);
+    await completeOnboarding(page);
+
+    for (let i = 0; i < 3; i++) {
+      await page.getByTestId('quest-row-career-open').click();
+      await page.getByRole('button', { name: 'Log application' }).click();
+      await expect(page.getByRole('dialog')).toBeVisible();
+      await page.getByRole('button', { name: 'Close' }).click();
+      await expect(page.getByRole('dialog')).toHaveCount(0);
+      // Still the app, still Today, still rendering.
+      await expect(page).toHaveURL(/\/today/);
+      await expect(page.getByTestId('quest-row-career')).toBeVisible();
+    }
+  });
+});
+
 test.describe('tab navigation', () => {
   test('back returns to the previous tab rather than leaving the app', async ({ page }) => {
     await withSafeClock(page);

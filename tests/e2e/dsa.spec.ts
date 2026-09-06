@@ -13,7 +13,7 @@ test('logging one problem auto-completes the DSA quest', async ({ page }) => {
 
   await page.getByTestId('quest-row-dsa-open').click();
   await page.getByRole('button', { name: 'Log problem' }).click();
-  await page.getByLabel('Problem').fill('Two Sum');
+  await page.getByLabel('Problem', { exact: true }).fill('Two Sum');
   await page.getByRole('button', { name: 'Arrays' }).click();
   await page.getByRole('button', { name: 'E', exact: true }).click();
   await page.getByRole('button', { name: 'First attempt' }).click();

@@ -8,6 +8,7 @@ import type { AttemptOutcome } from '../../engine/srs';
 import type { MasteryState } from '../../engine/types';
 import { SingleChipSelect } from '../components/SingleChipSelect';
 import { Stepper } from '../components/Stepper';
+import { Field, PrimaryButton, Sheet, TextInput } from '../kit';
 import { MasteryMoment } from '../moments/MasteryMoment';
 import { DeepWorkTimer } from '../components/DeepWorkTimer';
 
@@ -79,28 +80,25 @@ export function LogProblemSheet({ today, arcId, onClose }: LogProblemSheetProps)
   }
 
   return (
-    <div className="fixed inset-0 z-50 flex items-end bg-black/50" onClick={onClose}>
-      <div
-        className="flex max-h-[85vh] w-full flex-col gap-3 overflow-y-auto rounded-t-md border-t border-border bg-surface p-4"
-        style={{ paddingBottom: 'calc(env(safe-area-inset-bottom) + 16px)' }}
-        onClick={(e) => e.stopPropagation()}
+    <>
+      <Sheet
+        open
+        onClose={onClose}
+        title="Log problem"
+        footer={
+          <PrimaryButton
+            size="md"
+            disabled={!canLog || submitting}
+            onClick={() => void handleLog()}
+          >
+            {submitting ? 'Logging…' : 'Log problem'}
+          </PrimaryButton>
+        }
       >
-        <div className="flex items-center justify-between">
-          <h2 className="text-lg font-semibold text-text">LOG PROBLEM</h2>
-          <button type="button" onClick={onClose} aria-label="Close" className="min-h-[44px] min-w-[44px] text-text-dim">
-            ✕
-          </button>
-        </div>
-
-        <label className="block">
-          <span className="text-xxs uppercase tracking-wide text-text-dim">Problem</span>
-          <input
-            type="text"
-            value={problem}
-            onChange={(e) => setProblem(e.target.value)}
-            className="mt-1 w-full min-h-[44px] rounded-md border border-border bg-surface-2 px-3 text-text"
-          />
-        </label>
+        <div className="flex flex-col gap-4">
+          <Field label="Problem">
+            <TextInput type="text" value={problem} onChange={(e) => setProblem(e.target.value)} />
+          </Field>
 
         <SingleChipSelect label="Topic" options={TOPICS} labelFor={(t) => t} selected={topic} onSelect={setTopic} />
         <SingleChipSelect
@@ -121,29 +119,17 @@ export function LogProblemSheet({ today, arcId, onClose }: LogProblemSheetProps)
         <Stepper label="Minutes" value={minutes} step={5} min={5} onChange={setMinutes} />
         <DeepWorkTimer onStop={setMinutes} />
 
-        <label className="block">
-          <span className="text-xxs uppercase tracking-wide text-text-dim">Insight (optional)</span>
-          <input
-            type="text"
-            value={insight}
-            onChange={(e) => setInsight(e.target.value)}
-            className="mt-1 w-full min-h-[44px] rounded-md border border-border bg-surface-2 px-3 text-text"
-          />
-        </label>
+          <Field label="Insight (optional)">
+            <TextInput type="text" value={insight} onChange={(e) => setInsight(e.target.value)} />
+          </Field>
+        </div>
+      </Sheet>
 
-        <button
-          type="button"
-          disabled={!canLog || submitting}
-          onClick={() => void handleLog()}
-          className="min-h-[44px] rounded-md bg-accent text-sm font-medium text-bg disabled:opacity-40"
-        >
-          {submitting ? 'Logging…' : 'Log problem'}
-        </button>
-      </div>
-
+      {/* Outside the Sheet: a Moment is a full-screen ceremony and must
+          not be trapped inside the sheet it was triggered from. */}
       {masteryMoment && (
         <MasteryMoment topic={masteryMoment.topic} state={masteryMoment.state} onDismiss={onClose} />
       )}
-    </div>
+    </>
   );
 }

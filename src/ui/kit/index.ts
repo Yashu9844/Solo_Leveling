@@ -14,3 +14,4 @@ export { Sheet } from './Sheet';
 export { ArtLayer, artHasText, type Scrim } from './ArtLayer';
 export { Moment } from './Moment';
 export { Field, TextInput, TextArea, StepTitle } from './Field';
+export { Portal } from './Portal';

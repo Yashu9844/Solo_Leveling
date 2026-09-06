@@ -161,7 +161,11 @@ function consistencyOver(history: DayStreakOutcome[], windowDays: number): numbe
  * still-in-progress "today" would wrongly score as a miss); it uses
  * store/streak.ts's getStreakState, which excludes today by construction.
  */
-function buildProjections(events: SystemEvent[], config: EngineConfig, deps: EngineDeps): BuiltProjections {
+/** Pure — no db access. Exported for tests/engine/fuzz.test.ts's reducer
+ * fuzz (final/08 §3.4): the single computation rebuildProjections and
+ * verifyIntegrity both wrap with real IndexedDB I/O, callable directly
+ * against an in-memory event log for fast, DB-free invariant checking. */
+export function buildProjections(events: SystemEvent[], config: EngineConfig, deps: EngineDeps): BuiltProjections {
   const state = applyEvents(events, config);
   if (!state.arc) {
     return { templates: [], instances: [], ledger: [], dayRollups: [], playerState: null };

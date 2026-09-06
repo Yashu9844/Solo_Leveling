@@ -39,7 +39,7 @@ deleting a `data-testid` or an asserted string that §10 of the design system fr
 
 No visible change. Everything after this depends on it.
 
-- [ ] **0.1** Cut branch `frontend-redesign`. Add deps: `framer-motion@^11`,
+- [x] **0.1** Cut branch `frontend-redesign`. Add deps: `framer-motion@^11`,
       `@phosphor-icons/react@^2.1`, `@fontsource/inter`,
       `@fontsource/cormorant-garamond`, `@fontsource/jetbrains-mono`; devDep `sharp`.
       Pin exact majors that support React 18.3. Gate: fast.
@@ -248,6 +248,7 @@ The strict pass. This is where "must fit any phone" is proven, not asserted.
 | # | Task | Note |
 |---|---|---|
 | — | plan written | baseline green: 47 files / 358 tests, typecheck + lint clean |
+| 0.1 | deps | framer-motion 11.18.2 (last React-18 line), phosphor 2.1.10, 3 fontsource families, sharp (dev). Gate green. |
 
 ---
 

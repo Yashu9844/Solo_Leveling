@@ -7,6 +7,54 @@ import { realDeps } from '../../store/deps';
 import { useArcStatus } from '../../store/ArcStatusContext';
 import { ChipToggle } from '../components/ChipToggle';
 import { Stepper } from '../components/Stepper';
+import {
+  ArtLayer,
+  FramedPanel,
+  PrimaryButton,
+  SafeTop,
+  ScreenShell,
+  SecondaryButton,
+} from '../kit';
+
+const TOTAL_STEPS = 6;
+
+/**
+ * Six segments, filled to the current step.
+ *
+ * Replaces a bare "3/6". A rail shows how much is left without the user
+ * doing arithmetic, which matters on a flow with a 90-second budget —
+ * the thing that makes someone abandon onboarding is not knowing whether
+ * they are near the end.
+ */
+function StepRail({ step }: { step: number }) {
+  return (
+    <div
+      className="flex gap-1.5 px-gutter pt-4"
+      role="progressbar"
+      aria-valuenow={step}
+      aria-valuemin={1}
+      aria-valuemax={TOTAL_STEPS}
+      aria-label={`Step ${step} of ${TOTAL_STEPS}`}
+    >
+      {Array.from({ length: TOTAL_STEPS }, (_, i) => {
+        const index = i + 1;
+        const done = index < step;
+        const current = index === step;
+        return (
+          <span
+            key={index}
+            className="h-[3px] flex-1 rounded-pill transition-all duration-300"
+            style={{
+              background: done || current ? 'var(--accent)' : 'var(--surface-2)',
+              opacity: done ? 0.55 : 1,
+              boxShadow: current ? 'var(--glow-sm)' : 'none',
+            }}
+          />
+        );
+      })}
+    </div>
+  );
+}
 
 const TRAINING_DAY_OPTIONS = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'] as const;
 const ATTENTION_APP_OPTIONS = ['Instagram', 'YouTube', 'X / Twitter', 'Reddit', 'TikTok'] as const;
@@ -166,10 +214,31 @@ export function Onboarding({ onComplete }: OnboardingProps) {
     }
   }
 
+  // Art bookends the flow: the first step, where the user is deciding
+  // whether to start, and the last, where they are about to commit. The
+  // four steps between are forms, and a form does not want a backdrop.
+  const showArt = step === 1 || step === TOTAL_STEPS;
+
   return (
-    <div className="flex h-full flex-col bg-bg p-4 text-text">
-      <div className="mb-4 text-xxs uppercase tracking-wide text-text-dim">{step}/6</div>
-      <div className="flex-1 overflow-y-auto">
+    <ScreenShell>
+      <div className="relative flex flex-1 flex-col overflow-hidden text-text">
+        {showArt && <ArtLayer slot="onboarding" scrim="moment" priority={step === 1} />}
+
+        <div className="relative flex min-h-0 flex-1 flex-col">
+          <SafeTop />
+          <StepRail step={step} />
+
+          {/* The two art steps hold little content, so their panel is
+              centred rather than top-aligned — top-aligning left a large
+              dead zone under it. The four form steps are tall and stay
+              top-aligned so they scroll naturally. */}
+          <div
+            className={[
+              'no-scrollbar flex min-h-0 flex-1 flex-col overflow-y-auto px-gutter pb-4 pt-5',
+              showArt ? 'justify-center' : '',
+            ].join(' ')}
+          >
+            <FramedPanel className="shrink-0 px-5 py-6">
         {step === 1 && (
           <Step1Framing name={form.name} onChangeName={(v) => update('name', v)} />
         )}
@@ -227,41 +296,49 @@ export function Onboarding({ onComplete }: OnboardingProps) {
             copied={copied}
           />
         )}
-      </div>
+            </FramedPanel>
+          </div>
 
-      {error && <p className="mt-2 text-sm text-state-alert">{error}</p>}
+          {error && (
+            <p className="px-gutter pb-2 text-sm text-state-alert" role="alert">
+              {error}
+            </p>
+          )}
 
-      <div className="mt-4 flex gap-3">
-        {step > 1 && (
-          <button
-            type="button"
-            onClick={() => setStep((s) => s - 1)}
-            className="min-h-[44px] flex-1 rounded-md border border-border bg-surface-2 text-sm text-text"
+          {/* Pinned: the action never scrolls out of reach on a small
+              screen, which is where a six-step flow loses people. */}
+          <div
+            className="flex shrink-0 gap-3 px-gutter pt-2"
+            style={{ paddingBottom: 'max(env(safe-area-inset-bottom), 16px)' }}
           >
-            Back
-          </button>
-        )}
-        {step < 6 ? (
-          <button
-            type="button"
-            disabled={!canProceed}
-            onClick={() => setStep((s) => s + 1)}
-            className="min-h-[44px] flex-1 rounded-md bg-accent text-sm font-medium text-bg disabled:opacity-40"
-          >
-            {step === 1 ? 'Begin' : 'Next'}
-          </button>
-        ) : (
-          <button
-            type="button"
-            disabled={isSubmitting}
-            onClick={handleInitialise}
-            className="min-h-[44px] flex-1 rounded-md bg-accent text-sm font-medium text-bg disabled:opacity-40"
-          >
-            {isSubmitting ? 'Initialising…' : 'Initialise system'}
-          </button>
-        )}
+            {step > 1 && (
+              <SecondaryButton onClick={() => setStep((s) => s - 1)} className="flex-[0_0_38%]">
+                Back
+              </SecondaryButton>
+            )}
+            {step < TOTAL_STEPS ? (
+              <PrimaryButton
+                size="md"
+                disabled={!canProceed}
+                onClick={() => setStep((s) => s + 1)}
+                className="flex-1"
+              >
+                {step === 1 ? 'Begin' : 'Next'}
+              </PrimaryButton>
+            ) : (
+              <PrimaryButton
+                size="md"
+                disabled={isSubmitting}
+                onClick={handleInitialise}
+                className="flex-1"
+              >
+                {isSubmitting ? 'Initialising…' : 'Initialise system'}
+              </PrimaryButton>
+            )}
+          </div>
+        </div>
       </div>
-    </div>
+    </ScreenShell>
   );
 }
 

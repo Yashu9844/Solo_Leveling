@@ -116,7 +116,7 @@ task and the fix would change engine/store behaviour, or a task would require de
 
 ## Phase 5 — Onboarding
 
-- [ ] **5.1** Chrome: `ScreenShell`, `onboarding` art on steps 1 and 6, a 6-segment step
+- [x] **5.1** Chrome: `ScreenShell`, `onboarding` art on steps 1 and 6, a 6-segment step
       rail replacing the bare `1/6`, `FramedPanel` per step, footer pinned above the safe
       area. Gate: fast.
 - [ ] **5.2** Steps 1–3. Keep placeholder `Your name`, buttons `Begin` / `Next` verbatim.
@@ -296,6 +296,7 @@ system §10 are required; neither may be traded for the other.
 | 3.3 | boot path | /start is now the no-arc landing for every route, shortcut and unknown path. One sanctioned helper click added. New boot.spec (6 tests). Two existing specs updated for the deliberate behaviour change (onboarding's fresh-boot destination, backup's post-wipe destination) — both now assert Start, which is the correct first-run state. Phase 3 complete. FULL SUITE 78/78. |
 | 4.1 | shell + nav | Phosphor bottom nav (House/ChartLineUp/TreeStructure/UserCircle), active glow + fill weight, whileTap 0.88. AppShell now sits in ScreenShell so the desktop device frame applies app-wide. Caught a real layout bug the screenshot missed but the scroll tests found: ScreenShell used min-h-dvh, so the document scrolled instead of main and the bottom nav would scroll away on any long screen. Now h-dvh. Full e2e 78/78. |
 | 4.2 | headers | ScreenHeader on all four screens; SafeTop moved into the shell so the notch inset never scrolls. Progress's sub-tab switch became the header's right slot. core-loop caught a real regression: a visible TODAY title pushed the 6th quest row below the fold, breaking final/06 §5.2's above-the-fold rule. Today keeps a screen-reader-only heading — the spec's own wireframe has no title bar there, its identity is the DAY/LEVEL/RANK line. Budget noted on task 6.1. Phase 4 complete. 78/78. |
+| 5.1 | onboarding chrome | 6-segment step rail replaces the bare "3/6", FramedPanel per step, footer pinned above the safe area, art bookending steps 1 and 6. Screenshot caught two composition problems: the quiet scrim buried the plate into murk (now moment), and top-aligning a short panel left a large dead zone (art steps now centre, form steps stay top-aligned so they scroll). Gate green + onboarding/boot e2e 12/12. |
 | — | plan v2 | User added: configurable settings/theming, explicit nav flowchart, mood-based art assignment. Saw all 11 plates — split into Blue Arc (effort) / Gold Horizon (evidence) / Boss. Added docs 02 and 03; replanned to 13 phases, 60 tasks. |
 
 ---

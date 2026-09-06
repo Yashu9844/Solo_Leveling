@@ -35,10 +35,10 @@ test.describe('PWA app shortcuts', () => {
     });
   }
 
-  test('a shortcut with no arc yet goes to onboarding, not a dead end', async ({ page }) => {
+  test('a shortcut with no arc yet goes to Start, not a dead end', async ({ page }) => {
     await withSafeClock(page);
     await page.goto('/log/problem');
-    await expect(page).toHaveURL(/\/onboarding$/);
+    await expect(page).toHaveURL(/\/start$/);
   });
 
   // `replace`, not `push`: a launcher entry point must not sit in the
@@ -66,10 +66,10 @@ test.describe('unknown paths', () => {
     await expect(page).toHaveURL(/\/today$/);
   });
 
-  test('with no arc, an unknown path lands on onboarding', async ({ page }) => {
+  test('with no arc, an unknown path lands on Start', async ({ page }) => {
     await withSafeClock(page);
     await page.goto('/no-such-screen');
-    await expect(page).toHaveURL(/\/onboarding$/);
+    await expect(page).toHaveURL(/\/start$/);
   });
 });
 

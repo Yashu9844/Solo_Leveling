@@ -13,6 +13,12 @@ async function fillStep5(page: Page) {
  * leaving the page on step 6. */
 export async function reachStep6(page: Page, name = 'Ada') {
   await page.goto('/');
+
+  // The Start screen now sits in front of onboarding, so the flow gains
+  // one tap. This is the single sanctioned helper change in the redesign
+  // (design/00-DESIGN-SYSTEM.md §10).
+  await expect(page).toHaveURL(/\/start$/);
+  await page.getByRole('button', { name: 'Begin your journey' }).click();
   await expect(page).toHaveURL(/\/onboarding$/);
 
   await page.getByPlaceholder('Your name').fill(name);

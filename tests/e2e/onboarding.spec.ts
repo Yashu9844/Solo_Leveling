@@ -18,9 +18,12 @@ async function arcRowCount(page: Page): Promise<number> {
   );
 }
 
-test('fresh app boot with no arc redirects to /onboarding', async ({ page }) => {
+test('fresh app boot with no arc lands on the Start screen', async ({ page }) => {
+  // Deliberate behaviour change: a first-time user meets Start before
+  // onboarding. Onboarding itself is still reachable directly, and still
+  // redirects away once an arc exists (asserted below).
   await page.goto('/');
-  await expect(page).toHaveURL(/\/onboarding$/);
+  await expect(page).toHaveURL(/\/start$/);
 });
 
 test('full six-step flow completes and lands on /today', async ({ page }) => {
@@ -67,6 +70,7 @@ test('double-clicking "Initialise system" creates exactly one arc', async ({ pag
 
 test('back-navigation through the steps preserves entered values', async ({ page }) => {
   await page.goto('/');
+  await page.getByRole('button', { name: 'Begin your journey' }).click();
   await page.getByPlaceholder('Your name').fill('Ada');
   await page.getByRole('button', { name: 'Begin' }).click(); // -> step 2
   await page.getByRole('button', { name: 'Next' }).click(); // -> step 3

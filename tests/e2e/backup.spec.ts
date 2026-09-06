@@ -34,10 +34,12 @@ test('export downloads a real JSON backup, and importing it back restores state 
   expect(parsed.arc).toBeTruthy();
 
   // Wipe everything client-side (simulating a lost/reset device), then
-  // reload straight into onboarding to confirm the wipe took.
+  // reload to confirm the wipe took. A device with no arc now lands on
+  // the Start screen, which is exactly the first-run state a wiped
+  // device should be in.
   await page.evaluate(() => indexedDB.deleteDatabase('system-arc'));
   await page.reload();
-  await expect(page).toHaveURL(/\/onboarding$/);
+  await expect(page).toHaveURL(/\/start$/);
 
   // Now import the backup from the fresh (onboarding) state — the
   // import button lives on Profile, which requires an arc to view, so

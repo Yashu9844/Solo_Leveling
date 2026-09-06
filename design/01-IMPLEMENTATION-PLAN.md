@@ -102,7 +102,7 @@ task and the fix would change engine/store behaviour, or a task would require de
 - [x] **3.2** `Start` at `/start`: full-bleed `start-hero` (Gold Horizon) under a 4-stop
       scrim, wordmark, `BEGIN YOUR JOURNEY`. **The plate carries its own tagline — add no
       competing copy** (design system §2.4 rule 4). Gate: fast.
-- [ ] **3.3** `tests/e2e/helpers.ts` gains the one sanctioned click. New
+- [x] **3.3** `tests/e2e/helpers.ts` gains the one sanctioned click. New
       `tests/e2e/boot.spec.ts`: splash appears then clears; `/start` with no arc; `/start`
       redirects with an arc; a returning user never sees Start. ⛓ Gate: full.
 
@@ -289,6 +289,7 @@ system §10 are required; neither may be traded for the other.
 | 2.3 | back + overlays | OverlayStackProvider owns one history entry per overlay; Sheet and Moment register. New navigation.spec (10 tests). Fixed the scroll-restore bug it exposed: screens load from IndexedDB, so restoring before content arrives clamps to 0 — now re-applies via ResizeObserver until reachable. ALSO FIXED THE LONG-RUNNING FLAKE: both recovery-card tests jumped the clock before Day 1's async quest generation had landed, so there was nothing to recover. FULL SUITE GREEN 72/72. |
 | 3.1 | splash | First screen to render art. Four-beat reveal (plate/wordmark/rule/creed), 900ms minimum held only on cold start. ART PIPELINE VERIFIED END TO END: 32 hashed webp in dist, 0 in precache (runtime-cached as designed). Bundle 194KB gz vs 320KB budget; all 16 inlined LQIPs total just 3KB. E2E 72/72 with the splash in every boot path (suite 53s -> 1.1m, the expected cost). |
 | 3.2 | start | Gold Horizon front door. Screenshotting it caught two bugs code review would not have: PrimaryButton rendered as a solid slab (translucent inner fill over a solid border layer — affected every primary button), and the plate's marginal text was sliced in half by cover-cropping. Fixed both; added ArtLayer zoom. Route added but `/` still points at /onboarding — 3.3 flips it with the helper change so every commit stays green. |
+| 3.3 | boot path | /start is now the no-arc landing for every route, shortcut and unknown path. One sanctioned helper click added. New boot.spec (6 tests). Two existing specs updated for the deliberate behaviour change (onboarding's fresh-boot destination, backup's post-wipe destination) — both now assert Start, which is the correct first-run state. Phase 3 complete. FULL SUITE 78/78. |
 | — | plan v2 | User added: configurable settings/theming, explicit nav flowchart, mood-based art assignment. Saw all 11 plates — split into Blue Arc (effort) / Gold Horizon (evidence) / Boss. Added docs 02 and 03; replanned to 13 phases, 60 tasks. |
 
 ---

@@ -41,7 +41,10 @@ const EASE = [0.22, 1, 0.36, 1] as const;
 export function Splash() {
   return (
     <ScreenShell>
-      <div className="relative flex flex-1 flex-col items-center justify-center overflow-hidden">
+      <div
+        data-testid="splash"
+        className="relative flex flex-1 flex-col items-center justify-center overflow-hidden"
+      >
         <ArtLayer slot="boot" scrim="moment" priority />
 
         <motion.div

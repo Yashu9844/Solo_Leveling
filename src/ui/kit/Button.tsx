@@ -85,7 +85,11 @@ export function PrimaryButton({
         ].join(' ')}
         style={{
           minHeight: minH,
-          background: `linear-gradient(180deg, ${t.from} 0%, ${t.to} 100%)`,
+          // The tint is translucent by design, so it needs an opaque
+          // layer beneath it. Without one the border layer's solid
+          // colour shows straight through the 1px inset and the button
+          // renders as a solid slab instead of a lit outline.
+          background: `linear-gradient(180deg, ${t.from} 0%, ${t.to} 100%), var(--void)`,
           boxShadow: disabled ? 'none' : t.glow,
         }}
       >

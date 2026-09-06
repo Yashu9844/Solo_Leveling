@@ -99,7 +99,7 @@ task and the fix would change engine/store behaviour, or a task would require de
 
 - [x] **3.1** `Splash` replacing the blank loading div: wordmark, hairline sweep, 900 ms
       minimum, reduced-motion path. Gate: fast.
-- [ ] **3.2** `Start` at `/start`: full-bleed `start-hero` (Gold Horizon) under a 4-stop
+- [x] **3.2** `Start` at `/start`: full-bleed `start-hero` (Gold Horizon) under a 4-stop
       scrim, wordmark, `BEGIN YOUR JOURNEY`. **The plate carries its own tagline — add no
       competing copy** (design system §2.4 rule 4). Gate: fast.
 - [ ] **3.3** `tests/e2e/helpers.ts` gains the one sanctioned click. New
@@ -288,6 +288,7 @@ system §10 are required; neither may be traded for the other.
 | 2.2 | transitions | Route content is now opacity-only. The first version slid/scaled the entering screen and blew the hard 300ms tap-to-XP budget at 597ms (5/5 fail) — a moving screen means moving buttons, so the first tap queues behind the animation. Hierarchy moves to overlays instead. Also: per-tab scroll retention, tap-active-tab-to-top, edge derivation from route depth. No AnimatePresence on routes (mode="wait" would put mounting behind an animation). Full e2e 61/62, sole failure the known reflections flake (8/8 in isolation). |
 | 2.3 | back + overlays | OverlayStackProvider owns one history entry per overlay; Sheet and Moment register. New navigation.spec (10 tests). Fixed the scroll-restore bug it exposed: screens load from IndexedDB, so restoring before content arrives clamps to 0 — now re-applies via ResizeObserver until reachable. ALSO FIXED THE LONG-RUNNING FLAKE: both recovery-card tests jumped the clock before Day 1's async quest generation had landed, so there was nothing to recover. FULL SUITE GREEN 72/72. |
 | 3.1 | splash | First screen to render art. Four-beat reveal (plate/wordmark/rule/creed), 900ms minimum held only on cold start. ART PIPELINE VERIFIED END TO END: 32 hashed webp in dist, 0 in precache (runtime-cached as designed). Bundle 194KB gz vs 320KB budget; all 16 inlined LQIPs total just 3KB. E2E 72/72 with the splash in every boot path (suite 53s -> 1.1m, the expected cost). |
+| 3.2 | start | Gold Horizon front door. Screenshotting it caught two bugs code review would not have: PrimaryButton rendered as a solid slab (translucent inner fill over a solid border layer — affected every primary button), and the plate's marginal text was sliced in half by cover-cropping. Fixed both; added ArtLayer zoom. Route added but `/` still points at /onboarding — 3.3 flips it with the helper change so every commit stays green. |
 | — | plan v2 | User added: configurable settings/theming, explicit nav flowchart, mood-based art assignment. Saw all 11 plates — split into Blue Arc (effort) / Gold Horizon (evidence) / Boss. Added docs 02 and 03; replanned to 13 phases, 60 tasks. |
 
 ---

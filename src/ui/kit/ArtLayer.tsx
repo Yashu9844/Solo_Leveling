@@ -34,6 +34,16 @@ interface ArtLayerProps {
   focal?: string;
   /** Load eagerly — for the plate the current screen opens on. */
   priority?: boolean;
+  /**
+   * Scale the plate up before cropping.
+   *
+   * Several plates carry small text down their margins. A phone viewport
+   * is narrower than the source aspect, so `cover` crops the sides and
+   * slices that text in half — and half a word reads as a rendering bug,
+   * which is worse than not showing it at all. A little zoom pushes the
+   * marginalia cleanly out of frame.
+   */
+  zoom?: number;
   className?: string;
 }
 
@@ -54,6 +64,7 @@ export function ArtLayer({
   scrim = 'hero',
   focal,
   priority = false,
+  zoom = 1,
   className = '',
 }: ArtLayerProps) {
   const art = ART[slot];
@@ -66,8 +77,9 @@ export function ArtLayer({
           {/* The inlined 20px blur paints on the first frame — no request,
               so there is never an empty rectangle while the plate loads. */}
           <div
-            className="absolute inset-0 scale-110"
+            className="absolute inset-0"
             style={{
+              transform: `scale(${1.1 * zoom})`,
               backgroundImage: `url(${art.lqip})`,
               backgroundSize: 'cover',
               backgroundPosition: focal ?? art.focal,
@@ -85,7 +97,11 @@ export function ArtLayer({
             decoding="async"
             onLoad={() => setLoaded(true)}
             className="absolute inset-0 h-full w-full object-cover transition-opacity duration-500"
-            style={{ objectPosition: focal ?? art.focal, opacity: loaded ? 1 : 0 }}
+            style={{
+              objectPosition: focal ?? art.focal,
+              opacity: loaded ? 1 : 0,
+              ...(zoom !== 1 ? { transform: `scale(${zoom})` } : {}),
+            }}
           />
         </>
       ) : (

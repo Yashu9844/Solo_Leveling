@@ -8,6 +8,7 @@ import { Skills } from './ui/screens/Skills';
 import { Profile } from './ui/screens/Profile';
 import { SHORTCUT_ROUTES, OPEN_PARAM, type OpenTarget } from './ui/routing/shortcuts';
 import { Splash, SPLASH_MIN_MS, useMinimumElapsed } from './ui/boot/Splash';
+import { Start } from './ui/boot/Start';
 
 function RequireArc({ arcExists }: { arcExists: boolean }) {
   if (!arcExists) {
@@ -45,6 +46,14 @@ export function App() {
 
   return (
     <Routes>
+      {/* The front door. Task 3.3 makes this the no-arc landing for "/";
+          until then it is reachable directly, so the screen can be built
+          and reviewed without breaking every e2e helper in between. */}
+      <Route
+        path="/start"
+        element={arcExists ? <Navigate to="/today" replace /> : <Start />}
+      />
+
       <Route
         path="/onboarding"
         element={

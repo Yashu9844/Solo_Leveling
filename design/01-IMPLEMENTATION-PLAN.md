@@ -37,7 +37,7 @@ task and the fix would change engine/store behaviour, or a task would require de
 
 - [x] **0.1** Branch. Deps: `framer-motion@^11`, `@phosphor-icons/react@^2.1`,
       `@fontsource/{inter,cormorant-garamond,jetbrains-mono}`; devDep `sharp`.
-- [ ] **0.2** `src/ui/tokens.css` → the **three-layer theme-able** token system
+- [x] **0.2** `src/ui/tokens.css` → the **three-layer theme-able** token system
       (design system §3, settings §3): structural `:root`, five `[data-theme]` blocks,
       and the `[data-text-scale]` / `[data-density]` / `[data-art]` modifier blocks.
       Keep every v1 token name as an alias. Extend `tailwind.config.js` with the ramps,
@@ -248,6 +248,7 @@ The new configurable layer. `design/03-SETTINGS-AND-THEMING.md` is the spec.
 |---|---|---|
 | — | plan v1 | baseline green: 47 files / 358 tests |
 | 0.1 | deps | framer-motion 11.18.2, phosphor 2.1.10, 3 font families, sharp. Gate green. |
+| 0.2 | tokens | Three-layer theme-able token system: 5 themes (arc/dawn/abyss/contrast/daylight), text-scale/density/art modifiers, v1 aliases retained. Tailwind wraps every size in calc(* --type-scale) and uses unitless leading so text size scales the whole scale. Build 19.6KB CSS, all 5 themes present. Gate green. |
 | — | plan v2 | User added: configurable settings/theming, explicit nav flowchart, mood-based art assignment. Saw all 11 plates — split into Blue Arc (effort) / Gold Horizon (evidence) / Boss. Added docs 02 and 03; replanned to 13 phases, 60 tasks. |
 
 ---

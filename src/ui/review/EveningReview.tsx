@@ -5,6 +5,7 @@ import { realDeps } from '../../store/deps';
 import { completeEveningReview, getDailyReport, type DailyReport } from '../../store/review';
 import { DotPicker } from '../components/DotPicker';
 import { SingleChipSelect } from '../components/SingleChipSelect';
+import { ArtLayer, Field, Panel, Portal, PrimaryButton, QuoteCard, Sheet, TextInput } from '../kit';
 
 const BLOCKER_LABELS: Record<ReviewBlocker, string> = {
   time: 'Time',
@@ -64,15 +65,21 @@ export function EveningReview({ today, day, arcId, onClose }: EveningReviewProps
   }
 
   return (
-    <div className="fixed inset-0 z-50 flex flex-col justify-end bg-black/50">
-      <div
-        className="flex flex-col gap-4 rounded-t-md border-t border-border bg-surface p-4"
-        style={{ paddingBottom: 'calc(env(safe-area-inset-bottom) + 16px)' }}
-      >
-        <div className="text-xxs uppercase tracking-wide text-text-dim">
-          {day != null ? `DAY ${day} · ` : ''}EVENING
-        </div>
-
+    <Sheet
+      open
+      onClose={onClose}
+      title={day != null ? `Day ${day} · Evening` : 'Evening'}
+      footer={
+        <PrimaryButton
+          size="md"
+          disabled={!blocker || submitting}
+          onClick={() => void handleComplete()}
+        >
+          {submitting ? 'Saving…' : 'Complete day'}
+        </PrimaryButton>
+      }
+    >
+      <div className="flex flex-col gap-6">
         <DotPicker label="Energy" value={energy} onChange={setEnergy} />
         <DotPicker label="Focus" value={focus} onChange={setFocus} />
 
@@ -92,26 +99,11 @@ export function EveningReview({ today, day, arcId, onClose }: EveningReviewProps
           onSelect={setPriority}
         />
 
-        <label className="block">
-          <span className="text-xxs uppercase tracking-wide text-text-dim">Slept at</span>
-          <input
-            type="time"
-            value={sleptAt}
-            onChange={(e) => setSleptAt(e.target.value)}
-            className="mt-1 w-full min-h-[44px] rounded-md border border-border bg-surface-2 px-3 text-text"
-          />
-        </label>
-
-        <button
-          type="button"
-          disabled={!blocker || submitting}
-          onClick={() => void handleComplete()}
-          className="min-h-[44px] w-full rounded-md bg-accent text-sm font-medium text-bg disabled:opacity-40"
-        >
-          {submitting ? 'Saving…' : 'Complete day'}
-        </button>
+        <Field label="Slept at">
+          <TextInput type="time" value={sleptAt} onChange={(e) => setSleptAt(e.target.value)} />
+        </Field>
       </div>
-    </div>
+    </Sheet>
   );
 }
 
@@ -125,47 +117,91 @@ function DailyReportView({
   onDismiss: () => void;
 }) {
   return (
-    <div
-      className="fixed inset-0 z-50 flex flex-col items-center justify-center gap-4 bg-bg p-6"
-      onClick={onDismiss}
-      role="button"
-      tabIndex={0}
-      aria-label="Daily report. Dismiss."
-    >
-      <div className="text-xxs uppercase tracking-wide text-text-dim">
-        DAILY REPORT · DAY {day ?? report.day}
+    // The day's closing surface. It is a full-screen report rather than
+    // a toast because the day is over — final/05 §5 ends the loop with
+    // something to read, not something to acknowledge.
+    <Portal>
+      <div
+        className="fixed inset-0 z-[55] flex flex-col justify-center overflow-y-auto px-gutter py-10"
+        style={{ background: 'var(--void)' }}
+        onClick={onDismiss}
+        role="button"
+        tabIndex={0}
+        aria-label="Daily report. Dismiss."
+      >
+        <ArtLayer slot="review" scrim="quiet" focal="50% 35%" />
+
+        <div className="relative">
+          <p className="text-center text-xxs uppercase tracking-wide text-ink-700">
+            DAILY REPORT · DAY {day ?? report.day}
+          </p>
+
+          <Panel cut="md" className="mx-auto mt-5 w-full max-w-[380px]" bodyClassName="px-4 py-4">
+            <Row label="XP" value={`${report.xp}`} />
+            <Row label="Core quests" value={`${report.coreCompleted} / ${report.coreTotal}`} />
+            <Row label="Arc streak" value={`${report.arcStreak} ${report.arcStreak === 1 ? 'day' : 'days'}`} />
+            {report.strongest && (
+              <Row
+                stacked
+                label="Strongest"
+                value={`${report.strongest.title} — ${report.strongest.streakDays}${report.strongest.streakDays === 1 ? 'st' : 'th'} consecutive day`}
+              />
+            )}
+            {report.weakest && (
+              <Row
+                stacked
+                label="Weakest"
+                value={`${report.weakest.title} — ${report.weakest.missesInWindow} misses in ${report.weakest.windowDays}`}
+              />
+            )}
+          </Panel>
+
+          {/* The one sanctioned quote surface. design/00 §7 bans these at
+              the point of action and on any failure screen; the evening
+              report is neither — the day is already done, and this is
+              the app's closing line rather than encouragement to act. */}
+          <QuoteCard attributed className="mx-auto mt-5 w-full max-w-[380px]">
+            {report.message}
+          </QuoteCard>
+
+          <p className="mt-8 text-center text-xxs uppercase tracking-wide text-faint">tap anywhere</p>
+        </div>
       </div>
-
-      <div className="w-full max-w-xs space-y-2 font-mono text-sm tabular-nums text-text">
-        <Row label="XP" value={`${report.xp}`} />
-        <Row label="Core quests" value={`${report.coreCompleted} / ${report.coreTotal}`} />
-        <Row label="Arc streak" value={`${report.arcStreak} days`} />
-        {report.strongest && (
-          <Row
-            label="Strongest"
-            value={`${report.strongest.title} — ${report.strongest.streakDays}${report.strongest.streakDays === 1 ? 'st' : 'th'} consecutive day`}
-          />
-        )}
-        {report.weakest && (
-          <Row
-            label="Weakest"
-            value={`${report.weakest.title} — ${report.weakest.missesInWindow} misses in ${report.weakest.windowDays}`}
-          />
-        )}
-      </div>
-
-      <p className="mt-4 max-w-xs text-center text-sm italic text-text-dim">"{report.message}"</p>
-
-      <div className="mt-8 text-xxs uppercase tracking-wide text-text-faint">tap anywhere</div>
-    </div>
+    </Portal>
   );
 }
 
-function Row({ label, value }: { label: string; value: string }) {
+/**
+ * A labelled figure in the report.
+ *
+ * The label holds a fixed column and the value takes the rest, wrapping
+ * rather than truncating: "Strongest" carries a whole sentence, and the
+ * numbers ("1 / 6") are read verbatim by review.spec, so neither side
+ * may be cut.
+ */
+function Row({ label, value, stacked = false }: { label: string; value: string; stacked?: boolean }) {
+  // Numbers sit on one line opposite their label. Sentences ("CAREER —
+  // 1st consecutive day") get their own line underneath and are set in
+  // sans: right-aligned wrapped mono broke them into ragged fragments
+  // with two words orphaned on the last line.
+  if (stacked) {
+    return (
+      <div className="py-2.5" style={{ borderBottom: '1px solid var(--hair-faint)' }}>
+        <span className="text-xs text-ink-700">{label}</span>
+        <p className="mt-1 text-sm leading-[1.45] text-ink-100">{value}</p>
+      </div>
+    );
+  }
+
   return (
-    <div className="flex justify-between border-b border-border pb-1">
-      <span className="text-text-dim">{label}</span>
-      <span>{value}</span>
+    <div
+      className="flex items-baseline gap-4 py-2.5"
+      style={{ borderBottom: '1px solid var(--hair-faint)' }}
+    >
+      <span className="w-[86px] shrink-0 text-xs text-ink-700">{label}</span>
+      <span className="min-w-0 flex-1 text-right font-mono text-sm tabular-nums text-ink-100">
+        {value}
+      </span>
     </div>
   );
 }

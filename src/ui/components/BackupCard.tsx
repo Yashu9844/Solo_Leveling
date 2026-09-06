@@ -110,7 +110,7 @@ export function BackupCard({ onExported }: BackupCardProps = {}) {
     // The testid lives on a wrapper rather than on Panel, which draws
     // its border as two nested elements and takes no passthrough props.
     <div className="mt-4" data-testid="backup-card">
-      <Panel cut="md" className="px-4 py-4">
+      <Panel cut="md" bodyClassName="px-4 py-4">
         <SectionLabel className="mb-2">Data safety</SectionLabel>
 
         {status && (

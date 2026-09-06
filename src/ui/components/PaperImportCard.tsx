@@ -69,7 +69,7 @@ export function PaperImportCard() {
 
   return (
     <div className="mt-4" data-testid="paper-import-card">
-      <Panel cut="md" className="px-4 py-4">
+      <Panel cut="md" bodyClassName="px-4 py-4">
         <SectionLabel className="mb-2">Paper log import</SectionLabel>
         <p className="text-xs leading-[1.5] text-faint">
           For days tracked on paper before this app existed.

@@ -56,7 +56,7 @@ export function BodyMetricsCard() {
   if (!arcId) return null;
 
   return (
-    <Panel cut="md" className="mt-4 px-4 py-4">
+    <Panel cut="md" className="mt-4" bodyClassName="px-4 py-4">
       {!expanded ? (
         // Collapsed by default: this is a real but occasional action, and
         // an always-open form would outweigh the readouts above it.

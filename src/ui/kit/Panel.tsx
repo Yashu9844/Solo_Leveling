@@ -16,7 +16,20 @@ interface PanelProps {
   raised?: boolean;
   /** Drops the border entirely — for a panel sitting on top of art. */
   borderless?: boolean;
+  /**
+   * Lands on the OUTER element: margins, width, alignment — anything
+   * that positions the card in its parent.
+   *
+   * This split is not cosmetic. The border is a second element wrapped
+   * around the content, so a margin passed to the inner one opens a gap
+   * *inside* the card and closes the gap between cards, and a max-width
+   * there leaves the border colour showing as a band around the
+   * content. Both happened before this was split.
+   */
   className?: string;
+  /** Lands on the INNER element: padding, flex, text — the card's own
+   * contents. */
+  bodyClassName?: string;
   style?: CSSProperties;
 }
 
@@ -41,6 +54,7 @@ export function Panel({
   raised = false,
   borderless = false,
   className = '',
+  bodyClassName = '',
   style,
 }: PanelProps) {
   const shape = CUT_CLASS[cut];
@@ -48,15 +62,21 @@ export function Panel({
 
   if (borderless) {
     return (
-      <div className={[shape, className].join(' ')} style={{ background: fill, ...style }}>
+      <div
+        className={[shape, className, bodyClassName].join(' ')}
+        style={{ background: fill, ...style }}
+      >
         {children}
       </div>
     );
   }
 
   return (
-    <div className={shape} style={{ background: 'var(--hair)', padding: 1, ...style }}>
-      <div className={[shape, 'h-full w-full', className].join(' ')} style={{ background: fill }}>
+    <div
+      className={[shape, className].join(' ')}
+      style={{ background: 'var(--hair)', padding: 1, ...style }}
+    >
+      <div className={[shape, 'h-full w-full', bodyClassName].join(' ')} style={{ background: fill }}>
         {children}
       </div>
     </div>

@@ -48,7 +48,7 @@ export function InstallCard() {
 
   return (
     <div className="mt-4" data-testid="install-card">
-      <Panel cut="md" className="px-4 py-4">
+      <Panel cut="md" bodyClassName="px-4 py-4">
         <p className="text-sm text-ink-100">Install this as an app.</p>
         <p className="mt-1.5 text-xs text-faint">Full screen, works offline, no browser chrome.</p>
         <div className="mt-4">

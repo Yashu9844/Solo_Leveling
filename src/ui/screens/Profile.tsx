@@ -103,7 +103,7 @@ function LevelSummary() {
   const pct = level.xpForNext > 0 ? (level.xpIntoLevel / level.xpForNext) * 100 : 0;
 
   return (
-    <Panel cut="md" className="px-5 py-5">
+    <Panel cut="md" bodyClassName="px-5 py-5">
       {/* The main quest opens the identity screen because it is the one
           sentence the whole arc is measured against — onboarding calls
           it "the only thing the app judges you against", and this is the
@@ -286,7 +286,8 @@ function ArcPauseControl() {
   return (
     <Panel
       cut="md"
-      className="mt-4 px-4 py-4"
+      className="mt-4"
+      bodyClassName="px-4 py-4"
       // A paused arc is a state, not a warning, so its edge takes the
       // recovery amber the app already uses for reduced mode — never red.
       style={pausedToday ? { background: 'var(--state-recover)' } : undefined}

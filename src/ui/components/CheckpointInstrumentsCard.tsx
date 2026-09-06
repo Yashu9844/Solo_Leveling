@@ -66,7 +66,7 @@ export function CheckpointInstrumentsCard({ day, label, header, saveLabel = 'Sav
   }
 
   return (
-    <Panel cut="md" className="mt-4 px-4 py-4">
+    <Panel cut="md" className="mt-4" bodyClassName="px-4 py-4">
       {!expanded ? (
         <button
           type="button"

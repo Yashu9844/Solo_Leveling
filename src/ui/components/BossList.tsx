@@ -80,7 +80,8 @@ export function BossList() {
           <Panel
             key={status.boss.id}
             cut="md"
-            className="mb-3 px-4 py-4"
+            className="mb-3"
+            bodyClassName="px-4 py-4"
             // Panel draws its border as an outer layer whose background
             // IS the border colour, so this is how a card gets a boss-red
             // edge. A cleared boss drops back to the hairline: it is
@@ -137,7 +138,7 @@ export function BossList() {
       })}
 
       {visible.length === 0 && nextLocked && day !== null && (
-        <Panel cut="md" className="px-4 py-4">
+        <Panel cut="md" bodyClassName="px-4 py-4">
           <p className="text-sm text-ink-500">
             BOSS {nextLocked.id} · {nextLocked.title}
           </p>

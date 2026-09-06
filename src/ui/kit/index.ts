@@ -11,3 +11,5 @@ export { IconTile } from './IconTile';
 export { MeterBar, SegmentBar, StatTile, MASTERY_SEGMENTS } from './Meter';
 export { Segmented } from './Segmented';
 export { Sheet } from './Sheet';
+export { ArtLayer, artHasText, type Scrim } from './ArtLayer';
+export { Moment } from './Moment';

@@ -74,7 +74,7 @@ task and the fix would change engine/store behaviour, or a task would require de
       *Back-button dismissal moved to 2.3:* one app-level overlay-history owner is the
       right shape, because a sheet pushing its own entry would double-push whenever a
       sheet opens from another sheet.
-- [ ] **1.6** `ArtLayer` (LQIP → srcset, `aria-hidden`, theme-aware scrim,
+- [x] **1.6** `ArtLayer` (LQIP → srcset, `aria-hidden`, theme-aware scrim,
       `--art-opacity`, gradient fallback) and `Moment` base. Gate: fast.
 
 ## Phase 2 — Navigation architecture
@@ -279,6 +279,7 @@ system §10 are required; neither may be traded for the other.
 | 1.3 | kit: buttons | Primary/Secondary/Quiet + IconTile. Sized by explicit min-height, not padding, so text-scale XS (0.88x) cannot shrink a button under the 44px target. Tones accent/dawn/boss. Native button props forwarded (aria, disabled, data-testid); framer-motion's conflicting drag/animation handlers omitted from the type. Gate green. |
 | 1.4 | kit: meters | MeterBar animates via CSS width transition, not framer-motion — e2e regexes `width: N%` out of the inline style and a JS animation would publish unparseable px values. Segmented keeps plain <button> + aria-pressed because 6 specs select it with getByRole('button'). Added --on-accent per theme: 4 dark themes need a dark label on their light accent, daylight needs a light one. SegmentBar (5-state mastery, never a percentage), StatTile. Gate green. |
 | 1.5 | kit: sheet | Three dismissals (Close button, scrim, downward drag past 110px or a 520px/s flick), focus trap + restore, Esc, scroll lock, role=dialog, safe-area footer. Renders the frozen aria-label="Close" itself so all 8 sheets inherit it. Back-button dismissal deliberately deferred to 2.3 as an app-level owner. Gate green. |
+| 1.6 | kit: art + moment | ArtLayer: 6 scrim presets built with color-mix against --void so a theme change re-tints the scrim; inline LQIP paints frame 1; --art-opacity gates every plate at once; gradient fallback for unfilled slots. Moment base keeps role=button + /Level up/ label (frozen by xp.spec). Phase 1 complete. NOTE: art still absent from dist because no screen imports the kit yet — verified naturally at 3.1. Gate green. |
 | — | plan v2 | User added: configurable settings/theming, explicit nav flowchart, mood-based art assignment. Saw all 11 plates — split into Blue Arc (effort) / Gold Horizon (evidence) / Boss. Added docs 02 and 03; replanned to 13 phases, 60 tasks. |
 
 ---

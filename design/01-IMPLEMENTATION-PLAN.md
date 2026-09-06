@@ -89,7 +89,7 @@ task and the fix would change engine/store behaviour, or a task would require de
 - [x] **2.2** Transition grammar wired: `AnimatePresence` keyed on pathname, per-edge
       direction (lateral fade vs hierarchical push), tab scroll-position retention,
       tap-active-tab-to-top. Gate: fast.
-- [ ] **2.3** Back-button contract (§5): **an app-level `OverlayStack`** owns one history
+- [x] **2.3** Back-button contract (§5): **an app-level `OverlayStack`** owns one history
       entry per open overlay (moved here from 1.5 — a single owner avoids double-pushes
       when a sheet opens from a sheet); sheets and moments register with it;
       onboarding steps map to history; a tab root exits. New
@@ -286,6 +286,7 @@ system §10 are required; neither may be traded for the other.
 | 1.6 | kit: art + moment | ArtLayer: 6 scrim presets built with color-mix against --void so a theme change re-tints the scrim; inline LQIP paints frame 1; --art-opacity gates every plate at once; gradient fallback for unfilled slots. Moment base keeps role=button + /Level up/ label (frozen by xp.spec). Phase 1 complete. NOTE: art still absent from dist because no screen imports the kit yet — verified naturally at 3.1. Gate green. |
 | 2.1 | routing | The 3 PWA shortcuts declared in the manifest since Slice 1 were never handled — they fell through to the catch-all and landed on a bare Today with no sheet open. Now resolve to /today?open=<target> (Today consumes it in 6.3). /start deferred to 3.2 and /profile/settings to 10.2 to avoid premature routes. Gate green. |
 | 2.2 | transitions | Route content is now opacity-only. The first version slid/scaled the entering screen and blew the hard 300ms tap-to-XP budget at 597ms (5/5 fail) — a moving screen means moving buttons, so the first tap queues behind the animation. Hierarchy moves to overlays instead. Also: per-tab scroll retention, tap-active-tab-to-top, edge derivation from route depth. No AnimatePresence on routes (mode="wait" would put mounting behind an animation). Full e2e 61/62, sole failure the known reflections flake (8/8 in isolation). |
+| 2.3 | back + overlays | OverlayStackProvider owns one history entry per overlay; Sheet and Moment register. New navigation.spec (10 tests). Fixed the scroll-restore bug it exposed: screens load from IndexedDB, so restoring before content arrives clamps to 0 — now re-applies via ResizeObserver until reachable. ALSO FIXED THE LONG-RUNNING FLAKE: both recovery-card tests jumped the clock before Day 1's async quest generation had landed, so there was nothing to recover. FULL SUITE GREEN 72/72. |
 | — | plan v2 | User added: configurable settings/theming, explicit nav flowchart, mood-based art assignment. Saw all 11 plates — split into Blue Arc (effort) / Gold Horizon (evidence) / Boss. Added docs 02 and 03; replanned to 13 phases, 60 tasks. |
 
 ---

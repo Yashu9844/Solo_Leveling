@@ -1,5 +1,6 @@
 import { AnimatePresence, motion, type PanInfo } from 'framer-motion';
 import { useCallback, useEffect, useId, useRef, type ReactNode } from 'react';
+import { useBackDismiss } from '../routing/OverlayStack';
 
 const FOCUSABLE =
   'a[href],button:not([disabled]),textarea:not([disabled]),input:not([disabled]),select:not([disabled]),[tabindex]:not([tabindex="-1"])';
@@ -29,14 +30,16 @@ interface SheetProps {
  * contract (design/00-DESIGN-SYSTEM.md §10) and is rendered here so all
  * eight sheets inherit it rather than each spelling it out.
  *
- * Back-button dismissal is deliberately NOT handled here — see
- * design/02-NAVIGATION-FLOW.md §5. One app-level owner handles the
- * overlay history stack (task 2.3); a sheet pushing its own entry would
- * double-push whenever a sheet opens from another sheet.
+ * Back closes the sheet rather than the screen, via the app-level
+ * OverlayStack (design/02-NAVIGATION-FLOW.md §5). The stack is central
+ * rather than per-sheet because a sheet opened from another sheet would
+ * otherwise push two history entries and race to unwind them.
  */
 export function Sheet({ open, onClose, title, children, footer, testId }: SheetProps) {
   const panelRef = useRef<HTMLDivElement>(null);
   const titleId = useId();
+
+  useBackDismiss(open, onClose);
 
   // Scroll lock. The scrim covers the page, but without this the page
   // behind still scrolls under a dragging thumb on iOS.

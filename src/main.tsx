@@ -20,6 +20,7 @@ import { App } from './App';
 import { ArcStatusProvider } from './store/ArcStatusContext';
 import { SettingsProvider } from './store/SettingsContext';
 import { MotionRoot } from './ui/MotionRoot';
+import { OverlayStackProvider } from './ui/routing/OverlayStack';
 
 if ('storage' in navigator && 'persist' in navigator.storage) {
   void navigator.storage.persist();
@@ -30,9 +31,11 @@ createRoot(document.getElementById('root')!).render(
     <SettingsProvider>
       <MotionRoot>
         <BrowserRouter>
-          <ArcStatusProvider>
-            <App />
-          </ArcStatusProvider>
+          <OverlayStackProvider>
+            <ArcStatusProvider>
+              <App />
+            </ArcStatusProvider>
+          </OverlayStackProvider>
         </BrowserRouter>
       </MotionRoot>
     </SettingsProvider>

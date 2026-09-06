@@ -45,6 +45,13 @@ test('the recovery card offers an optional "what got in the way" chip alongside 
   await withSafeClock(page);
   await completeOnboarding(page);
 
+  // Day 1's quest instances are generated asynchronously once Today
+  // mounts, and completeOnboarding only waits for the URL. Jumping the
+  // clock before that write lands leaves Day 1 with no instances, so
+  // there is nothing to recover and the card never appears. Wait for a
+  // row to prove generation finished.
+  await expect(page.getByTestId('quest-row-career')).toBeVisible();
+
   // Day 2, having touched nothing on Day 1 -> Day 1 is fully recoverable.
   const day2 = new Date(SAFE_TIME);
   day2.setUTCDate(day2.getUTCDate() + 1);

@@ -1,5 +1,6 @@
 import type { ReactNode } from 'react';
 import type { ArtSlot } from '../../assets/art';
+import { useBackDismiss } from '../routing/OverlayStack';
 import { ArtLayer } from './ArtLayer';
 import { FramedPanel } from './Panel';
 
@@ -42,6 +43,9 @@ export function Moment({
   slot,
   hint = 'tap anywhere',
 }: MomentProps) {
+  // Back dismisses the Moment rather than leaving the screen behind it.
+  useBackDismiss(true, onDismiss);
+
   return (
     <div
       role="button"

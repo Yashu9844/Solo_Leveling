@@ -55,9 +55,13 @@ These are the five places the app says *something real changed*.
 
 ### 2.3 The third colour — **Boss**
 
-Red-magenta appears in exactly two plates (the demon, the throne). It is reserved for BOSS
-surfaces: `BossList`, `BossClearedMoment`. It must never mark an incomplete quest, a missed
-day, or any state the user could read as punishment.
+Six plates are crimson (demons, a throne, a tier ladder). Reserved for BOSS surfaces:
+`BossList` and its locked state. Never an incomplete quest, a missed day, or any state the
+user could read as punishment.
+
+Note the deliberate exception: **`boss-cleared` is gold, not red.** Clearing a boss is
+evidence, and the plate the user supplied for it — an enthroned figure under warm light —
+already agrees. Red is the boss you face; gold is the boss you beat.
 
 ### 2.4 Classification protocol for incoming art
 
@@ -77,22 +81,27 @@ that folder and classifies anything new **before** adding it to the manifest:
 
 ### 2.5 Slot map
 
-| Slot | Mood | Used by | Current source |
-|---|---|---|---|
-| `start-hero` | Gold | Start screen | `11_04_44` (has baked-in tagline) |
-| `boot` | Blue | Splash | `10_49_48` |
-| `onboarding` | Blue | Onboarding steps 1 & 6 | `10_48_22` |
-| `today` | Blue | Today header bleed | `10_51_01` |
-| `level-up` | Blue | LevelUpMoment | `10_56_27` |
-| `rank` | Gold | RankAdvancedMoment | `10_59_54` |
-| `boss` | Boss | BossList, BossClearedMoment | `10_39_47` |
-| `boss-throne` | Boss | Boss detail / locked state | `11_01_19` |
-| `progress` | Blue | Progress → SYSTEM level card | `10_54_45` |
-| `training` | Blue | Training log sheet, VITALITY | `10_58_14` |
-| `checkpoint` | Gold | CheckpointMoment, Day-N report | `11_02_52` |
-| `skills` | Blue | Skills header band | *unfilled → gradient* |
-| `review` | Blue | Evening review header | *unfilled → gradient* |
-| `quote` | Blue | Quote card backdrop | *unfilled → gradient* |
+| Slot | Mood | Used by | Source | Own text |
+|---|---|---|---|---|
+| `boot` | Blue | Splash | `10_49_48` | |
+| `start-hero` | Gold | Start screen | `11_04_44` | DISCIPLINE CREATES FREEDOM |
+| `onboarding` | Blue | Onboarding steps 1 & 6 | `10_48_22` | |
+| `today` | Blue | Today header bleed | `10_51_01` | |
+| `level-up` | Blue | LevelUpMoment | `11_15_38` | A GREATER YOU TOMORROW |
+| `rank` | Gold | RankAdvancedMoment | `11_21_19` | HIGHER THAN YESTERDAY |
+| `checkpoint` | Gold | CheckpointMoment, Day-N report | `11_02_52` | |
+| `progress` | Blue | Progress → SYSTEM level card | `10_54_45` | |
+| `skills` | Blue | Skills header band | `10_56_27` | |
+| `training` | Blue | Training log sheet, VITALITY | `11_30_52` | PROGRESS OVER COMFORT |
+| `review` | Blue | Evening review header | `10_59_54` | |
+| `review-weekly` | Gold | Weekly distance travelled | `11_09_20` | A BRIGHTER YOU SOMEDAY |
+| `boss` | Boss | BossList header (landscape) | `11_24_03` | NEXT LEVEL AWAITS |
+| `boss-throne` | Boss | Locked-boss state | `11_01_19` | |
+| `boss-cleared` | Gold | BossClearedMoment | `11_22_43` | A BETTER YOU AWAITS |
+| `quote` | Blue | Quote card backdrop | `10_58_14` | |
+
+Four further boss plates are classified and parked in the manifest's `overflow` block —
+kept so a later screen can claim one without re-reviewing the folder.
 
 **Every unfilled slot must render a procedural gradient of the same value structure.** No
 screen may look unfinished because art hasn't arrived.
@@ -102,13 +111,26 @@ screen may look unfinished because art hasn't arrived.
 `scripts/import-art.mjs` (sharp, devDependency) reads `design/art.manifest.json`
 (slot → `{ source, mood, focal }`) and emits per slot into `src/assets/art/`:
 
-- `<slot>-640.webp` (q72) and `<slot>-1280.webp` (q70)
+- `<slot>-480.webp` (q66) and `<slot>-960.webp` (q55)
 - a 20px blurred LQIP as an inline base64 data URI
 
 then regenerates a typed `src/assets/art/index.ts` exporting
-`{ src, srcSet, lqip, width, height, mood, focal }`. **Budget: ≤ 180 KB per file,
-≤ 1.6 MB total.** The script fails loudly if a slot blows it. Idempotent and re-runnable:
-new art is a manifest line plus `npm run art`, never a component change.
+`{ src, srcSet, lqip, width, height, mood, focal, hasText }`.
+
+Widths are 480/960 rather than 640/1280 because the app is a 430px column at every
+breakpoint — 960 already covers 2x on the widest phone, and 1280 would ship pixels nothing
+can display. Quality is tuned low on purpose: every plate sits under a 45–85% scrim, and
+often at `--art-opacity: 0.45`, so anything above ~q60 is bytes the user cannot perceive.
+
+**Budget: ≤ 170 KB per file.** That per-file number is the one that matters — a screen
+loads exactly one plate, so it *is* the per-screen art weight a phone pays. The total is
+only a sanity ceiling (4 MB), because art is deliberately **not precached**: it is
+runtime-cached on first view, so the sum on disk is never downloaded in one go. Capping the
+total tightly would just force a quality cut on existing plates every time a new one
+arrives. The script fails loudly on any breach. Idempotent and re-runnable: new art is a
+manifest line plus `npm run art`, never a component change.
+
+Current: **16/16 slots filled, 2.2 MB on disk, largest single file 154 KB.**
 
 ---
 

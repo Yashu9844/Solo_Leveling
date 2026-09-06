@@ -1,0 +1,132 @@
+{
+  "$comment": [
+    "Slot -> source art. design/00-DESIGN-SYSTEM.md §2.4 is the classification protocol.",
+    "mood: blue = effort, gold = evidence, boss = BOSS surfaces only.",
+    "focal: CSS object-position — keeps the figure clear of the copy.",
+    "text: true means the plate carries its own baked-in tagline, so the screen",
+    "      must not overlay a competing one (§2.4 rule 4).",
+    "A slot with source null renders a procedural gradient instead; every screen",
+    "must look finished with zero art present.",
+    "Re-run `npm run art` after editing this file."
+  ],
+  "sourceDir": "C:/Users/yashwanth/Desktop/system-app/project/assests_high_res",
+  "slots": {
+    "boot": {
+      "source": "ChatGPT Image Sep 6, 2026, 10_49_48 PM.png",
+      "mood": "blue",
+      "focal": "50% 28%",
+      "text": false,
+      "note": "Lit-eye portrait. Quiet enough to sit under the wordmark."
+    },
+    "start-hero": {
+      "source": "ChatGPT Image Sep 6, 2026, 11_04_44 PM.png",
+      "mood": "gold",
+      "focal": "50% 42%",
+      "text": true,
+      "note": "Carries DISCIPLINE CREATES FREEDOM / A BETTER YOU AWAITS. The promise."
+    },
+    "onboarding": {
+      "source": "ChatGPT Image Sep 6, 2026, 10_48_22 PM.png",
+      "mood": "blue",
+      "focal": "50% 30%",
+      "text": false
+    },
+    "today": {
+      "source": "ChatGPT Image Sep 6, 2026, 10_51_01 PM.png",
+      "mood": "blue",
+      "focal": "70% 25%",
+      "text": false,
+      "note": "Bleeds from the top-right corner only, under a directional scrim."
+    },
+    "level-up": {
+      "source": "ChatGPT Image Sep 6, 2026, 11_15_38 PM.png",
+      "mood": "blue",
+      "focal": "50% 45%",
+      "text": true,
+      "note": "Ascending a staircase toward a colossus. DISCIPLINE TODAY / A GREATER YOU TOMORROW."
+    },
+    "rank": {
+      "source": "ChatGPT Image Sep 6, 2026, 11_21_19 PM.png",
+      "mood": "gold",
+      "focal": "50% 40%",
+      "text": true,
+      "note": "Reaching for the eclipse. HIGHER THAN YESTERDAY. Rank is evidence, so gold."
+    },
+    "checkpoint": {
+      "source": "ChatGPT Image Sep 6, 2026, 11_02_52 PM.png",
+      "mood": "gold",
+      "focal": "50% 55%",
+      "text": false,
+      "note": "The cliff at sunrise. The report screen — the one that says something changed."
+    },
+    "progress": {
+      "source": "ChatGPT Image Sep 6, 2026, 10_54_45 PM.png",
+      "mood": "blue",
+      "focal": "50% 35%",
+      "text": false
+    },
+    "skills": {
+      "source": "ChatGPT Image Sep 6, 2026, 10_56_27 PM.png",
+      "mood": "blue",
+      "focal": "50% 30%",
+      "text": false,
+      "note": "Armoured monarch silhouette — mastery."
+    },
+    "training": {
+      "source": "ChatGPT Image Sep 6, 2026, 11_30_52 PM.png",
+      "mood": "blue",
+      "focal": "50% 40%",
+      "text": true,
+      "note": "PROGRESS OVER COMFORT. The physique plate."
+    },
+    "review": {
+      "source": "ChatGPT Image Sep 6, 2026, 10_59_54 PM.png",
+      "mood": "blue",
+      "focal": "50% 35%",
+      "text": false,
+      "note": "The nightly climb. Evening review header."
+    },
+    "review-weekly": {
+      "source": "ChatGPT Image Sep 6, 2026, 11_09_20 PM.png",
+      "mood": "gold",
+      "focal": "50% 50%",
+      "text": true,
+      "note": "A BRIGHTER YOU SOMEDAY. The weekly distance-travelled block."
+    },
+    "boss": {
+      "source": "ChatGPT Image Sep 6, 2026, 11_24_03 PM.png",
+      "mood": "boss",
+      "focal": "50% 45%",
+      "text": true,
+      "note": "Landscape banner, 1945x808. NEXT LEVEL AWAITS. The BossList header."
+    },
+    "boss-throne": {
+      "source": "ChatGPT Image Sep 6, 2026, 11_01_19 PM.png",
+      "mood": "boss",
+      "focal": "50% 40%",
+      "text": false,
+      "note": "Locked-boss state."
+    },
+    "boss-cleared": {
+      "source": "ChatGPT Image Sep 6, 2026, 11_22_43 PM.png",
+      "mood": "gold",
+      "focal": "50% 45%",
+      "text": true,
+      "note": "Enthroned. Gold, not red — clearing a boss is evidence, and the plate agrees."
+    },
+    "quote": {
+      "source": "ChatGPT Image Sep 6, 2026, 10_58_14 PM.png",
+      "mood": "blue",
+      "focal": "50% 35%",
+      "text": false,
+      "note": "Sits far back behind a quote card at low opacity."
+    }
+  },
+  "overflow": {
+    "$comment": "Classified but not yet slotted. Kept here so nothing is lost and a later screen can claim one without re-reviewing the folder.",
+    "ChatGPT Image Sep 6, 2026, 10_39_47 PM.png": "boss · wide demon banner",
+    "ChatGPT Image Sep 6, 2026, 11_25_25 PM.png": "boss · stairs toward a red demon",
+    "ChatGPT Image Sep 6, 2026, 11_27_15 PM.png": "boss · red demon portrait, no text",
+    "ChatGPT Image Sep 6, 2026, 11_29_35 PM.png": "boss · EVOLVE ADAPT ASCEND REPEAT, a tier ladder"
+  }
+}

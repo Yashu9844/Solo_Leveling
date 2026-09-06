@@ -58,7 +58,7 @@ export interface LogBuildSessionInput {
    * this session, granting the +50 CRAFT bonus (final/03 §4.1). A SHIP
    * session can be logged without one (e.g. shipped work with nothing
    * new to name as an artifact yet). */
-  shippedArtifact?: { kind: ArtifactRow['kind']; title: string; url?: string };
+  shippedArtifact?: { kind: ArtifactRow['kind']; title: string; url?: string; costPerTaskStated?: boolean };
 }
 
 export async function logBuildSession(
@@ -120,6 +120,7 @@ export async function logBuildSession(
         url: input.shippedArtifact.url,
         project_key: input.projectKey,
         local_date: today,
+        cost_per_task_stated: input.shippedArtifact.costPerTaskStated,
       };
       await db.artifact.add(artifactRow);
     }

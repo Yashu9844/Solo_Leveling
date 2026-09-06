@@ -5,14 +5,33 @@
 // screen (first quest ever, cumulative/trailing-90 MVD day counts, a
 // recovered-after-a-real-gap check, and whether Day 120 specifically is
 // sealed).
-import { differenceInCalendarDays, parseISO } from 'date-fns';
+import { addDays, differenceInCalendarDays, format, parseISO } from 'date-fns';
 import type { EngineConfig, QuestRecoveredPayload } from '../engine/types';
 import { achievementsFrom, identitiesFrom, type AchievementEvidence, type AchievementResult, type IdentityResult } from '../engine/achievements';
+import { ifThenFiringRate } from '../engine/ifThen';
 import { computeGateEvidence } from './checkpoint';
 import { applyEvents } from '../engine/reduce';
 import { getAllEvents } from '../db/events';
 import { buildDayOutcomes } from '../db/projections';
 import { db } from '../db/db';
+
+// The three core quests onboarding actually collects an implementation
+// intention for — store/onboarding.ts's Step 5 (career/DSA/training),
+// not all six core quests (sleep/attention have no if-then plan).
+const IF_THEN_KEYS = ['career', 'dsa', 'training'] as const;
+
+async function computeIfThenFiringRate(today: string): Promise<number> {
+  const windowStart = format(addDays(parseISO(today), -59), 'yyyy-MM-dd');
+  const [templates, instances] = await Promise.all([
+    db.quest_template.toArray(),
+    db.quest_instance.where('local_date').between(windowStart, today, true, true).toArray(),
+  ]);
+  const firableTemplateIds = new Set(
+    templates.filter((t) => t.type === 'core' && IF_THEN_KEYS.includes(t.key as (typeof IF_THEN_KEYS)[number])).map((t) => t.id)
+  );
+  const firable = instances.filter((i) => firableTemplateIds.has(i.template_id));
+  return ifThenFiringRate(firable);
+}
 
 export interface AchievementsReport {
   achievements: AchievementResult[];
@@ -23,10 +42,11 @@ export async function getAchievementsReport(today: string, config: EngineConfig)
   const arc = await db.arc.toCollection().first();
   if (!arc) return { achievements: achievementsFrom(EMPTY), identities: identitiesFrom(EMPTY) };
 
-  const [events, gateEvidence, checkpoints] = await Promise.all([
+  const [events, gateEvidence, checkpoints, ifThenRate] = await Promise.all([
     getAllEvents(),
     computeGateEvidence(today, config),
     db.checkpoint.toArray(),
+    computeIfThenFiringRate(today),
   ]);
   const state = applyEvents(events, config);
 
@@ -58,7 +78,7 @@ export async function getAchievementsReport(today: string, config: EngineConfig)
     publishedWriteups: gateEvidence.publishedWriteups,
     publicProjectsTotal: gateEvidence.publicProjectsTotal,
     trainingSessionsTotal: gateEvidence.trainingSessionsTotal,
-    ifThenFiringRate: 0, // no data source yet — see engine/achievements.ts's doc comment
+    ifThenFiringRate: ifThenRate,
     day120Sealed: day120?.sealed_at !== undefined,
   };
 

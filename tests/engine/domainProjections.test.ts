@@ -103,7 +103,7 @@ describe('db/domainProjections — buildDomainTables reproduces every live domai
     await logLearningBlock(day, arcId, 'Networking', 15, DEFAULT_CONFIG, deps, 'note');
     await logSystemDesignStudy(day, arcId, 'URL shortener', 'written_up', 30, DEFAULT_CONFIG, deps, 'https://example.com', 'notes');
     await logBuildSession(day, arcId, { mode: 'LEARN', minutes: 45, projectKey: 'agent' }, DEFAULT_CONFIG, deps);
-    await logBuildSession(day2, arcId, { mode: 'SHIP', minutes: 60, projectKey: 'agent', shippedArtifact: { kind: 'feature', title: 'Retry logic', url: 'https://github.com/x/y' } }, DEFAULT_CONFIG, deps);
+    await logBuildSession(day2, arcId, { mode: 'SHIP', minutes: 60, projectKey: 'agent', shippedArtifact: { kind: 'project', title: 'Retry logic', url: 'https://github.com/x/y', costPerTaskStated: true } }, DEFAULT_CONFIG, deps);
 
     // Physical/lifestyle: a training session with lifts, steps, a body
     // metric, sleep (with a sleep time), screen time, maintenance.

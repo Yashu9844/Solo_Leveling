@@ -19,7 +19,7 @@ async function isBossCleared(bossId: BossId): Promise<boolean> {
 }
 
 export async function computeBossEvidence(): Promise<BossEvidence> {
-  const [dsaAttempts, dsaProblems, applications, artifacts, learningBlocks, systemDesigns, trainingSessions, resumeVersions, checkpoints, events] =
+  const [dsaAttempts, dsaProblems, applications, artifacts, learningBlocks, systemDesigns, trainingSessions, resumeVersions, checkpoints, events, metricSamples] =
     await Promise.all([
       db.dsa_attempt.toArray(),
       db.dsa_problem.toArray(),
@@ -31,6 +31,7 @@ export async function computeBossEvidence(): Promise<BossEvidence> {
       db.resume_version.toArray(),
       db.checkpoint.toArray(),
       getAllEvents(),
+      db.metric_sample.toArray(),
     ]);
 
   const problemById = new Map(dsaProblems.map((p) => [p.id, p]));
@@ -80,7 +81,7 @@ export async function computeBossEvidence(): Promise<BossEvidence> {
     systemDesignsWrittenUp: systemDesigns.filter((s) => s.mode === 'written_up').length,
     publicProjectsWithEvalSuite: [...projectKeys].filter((k) => evalProjectKeys.has(k)).length,
     publicProjectsDeployedReachable: artifacts.filter((a) => a.kind === 'deployment').length,
-    costPerTaskMeasured: false,
+    costPerTaskMeasured: artifacts.some((a) => a.kind === 'project' && a.cost_per_task_stated === true),
     publishedWriteups: artifacts.filter((a) => a.kind === 'writeup').length,
     problemsFirstAttemptRateM: mediumAttempts.length > 0 ? mediumAttempts.filter((a) => a.outcome === 'first_attempt').length / mediumAttempts.length : 0,
     foundationTopicsFluentPlus: allFoundationStates.filter((s) => s === 'fluent' || s === 'retained').length,
@@ -89,7 +90,7 @@ export async function computeBossEvidence(): Promise<BossEvidence> {
     resumeVersionsTotal: resumeVersions.length,
     resumeExternallyReviewed: resumeVersions.some((r) => r.external_review === true),
     recordedMocks,
-    interviewBenchmarkPassed: false,
+    interviewBenchmarkPassed: metricSamples.some((s) => s.kind === 'interview_benchmark' && s.value === 1),
     arcSealed,
   };
 }

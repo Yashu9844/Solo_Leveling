@@ -477,6 +477,7 @@ export interface ArtifactShippedPayload {
   title: string;
   url?: string;
   projectKey: string;
+  costPerTaskStated?: boolean;
 }
 
 /**

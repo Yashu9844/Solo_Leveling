@@ -1,23 +1,17 @@
 // The Day-0 checkpoint row is created empty during onboarding
 // (store/onboarding.ts) — self_efficacy: {}, automaticity: {}, enjoyment:
-// {}. This module fills in self_efficacy from the carry-over instrument
-// (final/11-SLICE-2-PROMPT.md Step 1; the spec gap was in docs/13, not
-// final/, which is why Phase 0 didn't have it). automaticity and
-// enjoyment stay {} — no instrument for either exists yet in any final/
-// doc; left as an open gap, same shape as the other flagged omissions
-// in this file below.
+// {}. saveCheckpointInstruments (below) fills in all three, at Day 0 and
+// at every later administration (docs/04 §5.2-5.3: Day 0/30/60/90/120).
 //
 // Slice 12 — final/01 §4: rank gate evidence, sealing, and the export
 // gate that blocks sealing. computeGateEvidence pulls every field
 // engine/rank.ts's GateEvidence needs from real tables where the data
 // exists (career, DSA, foundations, training, resume, system design —
 // all real as of Slices 6-11; the four bossXCleared fields became real
-// too in Slice 13, via store/boss.ts's getBossStatus). Two fields still
-// have no data source ANYWHERE in this build and stay always false:
-// costPerTaskMeasured and interviewBenchmarkPassed have no logging
-// surface in any final/ doc. This is the safe direction — a gate
-// depending on them can never over-report a rank it hasn't actually
-// earned.
+// too in Slice 13, via store/boss.ts's getBossStatus; costPerTaskMeasured
+// and interviewBenchmarkPassed became real in Slice 14, via
+// ArtifactRow.cost_per_task_stated and store/training.ts's
+// logInterviewBenchmark respectively).
 import { addDays, format, parseISO } from 'date-fns';
 import {
   evaluateGates,
@@ -327,8 +321,17 @@ export async function computeGateEvidence(today: string, config: EngineConfig): 
     systemDesignsWrittenUp: systemDesigns.filter((s) => s.mode === 'written_up').length,
     systemDesignsExplainedAloud: systemDesigns.filter((s) => s.mode === 'explained_aloud').length,
     trainingEst1RmGainPct,
-    costPerTaskMeasured: false,
-    interviewBenchmarkPassed: false,
+    // final/03 §4.4's P2 requirement ("cost per task measured and
+    // stated") is a project-level self-certification, not a formula —
+    // true once any 'project' artifact has been flagged as such (see
+    // ArtifactShippedPayload.costPerTaskStated and
+    // ui/build/LogBuildSessionSheet.tsx's checkbox, shown only for that
+    // kind).
+    costPerTaskMeasured: artifacts.some((a) => a.kind === 'project' && a.cost_per_task_stated === true),
+    // final/02 §2.2 — "self-administered, logged, repeatable": true
+    // forever once any attempt has passed (store/training.ts's
+    // logInterviewBenchmark).
+    interviewBenchmarkPassed: metricSamples.some((s) => s.kind === 'interview_benchmark' && s.value === 1),
     bossICleared: bossI.cleared,
     bossIICleared: bossII.cleared,
     bossIIICleared: bossIII.cleared,

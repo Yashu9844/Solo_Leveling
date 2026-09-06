@@ -167,6 +167,9 @@ export interface ArtifactRow {
   project_key: string;
   local_date: string;
   notes?: string;
+  // final/03 §4.4's P2 requirement ("cost per task measured and
+  // stated") — a self-certification, kind: 'project' only.
+  cost_per_task_stated?: boolean;
 }
 
 export interface SkillNodeRow {
@@ -197,7 +200,7 @@ export interface TrainingSessionRow {
 export interface MetricSampleRow {
   id: string; // pk
   local_date: string;
-  kind: 'weight_kg' | 'waist_cm' | 'bodyfat_pct' | 'steps' | 'screen_time_min' | 'wake_time' | 'sleep_time';
+  kind: 'weight_kg' | 'waist_cm' | 'bodyfat_pct' | 'steps' | 'screen_time_min' | 'wake_time' | 'sleep_time' | 'interview_benchmark';
   value: number;
   unit: string;
   note?: string;

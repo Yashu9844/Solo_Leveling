@@ -29,7 +29,7 @@ export interface AchievementEvidence {
   publishedWriteups: number;
   publicProjectsTotal: number;
   trainingSessionsTotal: number;
-  ifThenFiringRate: number; // 0-1 — no data source yet, always 0
+  ifThenFiringRate: number; // 0-1 — engine/ifThen.ts, trailing 60 days, on-day completion of career/DSA/training (the 3 keys with an if-then plan)
   day120Sealed: boolean;
 }
 

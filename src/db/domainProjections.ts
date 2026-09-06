@@ -270,6 +270,7 @@ export function buildDomainTables(events: SystemEvent[], config: EngineConfig): 
           url: p.url,
           project_key: p.projectKey,
           local_date: event.local_date,
+          cost_per_task_stated: p.costPerTaskStated,
         });
         break;
       }

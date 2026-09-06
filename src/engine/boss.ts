@@ -48,7 +48,7 @@ export interface BossEvidence {
   systemDesignsWrittenUp: number;
   publicProjectsWithEvalSuite: number; // 'eval' artifact sharing a project_key with a 'project' artifact
   publicProjectsDeployedReachable: number;
-  costPerTaskMeasured: boolean; // no data source yet — always false
+  costPerTaskMeasured: boolean; // final/03 §4.4 — self-certified on a 'project' artifact
   publishedWriteups: number;
   problemsFirstAttemptRateM: number; // all-time, not windowed — Boss IV reads "200+ problems ... first-attempt M >= 60%" as a single cumulative fact
   foundationTopicsFluentPlus: number; // of all 9
@@ -57,7 +57,7 @@ export interface BossEvidence {
   resumeVersionsTotal: number;
   resumeExternallyReviewed: boolean;
   recordedMocks: number;
-  interviewBenchmarkPassed: boolean; // no data source yet — always false
+  interviewBenchmarkPassed: boolean; // final/02 §2.2 — self-administered, logged
   arcSealed: boolean; // every prior checkpoint (14/30/60/90) sealed
 }
 

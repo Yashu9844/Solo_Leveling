@@ -67,4 +67,30 @@ describe('store/achievements — getAchievementsReport', () => {
     const report = await getAchievementsReport(day, DEFAULT_CONFIG);
     expect(report.achievements.find((a) => a.id === 'first_move')?.earned).toBe(true);
   });
+
+  it("Keeps Promises earns once career/DSA/training fire on-day at >= 80% (engine/ifThen.ts's real wiring)", async () => {
+    const deps = seededDeps();
+    const arcId = await initialiseArc({ ...ONBOARDING_INPUT, intentions: {}, baseline: {} }, DEFAULT_CONFIG, deps);
+    const templates = await db.quest_template.toArray();
+    const byKey = (key: string) => templates.find((t) => t.key === key && t.type === 'core')!;
+
+    const days = ['2026-09-01', '2026-09-02', '2026-09-03'];
+    for (const day of days) {
+      const { instances } = await loadTodayQuests(day, DEFAULT_CONFIG, deps);
+      for (const key of ['career', 'dsa', 'training']) {
+        const instance = instances.find((i) => i.template_id === byKey(key).id)!;
+        await completeQuest(instance, key, arcId, DEFAULT_CONFIG, deps);
+      }
+    }
+
+    const report = await getAchievementsReport(days[days.length - 1]!, DEFAULT_CONFIG);
+    expect(report.identities.find((i) => i.id === 'keeps_promises')?.earned).toBe(true);
+  });
+
+  it('Keeps Promises is not earned when nothing has ever fired', async () => {
+    const deps = seededDeps();
+    await initialiseArc({ ...ONBOARDING_INPUT, intentions: {}, baseline: {} }, DEFAULT_CONFIG, deps);
+    const report = await getAchievementsReport(DEFAULT_CONFIG.arc.startDate, DEFAULT_CONFIG);
+    expect(report.identities.find((i) => i.id === 'keeps_promises')?.earned).toBe(false);
+  });
 });

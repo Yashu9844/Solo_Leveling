@@ -168,6 +168,59 @@ export async function logBodyMetric(
   await rebuildProjections(config, deps);
 }
 
+/**
+ * final/02 §2.2 / docs/04-domain-systems.md line 77 — the interview-
+ * readiness benchmark ("solve 3 randomly-drawn mediums in 90 minutes
+ * total, unseen, first-attempt, with a working solution and a stated
+ * complexity") is explicitly "self-administered, logged, repeatable" —
+ * no defined schema beyond that, so this is modelled the same way body
+ * metrics are: a metric_sample of kind 'interview_benchmark', value 1
+ * (pass) or 0 (attempted, not yet passed), no quest tie, no XP. Once
+ * ANY attempt passes, engine/rank.ts's interviewBenchmarkPassed gate
+ * stays true forever — "repeatable" describes retrying after a miss,
+ * not re-proving a pass that already happened.
+ */
+export async function logInterviewBenchmark(
+  today: string,
+  arcId: string,
+  passed: boolean,
+  config: EngineConfig,
+  deps: EngineDeps
+): Promise<void> {
+  const id = deps.newId();
+  await db.transaction('rw', REBUILD_ADJACENT_TABLES, async () => {
+    await appendEvent({
+      id,
+      type: 'METRIC_RECORDED',
+      occurred_at: deps.now(),
+      local_date: today,
+      arc_id: arcId,
+      payload: { kind: 'interview_benchmark', value: passed ? 1 : 0, unit: 'pass' },
+      source: 'user',
+      idem_key: `interview-benchmark:${id}`,
+      schema_v: 1,
+    });
+    const row: MetricSampleRow = { id, local_date: today, kind: 'interview_benchmark', value: passed ? 1 : 0, unit: 'pass' };
+    await db.metric_sample.add(row);
+  });
+  await rebuildProjections(config, deps);
+}
+
+export interface InterviewBenchmarkAttempt {
+  local_date: string;
+  passed: boolean;
+}
+
+export async function getInterviewBenchmarkHistory(): Promise<InterviewBenchmarkAttempt[]> {
+  const rows = await db.metric_sample.where('kind').equals('interview_benchmark').toArray();
+  return rows.map((r) => ({ local_date: r.local_date, passed: r.value === 1 })).sort((a, b) => a.local_date.localeCompare(b.local_date));
+}
+
+export async function getInterviewBenchmarkPassed(): Promise<boolean> {
+  const rows = await db.metric_sample.where('kind').equals('interview_benchmark').toArray();
+  return rows.some((r) => r.value === 1);
+}
+
 export interface MetricSeriesPoint {
   local_date: string;
   value: number;

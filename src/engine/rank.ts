@@ -49,8 +49,8 @@ export interface GateEvidence {
   systemDesignsWrittenUp: number;
   systemDesignsExplainedAloud: number;
   trainingEst1RmGainPct: number; // 0-1; 0 without >= 2 dated samples to compare
-  costPerTaskMeasured: boolean; // final/00 §2 — no data source yet, always false
-  interviewBenchmarkPassed: boolean; // final/00 §2 — no data source yet, always false
+  costPerTaskMeasured: boolean; // final/03 §4.4 — self-certified on a 'project' artifact (ArtifactRow.cost_per_task_stated)
+  interviewBenchmarkPassed: boolean; // final/02 §2.2 — self-administered, logged via store/training.ts's logInterviewBenchmark
   bossICleared: boolean; // final/01 §7 — real as of Slice 13's store/boss.ts
   bossIICleared: boolean;
   bossIIICleared: boolean;

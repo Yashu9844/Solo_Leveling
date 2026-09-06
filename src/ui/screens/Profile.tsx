@@ -23,13 +23,15 @@ import { BackupCard } from '../components/BackupCard';
 import { PaperImportCard } from '../components/PaperImportCard';
 import { BodyMetricsCard } from '../components/BodyMetricsCard';
 import { CheckpointInstrumentsCard } from '../components/CheckpointInstrumentsCard';
+import { ScreenHeader } from '../kit';
 
 const CHECKPOINT_DAYS: Checkpoint['day'][] = [14, 30, 60, 90, 120];
 
 export function Profile() {
   return (
-    <div className="p-4">
-      <h1 className="text-lg font-semibold">PROFILE</h1>
+    <>
+      <ScreenHeader title="PROFILE" />
+      <div className="px-gutter pb-6 pt-4">
       <LevelSummary />
       <CheckpointRow />
       <BossList />
@@ -41,13 +43,14 @@ export function Profile() {
       <BackupCard />
       <PaperImportCard />
       <InstallCard />
-      {import.meta.env.DEV && (
-        <>
-          <DevResetArc />
-          <DevVerifyIntegrity />
-        </>
-      )}
-    </div>
+        {import.meta.env.DEV && (
+          <>
+            <DevResetArc />
+            <DevVerifyIntegrity />
+          </>
+        )}
+      </div>
+    </>
   );
 }
 

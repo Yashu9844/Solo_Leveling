@@ -2,7 +2,7 @@ import { useLayoutEffect, useRef } from 'react';
 import { NavLink, Outlet, useLocation } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import { House, ChartLineUp, TreeStructure, UserCircle, type Icon } from '@phosphor-icons/react';
-import { PageTransition, ScreenShell } from './kit';
+import { PageTransition, SafeTop, ScreenShell } from './kit';
 import { useTransitionEdge } from './routing/useTransitionEdge';
 
 /**
@@ -93,6 +93,10 @@ export function AppShell() {
 
   return (
     <ScreenShell>
+      {/* Outside <main> so it never scrolls away — a notch does not
+          move when the content does. */}
+      <SafeTop />
+
       <main
         ref={scroller}
         onScroll={rememberScroll}

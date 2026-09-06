@@ -28,6 +28,7 @@ import { LogAttentionSheet } from '../lifestyle/LogAttentionSheet';
 import { MaintenanceCard } from '../lifestyle/MaintenanceCard';
 import { LearningBlockSheet } from '../foundations/LearningBlockSheet';
 import { SingleChipSelect } from '../components/SingleChipSelect';
+import { ScreenHeader } from '../kit';
 import { getTodaySystemLine } from '../../store/messages';
 import { recordReflectionShown } from '../../store/reflections';
 
@@ -283,7 +284,9 @@ export function Today() {
     levelState.xpForNext > 0 ? Math.min(100, (levelState.xpIntoLevel / levelState.xpForNext) * 100) : 0;
 
   return (
-    <div className="p-4">
+    <>
+      <ScreenHeader title="TODAY" visuallyHidden />
+      <div className="px-gutter pb-6 pt-4">
       <div className="mb-1 text-xs uppercase tracking-wide text-text-dim">
         {day != null ? `DAY ${day} · ` : ''}LEVEL {levelState.level} · RANK {rank}
       </div>
@@ -359,8 +362,6 @@ export function Today() {
           {systemLine}
         </p>
       )}
-
-      <h1 className="sr-only">TODAY</h1>
 
       <div>
         {templates.map((template) => {
@@ -556,6 +557,7 @@ export function Today() {
           }}
         />
       )}
-    </div>
+      </div>
+    </>
   );
 }

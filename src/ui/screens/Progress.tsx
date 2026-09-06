@@ -10,6 +10,7 @@ import { getRealitySummary, type RealitySummary } from '../../store/reality';
 import { AttributeBars } from '../components/AttributeBars';
 import { WeeklyReview } from '../review/WeeklyReview';
 import { getCurrentRank } from '../../store/checkpoint';
+import { ScreenHeader } from '../kit';
 
 type SubTab = 'SYSTEM' | 'REALITY';
 
@@ -34,31 +35,32 @@ export function Progress() {
 
   if (tab === null) return null;
 
-  return (
-    <div className="p-4">
-      <div className="flex items-center justify-between">
-        <h1 className="text-lg font-semibold text-text">PROGRESS</h1>
-        <div className="flex gap-1 rounded-pill border border-border p-0.5">
-          {(['SYSTEM', 'REALITY'] as const).map((t) => (
-            <button
-              key={t}
-              type="button"
-              onClick={() => setTab(t)}
-              className={[
-                'min-h-[32px] rounded-pill px-3 text-xs font-medium',
-                tab === t ? 'bg-accent text-bg' : 'text-text-dim',
-              ].join(' ')}
-            >
-              {t}
-            </button>
-          ))}
-        </div>
-      </div>
-
-      {day != null && <p className="mt-1 text-xxs text-text-faint">Day {day}</p>}
-
-      {tab === 'SYSTEM' ? <SystemTab /> : <RealityTab />}
+  const subTabs = (
+    <div className="flex gap-1 rounded-pill border border-border p-0.5">
+      {(['SYSTEM', 'REALITY'] as const).map((t) => (
+        <button
+          key={t}
+          type="button"
+          onClick={() => setTab(t)}
+          className={[
+            'min-h-[32px] rounded-pill px-3 text-xs font-medium',
+            tab === t ? 'bg-accent text-on-accent' : 'text-text-dim',
+          ].join(' ')}
+        >
+          {t}
+        </button>
+      ))}
     </div>
+  );
+
+  return (
+    <>
+      <ScreenHeader title="PROGRESS" right={subTabs} />
+      <div className="px-gutter pb-6 pt-4">
+        {day != null && <p className="text-xxs text-text-faint">Day {day}</p>}
+        {tab === 'SYSTEM' ? <SystemTab /> : <RealityTab />}
+      </div>
+    </>
   );
 }
 

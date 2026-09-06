@@ -6,6 +6,7 @@ import { db } from '../../db/db';
 import { getDsaSkillsOverview, getFoundationSkillsOverview, getCareerTreeOverview, type TopicMastery, type CareerTreeOverview } from '../../store/skills';
 import { getInterviewBenchmarkHistory, getInterviewBenchmarkPassed, logInterviewBenchmark } from '../../store/training';
 import type { MasteryState } from '../../engine/types';
+import { ScreenHeader } from '../kit';
 
 // final/03 §1's "5-segment bar, never a percentage" — one segment per
 // state, filled cumulatively up to the current one.
@@ -89,8 +90,9 @@ export function Skills() {
   }, []);
 
   return (
-    <div className="p-4">
-      <h1 className="text-lg font-semibold">SKILLS</h1>
+    <>
+      <ScreenHeader title="SKILLS" />
+      <div className="px-gutter pb-6 pt-4">
 
       <Section title="DSA">
         {dsa?.map((item) => <TopicRow key={item.topic} item={item} />)}
@@ -133,10 +135,11 @@ export function Skills() {
         </Section>
       )}
 
-      <Section title="Interview-readiness benchmark">
-        <InterviewBenchmarkCard />
-      </Section>
-    </div>
+        <Section title="Interview-readiness benchmark">
+          <InterviewBenchmarkCard />
+        </Section>
+      </div>
+    </>
   );
 }
 

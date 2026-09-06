@@ -31,6 +31,16 @@ export function ScreenHeader({
   visuallyHidden = false,
   className = '',
 }: ScreenHeaderProps) {
+  // A hidden title with nothing beside it means the screen has no header
+  // chrome at all — rendering the padding and rule anyway would cost
+  // vertical space for an invisible element. Today depends on this:
+  // final/06 §5.2 requires all six core quests above the fold on a 6"
+  // Android screen, and that is the constraint capping the core set at
+  // six. Its identity line (DAY n · LEVEL n · RANK X) is the header.
+  if (visuallyHidden && !right) {
+    return <h1 className="sr-only">{title}</h1>;
+  }
+
   return (
     <div className={['relative shrink-0', className].join(' ')}>
       <div className="flex items-center justify-between px-gutter pt-3">

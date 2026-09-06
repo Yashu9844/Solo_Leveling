@@ -111,7 +111,7 @@ task and the fix would change engine/store behaviour, or a task would require de
 - [x] **4.1** `AppShell`: `ScreenShell` + phosphor bottom nav, active `accent-mid` +
       `fill`, safe-area bottom. **Frozen:** `role="navigation"`, `aria-label="Primary"`,
       link names `TODAY PROGRESS SKILLS PROFILE`. Gate: fast.
-- [ ] **4.2** Every screen onto `ScreenHeader` with its frozen `h1`. ⛓ Gate: full
+- [x] **4.2** Every screen onto `ScreenHeader` with its frozen `h1`. ⛓ Gate: full
       (`smoke.spec.ts` is the exact contract).
 
 ## Phase 5 — Onboarding
@@ -130,7 +130,11 @@ task and the fix would change engine/store behaviour, or a task would require de
 
 - [ ] **6.1** Header: `today` art bleeding top-right at `mix-blend-lighten` under a
       directional scrim; `DAY nn` display type; LEVEL / XP `MeterBar` / RANK panel; streak
-      in mono. Preserve `data-testid="xp-bar-fill"`. Gate: fast.
+      in mono. Preserve `data-testid="xp-bar-fill"`.
+      **Hard budget:** core-loop.spec asserts all six quest rows are reachable without
+      scrolling at 412x915. `final/06` §5.2 calls that the constraint capping the core set
+      at six, so the hero must fit inside it — Today carries no title bar for the same
+      reason. Gate: fast.
 - [ ] **6.2** `QuestRow`: `IconTile` per key, title + `ROW_SUMMARY`, mono XP, glowing
       accent circle on complete. **Frozen:** two ≥44px targets, `Complete X`/`Undo X`,
       `aria-pressed`, `quest-row-<key>` and `-open`, the state glyphs. Gate: fast.
@@ -291,6 +295,7 @@ system §10 are required; neither may be traded for the other.
 | 3.2 | start | Gold Horizon front door. Screenshotting it caught two bugs code review would not have: PrimaryButton rendered as a solid slab (translucent inner fill over a solid border layer — affected every primary button), and the plate's marginal text was sliced in half by cover-cropping. Fixed both; added ArtLayer zoom. Route added but `/` still points at /onboarding — 3.3 flips it with the helper change so every commit stays green. |
 | 3.3 | boot path | /start is now the no-arc landing for every route, shortcut and unknown path. One sanctioned helper click added. New boot.spec (6 tests). Two existing specs updated for the deliberate behaviour change (onboarding's fresh-boot destination, backup's post-wipe destination) — both now assert Start, which is the correct first-run state. Phase 3 complete. FULL SUITE 78/78. |
 | 4.1 | shell + nav | Phosphor bottom nav (House/ChartLineUp/TreeStructure/UserCircle), active glow + fill weight, whileTap 0.88. AppShell now sits in ScreenShell so the desktop device frame applies app-wide. Caught a real layout bug the screenshot missed but the scroll tests found: ScreenShell used min-h-dvh, so the document scrolled instead of main and the bottom nav would scroll away on any long screen. Now h-dvh. Full e2e 78/78. |
+| 4.2 | headers | ScreenHeader on all four screens; SafeTop moved into the shell so the notch inset never scrolls. Progress's sub-tab switch became the header's right slot. core-loop caught a real regression: a visible TODAY title pushed the 6th quest row below the fold, breaking final/06 §5.2's above-the-fold rule. Today keeps a screen-reader-only heading — the spec's own wireframe has no title bar there, its identity is the DAY/LEVEL/RANK line. Budget noted on task 6.1. Phase 4 complete. 78/78. |
 | — | plan v2 | User added: configurable settings/theming, explicit nav flowchart, mood-based art assignment. Saw all 11 plates — split into Blue Arc (effort) / Gold Horizon (evidence) / Boss. Added docs 02 and 03; replanned to 13 phases, 60 tasks. |
 
 ---

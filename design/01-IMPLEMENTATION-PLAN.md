@@ -148,7 +148,7 @@ task and the fix would change engine/store behaviour, or a task would require de
 
 ## Phase 7 — Sheets
 
-- [ ] **7.1** `QuestDetailSheet` on `Sheet`. If-then sentence in a `FramedPanel`. Stays
+- [x] **7.1** `QuestDetailSheet` on `Sheet`. If-then sentence in a `FramedPanel`. Stays
       quote-free. Gate: fast.
 - [x] **7.2** `LogApplicationSheet`, `LogProblemSheet`, `LogBuildSessionSheet`.
       Gate: fast.

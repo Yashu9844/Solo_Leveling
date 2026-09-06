@@ -128,7 +128,7 @@ task and the fix would change engine/store behaviour, or a task would require de
 
 ## Phase 6 — Today
 
-- [ ] **6.1** Header: `today` art bleeding top-right at `mix-blend-lighten` under a
+- [x] **6.1** Header: `today` art bleeding top-right at `mix-blend-lighten` under a
       directional scrim; `DAY nn` display type; LEVEL / XP `MeterBar` / RANK panel; streak
       in mono. Preserve `data-testid="xp-bar-fill"`.
       **Hard budget:** core-loop.spec asserts all six quest rows are reachable without
@@ -305,6 +305,7 @@ system §10 are required; neither may be traded for the other.
 | 5.2 | onboarding 1-3 | Added Field/TextInput/TextArea/StepTitle to the kit (the log sheets in phase 7 need them too). Step 1's premise line set in display serif over the art; step 2's day count as a mono figure; step 3's wake/sleep paired. Replaced justify-center with my-auto on the panel — auto margins centre short steps and collapse on tall ones, where justify-center would clip an overflowing step's top. Gate green + onboarding e2e 6/6. |
 | 5.3 | onboarding 4-6 | Step 5 (final/06's "THE IMPORTANT ONE") gets an accent rule per intention. The inline sentence layout looked right on paper and failed on a phone — the time picker squeezed "my desk" to "my d" at 390px and orphaned the word "at" at 320px; now one clause per row on a fixed prefix column. Step 6's alarm times set in mono tabular since the user is about to copy them. Gate green + onboarding e2e 6/6. |
 | 5.4 | phase 5 gate | 78/78. The 300ms budget failed at 332ms first — traced to twelve orphaned vite preview servers left running by my own screenshot runs, competing for CPU with the suite. Killed them; clean re-run passed. Added a standing rule to kill previews. Phase 5 complete. |
+| 6.1 | today hero | DAY nn in display serif, RANK opposite, LV + MeterBar + xp on one row, streak in mono. Art is a corner bleed masked radially — under mix-blend-lighten the scrim's dark stops vanish, so the bright streaks were being cut in a hard rectangle. The hero cost 30px and core-loop's zero-overflow assertion caught it exactly; reclaimed by trimming 8 margins rather than shrinking the hero's idea. 78/78. |
 | — | plan v2 | User added: configurable settings/theming, explicit nav flowchart, mood-based art assignment. Saw all 11 plates — split into Blue Arc (effort) / Gold Horizon (evidence) / Boss. Added docs 02 and 03; replanned to 13 phases, 60 tasks. |
 
 ---

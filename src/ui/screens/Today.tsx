@@ -28,7 +28,7 @@ import { LogAttentionSheet } from '../lifestyle/LogAttentionSheet';
 import { MaintenanceCard } from '../lifestyle/MaintenanceCard';
 import { LearningBlockSheet } from '../foundations/LearningBlockSheet';
 import { SingleChipSelect } from '../components/SingleChipSelect';
-import { ScreenHeader } from '../kit';
+import { ArtLayer, MeterBar, ScreenHeader } from '../kit';
 import { getTodaySystemLine } from '../../store/messages';
 import { recordReflectionShown } from '../../store/reflections';
 
@@ -286,25 +286,69 @@ export function Today() {
   return (
     <>
       <ScreenHeader title="TODAY" visuallyHidden />
-      <div className="px-gutter pb-6 pt-4">
-      <div className="mb-1 text-xs uppercase tracking-wide text-text-dim">
-        {day != null ? `DAY ${day} · ` : ''}LEVEL {levelState.level} · RANK {rank}
-      </div>
-      <div className="mb-1 h-1 w-full overflow-hidden rounded-pill bg-surface-2">
+      <div className="px-gutter pb-4 pt-2">
+      {/*
+        The identity block. Today carries no title bar — this is the
+        screen's header (final/06 §5.2's wireframe opens on exactly this
+        line), and it is built tight on purpose: core-loop.spec asserts
+        the WHOLE screen fits at 412x915 with zero overflow, which is the
+        constraint that caps the core quest set at six. Day, level, XP
+        and rank share one panel rather than stacking, and the art is a
+        corner bleed rather than a band, for the same reason.
+      */}
+      <div className="relative -mx-gutter mb-2 px-gutter">
         <div
-          className="h-full rounded-pill bg-accent transition-all duration-500"
-          style={{ width: `${barPct}%` }}
-          data-testid="xp-bar-fill"
-        />
-      </div>
+          aria-hidden
+          className="pointer-events-none absolute right-0 top-0 h-[170px] w-[210px] overflow-hidden"
+          style={{
+            mixBlendMode: 'lighten',
+            opacity: 0.5,
+            // A radial mask, not the layer's own scrim. Under `lighten`
+            // the scrim's dark stops disappear entirely, so only the
+            // bright mana streaks survive — and they were being cut off
+            // by the container edge in a hard rectangle. The mask fades
+            // the bleed out in every direction from the corner instead.
+            maskImage: 'radial-gradient(125% 105% at 100% 0%, #000 28%, transparent 72%)',
+            WebkitMaskImage: 'radial-gradient(125% 105% at 100% 0%, #000 28%, transparent 72%)',
+          }}
+        >
+          <ArtLayer slot="today" scrim="none" focal="62% 22%" />
+        </div>
 
-      {/* Streak is displayed smaller than consistency — it's the number
-          that carries the real signal (final/01 §6.2). */}
-      {streak && (streak.consistency_7 > 0 || streak.consistency_28 > 0 || streak.arc_streak > 0) && (
-        <p className="mb-3 text-xxs text-text-faint">
-          {streak.consistency_7}% (7d) · {streak.consistency_28}% (28d) · streak {streak.arc_streak}
-        </p>
-      )}
+        <div className="relative">
+          <div className="flex items-baseline justify-between gap-3">
+            <span className="font-display text-[calc(26px*var(--type-scale))] leading-none tracking-[0.12em] text-ink-100">
+              DAY {day != null ? String(day).padStart(2, '0') : '—'}
+            </span>
+            <span className="flex items-baseline gap-2">
+              <span className="text-xxs uppercase text-ink-900">Rank</span>
+              <span className="font-display text-[calc(24px*var(--type-scale))] leading-none text-ink-100">
+                {rank}
+              </span>
+            </span>
+          </div>
+
+          <div className="mt-2.5 flex items-center gap-3">
+            <span className="shrink-0 text-xxs uppercase text-ink-700">
+              LV <span className="font-mono text-sm tabular-nums text-ink-100">{levelState.level}</span>
+            </span>
+            <MeterBar pct={barPct} testId="xp-bar-fill" label="XP to next level" className="min-w-0 flex-1" />
+            <span className="shrink-0 font-mono text-xs tabular-nums text-ink-700">
+              <span className="text-accent-mid">{levelState.xpIntoLevel}</span>/{levelState.xpForNext}
+            </span>
+          </div>
+
+          {/* Streak is displayed smaller than consistency — it's the number
+              that carries the real signal (final/01 §6.2). */}
+          {streak &&
+            (streak.consistency_7 > 0 || streak.consistency_28 > 0 || streak.arc_streak > 0) && (
+              <p className="mt-1.5 font-mono text-xs tabular-nums text-faint">
+                {streak.consistency_7}% (7d) · {streak.consistency_28}% (28d) · streak{' '}
+                {streak.arc_streak}
+              </p>
+            )}
+        </div>
+      </div>
 
       {banner && (
         <p className="mb-3 border-l-2 border-accent pl-2 text-sm text-text-dim">
@@ -358,7 +402,7 @@ export function Today() {
       </p>
 
       {systemLine && (
-        <p className="mb-4 pl-2 text-xs italic text-text-faint" data-testid="system-line">
+        <p className="mb-3 pl-2 text-xs italic text-text-faint" data-testid="system-line">
           {systemLine}
         </p>
       )}
@@ -390,7 +434,7 @@ export function Today() {
       <button
         type="button"
         onClick={() => setLearningBlockOpen(true)}
-        className="mt-3 min-h-[44px] w-full rounded-md border border-border text-sm text-text-dim"
+        className="mt-2 min-h-[44px] w-full rounded-md border border-border text-sm text-text-dim"
       >
         Learning block · +{CONFIG.learningBlockXp} XP
       </button>
@@ -441,7 +485,7 @@ export function Today() {
         <button
           type="button"
           onClick={() => setReviewOpen(true)}
-          className="mt-4 min-h-[44px] w-full rounded-md border border-border text-sm text-accent"
+          className="mt-3 min-h-[44px] w-full rounded-md border border-border text-sm text-accent"
         >
           Evening review · 25 seconds
         </button>

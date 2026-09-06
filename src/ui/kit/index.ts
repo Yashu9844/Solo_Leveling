@@ -10,3 +10,4 @@ export { PrimaryButton, SecondaryButton, QuietButton, type ButtonTone } from './
 export { IconTile } from './IconTile';
 export { MeterBar, SegmentBar, StatTile, MASTERY_SEGMENTS } from './Meter';
 export { Segmented } from './Segmented';
+export { Sheet } from './Sheet';

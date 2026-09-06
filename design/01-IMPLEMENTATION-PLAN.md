@@ -69,9 +69,11 @@ task and the fix would change engine/store behaviour, or a task would require de
       every text scale and density, forwarding `aria-*`, `disabled`, `data-testid`.
       Gate: fast.
 - [x] **1.4** `MeterBar`, `SegmentBar`, `StatTile`, `Segmented`. Gate: fast.
-- [ ] **1.5** `Sheet` base: scrim, `max-h-[86dvh]`, drag-to-dismiss, focus trap, `Esc`,
-      scroll lock, `role="dialog"`, **and a history entry so back closes it**
-      (nav flow §5). Gate: fast.
+- [x] **1.5** `Sheet` base: scrim, `max-h-[86dvh]`, drag-to-dismiss, focus trap, `Esc`,
+      scroll lock, `role="dialog"`, focus restore, safe-area footer. Gate: fast.
+      *Back-button dismissal moved to 2.3:* one app-level overlay-history owner is the
+      right shape, because a sheet pushing its own entry would double-push whenever a
+      sheet opens from another sheet.
 - [ ] **1.6** `ArtLayer` (LQIP → srcset, `aria-hidden`, theme-aware scrim,
       `--art-opacity`, gradient fallback) and `Moment` base. Gate: fast.
 
@@ -83,7 +85,9 @@ task and the fix would change engine/store behaviour, or a task would require de
 - [ ] **2.2** Transition grammar wired: `AnimatePresence` keyed on pathname, per-edge
       direction (lateral fade vs hierarchical push), tab scroll-position retention,
       tap-active-tab-to-top. Gate: fast.
-- [ ] **2.3** Back-button contract (§5): sheets and moments push history entries;
+- [ ] **2.3** Back-button contract (§5): **an app-level `OverlayStack`** owns one history
+      entry per open overlay (moved here from 1.5 — a single owner avoids double-pushes
+      when a sheet opens from a sheet); sheets and moments register with it;
       onboarding steps map to history; a tab root exits. New
       `tests/e2e/navigation.spec.ts` covering every row of the §5 table. ⛓ Gate: full.
 
@@ -274,6 +278,7 @@ system §10 are required; neither may be traded for the other.
 | 1.2 | kit: panels | Panel draws its border as a two-layer clip so the bevel keeps a 1px edge (a plain border+clip-path leaves the diagonals bare). FramedPanel = corner brackets + inset glow, tone accent/dawn/boss. ScreenHeader carries the frozen h1 contract. SectionLabel, QuoteCard. Gate green. |
 | 1.3 | kit: buttons | Primary/Secondary/Quiet + IconTile. Sized by explicit min-height, not padding, so text-scale XS (0.88x) cannot shrink a button under the 44px target. Tones accent/dawn/boss. Native button props forwarded (aria, disabled, data-testid); framer-motion's conflicting drag/animation handlers omitted from the type. Gate green. |
 | 1.4 | kit: meters | MeterBar animates via CSS width transition, not framer-motion — e2e regexes `width: N%` out of the inline style and a JS animation would publish unparseable px values. Segmented keeps plain <button> + aria-pressed because 6 specs select it with getByRole('button'). Added --on-accent per theme: 4 dark themes need a dark label on their light accent, daylight needs a light one. SegmentBar (5-state mastery, never a percentage), StatTile. Gate green. |
+| 1.5 | kit: sheet | Three dismissals (Close button, scrim, downward drag past 110px or a 520px/s flick), focus trap + restore, Esc, scroll lock, role=dialog, safe-area footer. Renders the frozen aria-label="Close" itself so all 8 sheets inherit it. Back-button dismissal deliberately deferred to 2.3 as an app-level owner. Gate green. |
 | — | plan v2 | User added: configurable settings/theming, explicit nav flowchart, mood-based art assignment. Saw all 11 plates — split into Blue Arc (effort) / Gold Horizon (evidence) / Boss. Added docs 02 and 03; replanned to 13 phases, 60 tasks. |
 
 ---

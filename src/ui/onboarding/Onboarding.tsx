@@ -16,6 +16,7 @@ import {
   ScreenShell,
   SecondaryButton,
   StepTitle,
+  TextArea,
   TextInput,
 } from '../kit';
 
@@ -474,16 +475,15 @@ function Step3Rhythm({
 
 function Step4MainQuest({ value, onChange }: { value: string; onChange: (v: string) => void }) {
   return (
-    <div className="space-y-4">
-      <h1 className="text-lg font-semibold">MAIN QUEST</h1>
-      <p className="text-sm text-text-dim">
+    <div className="space-y-5">
+      <StepTitle>Main quest</StepTitle>
+      <p className="text-sm text-ink-500">
         One sentence. What has to be true on {DEFAULT_CONFIG.arc.endDate}?
       </p>
-      <textarea
+      <TextArea
         value={value}
         onChange={(e) => onChange(e.target.value)}
         rows={4}
-        className="w-full rounded-md border border-border bg-surface-2 p-3 text-text"
         placeholder="This is the only thing the app judges you against."
       />
     </div>
@@ -506,35 +506,48 @@ function IntentionFields({
   onChange: (patch: Partial<IntentionDraft>) => void;
 }) {
   return (
-    <div className="space-y-2 rounded-md border border-border p-3" data-testid={testId}>
-      <div className="text-xxs uppercase tracking-wide text-text-dim">{label}</div>
-      <div className="flex items-center gap-2 text-sm text-text-dim">
-        <span>At</span>
-        <input
+    <div
+      className="space-y-3 rounded-sm p-4"
+      data-testid={testId}
+      style={{ background: 'var(--surface)', borderLeft: '2px solid var(--accent)' }}
+    >
+      <div className="text-xxs uppercase text-accent-mid">{label}</div>
+
+      {/* One clause per row, with the connecting words on a fixed column
+          so the fields align. Wrapping the sentence inline looked better
+          on paper and failed on a phone: the time picker eats most of the
+          row, squeezing "my desk" down to "my d" at 390px, and at 320px
+          the word "at" wraps and is orphaned at the end of a line. The
+          sentence still reads top to bottom. */}
+      <div className="flex items-center gap-2 text-sm text-ink-700">
+        <span className="w-12 shrink-0">At</span>
+        <TextInput
           type="time"
           value={value.time}
           onChange={(e) => onChange({ time: e.target.value })}
-          className="min-h-[44px] rounded-md border border-border bg-surface-2 px-2 text-text"
+          className="!w-auto min-w-0 flex-1 px-2"
         />
-        <span>at</span>
-        <input
+      </div>
+      <div className="flex items-center gap-2 text-sm text-ink-700">
+        <span className="w-12 shrink-0">at</span>
+        <TextInput
           type="text"
           value={value.place}
           onChange={(e) => onChange({ place: e.target.value })}
           placeholder={placeholderPlace}
           data-testid={`${testId}-place`}
-          className="min-h-[44px] flex-1 rounded-md border border-border bg-surface-2 px-2 text-text"
+          className="!w-auto min-w-0 flex-1 px-2"
         />
       </div>
-      <div className="flex items-center gap-2 text-sm text-text-dim">
-        <span>I will</span>
-        <input
+      <div className="flex items-center gap-2 text-sm text-ink-700">
+        <span className="w-12 shrink-0">I will</span>
+        <TextInput
           type="text"
           value={value.first_action}
           onChange={(e) => onChange({ first_action: e.target.value })}
           placeholder={placeholderAction}
           data-testid={`${testId}-action`}
-          className="min-h-[44px] flex-1 rounded-md border border-border bg-surface-2 px-2 text-text"
+          className="!w-auto min-w-0 flex-1 px-2"
         />
       </div>
     </div>
@@ -558,8 +571,11 @@ function Step5Intentions({
 }) {
   return (
     <div className="space-y-4">
-      <h1 className="text-lg font-semibold">WHEN AND WHERE</h1>
-      <p className="text-sm text-text-dim">
+      <StepTitle>When and where</StepTitle>
+      {/* final/06 §5.1 marks this step "THE IMPORTANT ONE". Implementation
+          intentions are the highest-leverage thing in onboarding, so the
+          instruction is stated plainly rather than softened. */}
+      <p className="text-sm text-ink-300">
         Finish these. They matter more than any other setting here.
       </p>
       <IntentionFields
@@ -614,63 +630,53 @@ function Step6Baseline({
   copied: boolean;
 }) {
   return (
-    <div className="space-y-4">
-      <h1 className="text-lg font-semibold">BASELINE</h1>
-      <label className="block">
-        <span className="text-xxs uppercase tracking-wide text-text-dim">Height (cm)</span>
-        <input
-          type="number"
-          inputMode="numeric"
-          value={heightCm}
-          onChange={(e) => onChangeHeight(e.target.value)}
-          className="mt-1 w-full min-h-[44px] rounded-md border border-border bg-surface-2 px-3 text-text"
-        />
-      </label>
-      <label className="block">
-        <span className="text-xxs uppercase tracking-wide text-text-dim">Weight (kg)</span>
-        <input
-          type="number"
-          inputMode="numeric"
-          value={weightKg}
-          onChange={(e) => onChangeWeight(e.target.value)}
-          className="mt-1 w-full min-h-[44px] rounded-md border border-border bg-surface-2 px-3 text-text"
-        />
-      </label>
+    <div className="space-y-5">
+      <StepTitle>Baseline</StepTitle>
+      <div className="grid grid-cols-2 gap-3">
+        <Field label="Height (cm)">
+          <TextInput
+            type="number"
+            inputMode="numeric"
+            value={heightCm}
+            onChange={(e) => onChangeHeight(e.target.value)}
+          />
+        </Field>
+        <Field label="Weight (kg)">
+          <TextInput
+            type="number"
+            inputMode="numeric"
+            value={weightKg}
+            onChange={(e) => onChangeWeight(e.target.value)}
+          />
+        </Field>
+      </div>
       <p className="text-xs text-text-faint">
         Body fat — skip for now. Yours is unknown; it stays unknown and optional until you have a
         method you trust.
       </p>
-      <label className="block">
-        <span className="text-xxs uppercase tracking-wide text-text-dim">
-          Problems solved so far (optional)
-        </span>
-        <input
+      <Field label="Problems solved so far (optional)">
+        <TextInput
           type="number"
           inputMode="numeric"
           value={problemsSolvedSoFar}
           onChange={(e) => onChangeProblems(e.target.value)}
-          className="mt-1 w-full min-h-[44px] rounded-md border border-border bg-surface-2 px-3 text-text"
         />
-      </label>
+      </Field>
 
-      <div className="rounded-md border border-border p-3">
-        <div className="mb-2 text-xxs uppercase tracking-wide text-text-dim">
-          Three phone alarms
-        </div>
-        <ul className="space-y-1 text-sm text-text-dim">
+      <div className="cut-sm p-4" style={{ background: 'var(--surface)' }}>
+        <div className="mb-3 text-xxs uppercase text-ink-700">Three phone alarms</div>
+        {/* Mono and tabular: these are times the user is about to copy
+            into a Clock app, so they have to line up. */}
+        <ul className="space-y-2 font-mono text-xs tabular-nums text-ink-500">
           <li>{alarmLabel(career, 'CAREER')}</li>
           <li>{alarmLabel(dsa, 'DSA')}</li>
           <li>23:30 — Evening review. 25 seconds.</li>
         </ul>
-        <button
-          type="button"
-          onClick={onCopyTimes}
-          className="mt-3 min-h-[44px] w-full rounded-md border border-border bg-surface-2 text-sm text-text"
-        >
+        <SecondaryButton onClick={onCopyTimes} className="mt-4">
           {copied ? 'Copied' : 'Copy times'}
-        </button>
-        <p className="mt-2 text-xs text-text-faint">
-          Add these in your phone's Clock app as repeating alarms.
+        </SecondaryButton>
+        <p className="mt-3 text-xs text-faint">
+          Add these in your phone&rsquo;s Clock app as repeating alarms.
         </p>
       </div>
     </div>

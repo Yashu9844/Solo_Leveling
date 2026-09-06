@@ -229,10 +229,40 @@ progress bar                  500 ms
 screen transition             200–320 ms
 ```
 
+### 5.1 CSS or JavaScript — the rule that matters
+
+**If an element's final state matters, animate it in CSS. Never in JavaScript.**
+
+Learned three separate times during this redesign, each as a bug that reached a screenshot
+or a test rather than a review:
+
+| Animated in JS | How it failed |
+|---|---|
+| Route content fading in | Stuck at `opacity: 0` — a blank screen every test called "visible" |
+| Sheet sliding up | Parked off-screen at `translateY(100%)`, still "visible", taps landing on nothing |
+| Route sliding and scaling | 597 ms against the 300 ms tap budget — a moving button cannot be tapped |
+
+The mechanism is the same every time. A JavaScript animation is driven by
+`requestAnimationFrame`; if rAF is starved — a backgrounded tab, a frame-budget spike, a
+faked clock — it never completes and the element never reaches its final state. A CSS
+animation settles on its final frame regardless, and `animation-fill-mode: both` plus the
+reduced-motion rule in `index.css` resolves it instantly rather than skipping it.
+
+`final/06` §4.3 already says nothing functional may depend on animation. This is what that
+sentence means in practice.
+
+- **CSS** — route transitions, sheet entrance, meter and bar widths, scrims: anything
+  gating visibility, position or reachability.
+- **framer-motion** — `whileTap` scales, drag gestures, shared-element `layoutId` pills:
+  things where a stalled animation costs a flourish and nothing else.
+
+### 5.2 Reduced motion and easing
+
 Root-level `<MotionConfig reducedMotion={…}>` driven by the **motion setting**, which has
 three states: `full`, `reduced`, `system` (default — follows `prefers-reduced-motion`).
-Moments keep their hand-rolled reduced-motion path because they also carry haptics, which
-`MotionConfig` does not govern.
+`index.css` collapses CSS durations under the same three states, so the two halves cannot
+disagree. Moments keep their hand-rolled check because they also carry haptics, which
+neither mechanism governs.
 
 Easings: `[0.22, 1, 0.36, 1]` for entrances; springs `{ stiffness: 400–500, damping:
 24–40 }` for taps. Route transitions and their directionality are specified per-edge in

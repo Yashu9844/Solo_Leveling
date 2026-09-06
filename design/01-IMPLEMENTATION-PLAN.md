@@ -154,8 +154,7 @@ task and the fix would change engine/store behaviour, or a task would require de
       Gate: fast.
 - [x] **7.3** `LogTrainingSheet` (uses `training` art), `LogSleepSheet`,
       `LogAttentionSheet`, `LearningBlockSheet`. Gate: fast.
-- [ ] **7.4** ⛓ Gate: full — `career`, `dsa`, `build`, `build-artifact-kind`,
-      `physical-lifestyle`, `body-metrics`, `learning-block`, `deep-work-timer`.
+- [x] **7.4** ⛓ Gate: full. **80/80 on two consecutive runs.** Phase 7 complete.
 
 ## Phase 8 — Progress & Skills
 
@@ -313,6 +312,7 @@ system §10 are required; neither may be traded for the other.
 | 7.1 | quest sheet | Sheet now portals to document.body — structurally prevents the stacking-context trap that cost 14 failures in 6.4, rather than relying on z-index discipline. QuestDetailSheet migrated: the user's if-then sentence quoted back verbatim in a FramedPanel, criterion text, Log X secondary, Mark complete pinned. Stays quote-free per final/06 §5.3. |
 | 7.2 | log sheets 1-3 | Career, DSA and build sheets migrated onto the kit Sheet. Found a DESTRUCTIVE bug: OverlayStack popped history on programmatic close, but history.back() is async while pushState is not, so a sheet opened from a sheet consumed the wrong entry — two rounds unwound past the app to about:blank (white screen). Rewritten to never call back(); spent entries are consumed on the next popstate. Two regression tests added. Also portalled the in-sheet Moments, and reverted a curly apostrophe that broke an asserted string. 80/80. |
 | 7.3 | log sheets 4-7 | All eight sheets now on the kit Sheet. Training gets the only art band (its evidence is physical). Fixed the flakiness the migration exposed: the Sheet's framer-driven y:100%->0 entrance left it parked OFF-SCREEN when rAF was starved, while still counting as visible — so taps landed on nothing and a different sheet test failed each run. Entrance is now CSS; framer keeps only the drag. Also capped Playwright workers to 4: the 300ms budget was measuring 16-core contention (310-332ms) while the app measures 106-127ms idle. 80/80 twice consecutively. |
+| 7.4 | phase 7 gate | 80/80 twice. Promoted the CSS-vs-JS animation rule into design system §5.1 with the three failures that taught it. Fixed the last recovery-card race: streak.spec reloaded after seeing only the OPTIMISTIC toggle, so the confirmed rebuildProjections write could lose the race — now polls IndexedDB via the helper that exists for exactly this. Phase 7 complete: all eight sheets. |
 | — | plan v2 | User added: configurable settings/theming, explicit nav flowchart, mood-based art assignment. Saw all 11 plates — split into Blue Arc (effort) / Gold Horizon (evidence) / Boss. Added docs 02 and 03; replanned to 13 phases, 60 tasks. |
 
 ---

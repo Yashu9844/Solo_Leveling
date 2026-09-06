@@ -1,6 +1,12 @@
 import { differenceInCalendarDays, parseISO } from 'date-fns';
 import type { MasteryState } from './types';
 
+// ui/dsa/LogProblemSheet.tsx's chip list, promoted here so the Skills
+// screen (ui/screens/Skills.tsx) can render mastery for the same nine
+// topics without a second, driftable copy of the list.
+export const DSA_TOPICS = ['Arrays', 'Strings', 'Hashing', 'Two Pointers', 'Sliding Window', 'Stacks', 'Trees', 'Graphs', 'DP'] as const;
+export type DsaTopic = (typeof DSA_TOPICS)[number];
+
 export interface DsaAttemptFixture {
   problem_id: string;
   topic: string;

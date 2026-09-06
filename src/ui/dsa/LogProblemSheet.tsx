@@ -3,6 +3,7 @@ import { DEFAULT_CONFIG } from '../../engine/config';
 import { realDeps } from '../../store/deps';
 import { logProblem } from '../../store/dsa';
 import { getDsaTopicMastery } from '../../store/mastery';
+import { DSA_TOPICS } from '../../engine/dsa';
 import type { AttemptOutcome } from '../../engine/srs';
 import type { MasteryState } from '../../engine/types';
 import { SingleChipSelect } from '../components/SingleChipSelect';
@@ -10,7 +11,7 @@ import { Stepper } from '../components/Stepper';
 import { MasteryMoment } from '../moments/MasteryMoment';
 import { DeepWorkTimer } from '../components/DeepWorkTimer';
 
-const TOPICS = ['Arrays', 'Strings', 'Hashing', 'Two Pointers', 'Sliding Window', 'Stacks', 'Trees', 'Graphs', 'DP'] as const;
+const TOPICS = DSA_TOPICS;
 const DIFFICULTIES = ['E', 'M', 'H'] as const;
 const OUTCOMES: AttemptOutcome[] = ['first_attempt', 'hint', 'editorial', 'unsolved'];
 const OUTCOME_LABELS: Record<AttemptOutcome, string> = {

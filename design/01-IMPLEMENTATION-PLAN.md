@@ -55,7 +55,7 @@ task and the fix would change engine/store behaviour, or a task would require de
       per design system §2.5), `scripts/import-art.mjs`, `npm run art`. Run it over all
       current images. Generate typed `src/assets/art/index.ts`; unfilled slots export a
       procedural gradient. Gate: fast.
-- [ ] **0.6** `vite.config.ts`: `webp` in PWA `globPatterns`,
+- [x] **0.6** `vite.config.ts`: `webp` in PWA `globPatterns`,
       `maximumFileSizeToCacheInBytes` sized to the largest art file, precache ≤ 3 MB.
       ⛓ Gate: full — proves the redesign starts from green.
 
@@ -269,6 +269,7 @@ system §10 are required; neither may be traded for the other.
 | 0.3 | global css | Utilities (.cut-*, .glow-text, .hairline, .no-scrollbar, .art-layer), focus-visible ring, keyframes, 3-state motion (reduced/full/system). 8 latin-subset font files, 192KB. Found and fixed: woff2 was missing from the PWA globPatterns, so fonts would NOT have been precached — an offline launch would have silently fallen back to system fonts. Precache 12→20 entries, 698KB. Gate green. |
 | 0.4 | settings | Pure codec (parse/serialize/applyToRoot) + SettingsProvider + pre-paint bootstrap in index.html + MotionRoot. 13 new tests, 358->371. Caught two colour clashes: dawn's accent and --state-recover were both amber, and a warm user accent would hit the same collision on cool themes; states now swing opposite the accent's temperature. Accent palette excludes green because a completed quest circle fills with accent and --state-complete is green. Gate green. |
 | 0.5 | art | All 20 plates reviewed and classified; 16 slots filled, 0 on gradient fallback. 2.2MB on disk, largest file 154KB. Budget guard fired at first run (2544KB) and forced a quality retune — then the total cap itself was corrected: per-file is the real budget (= per-screen weight), total is a sanity ceiling, since art will be runtime-cached not precached. 4 boss plates parked in overflow. |
+| 0.6 | pwa | Art excluded from precache; CacheFirst runtime rule instead. Precache holds at 20 entries / 702KB. FULL GATE GREEN: 62/62 e2e. Known intermittent: reflections.spec:20 and weekly-review.spec:44 (both recovery-card, 10s timeout) failed once under parallel load then passed 12/12 isolated and 62/62 in-suite. weekly-review:44 also fails on the untouched baseline, so it is pre-existing. Watch, do not chase. |
 | — | plan v2 | User added: configurable settings/theming, explicit nav flowchart, mood-based art assignment. Saw all 11 plates — split into Blue Arc (effort) / Gold Horizon (evidence) / Boss. Added docs 02 and 03; replanned to 13 phases, 60 tasks. |
 
 ---

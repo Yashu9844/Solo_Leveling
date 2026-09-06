@@ -56,34 +56,103 @@ function stddev(values: number[]): number {
   return Math.sqrt(values.reduce((sum, v) => sum + (v - m) ** 2, 0) / values.length);
 }
 
+// docs/04-domain-systems.md §5.2-5.3 / docs/13-day0-baseline.md — three
+// self-report instruments, administered at Day 0/30/60/90/120 (final/11
+// SLICE-2-PROMPT built self-efficacy only and explicitly deferred the
+// other two with a "TODO: Slice 12" marker; automaticity/enjoyment's
+// exact item wording turned out to live in docs/13, not final/, which
+// is why the deferral happened in the first place). All three are
+// "tracked metrics, never an attribute, never XP-linked" (docs/04 §5.3)
+// — supplementary self-report, not part of the evidence gate final/01
+// §4 evaluates, so recording them is never blocked by sealing and never
+// blocks it either.
 export interface SelfEfficacy {
-  items: [number, number, number, number, number, number];
+  items: [number, number, number, number, number, number]; // 0-100 each
+  mean: number;
+}
+export interface Automaticity {
+  items: [number, number, number, number]; // 1-7 each ("I do this without having to consciously remember or decide")
+  mean: number;
+}
+export interface Enjoyment {
+  items: [number, number, number]; // 0-10 each: DSA, Building/AI, Training
   mean: number;
 }
 
-export async function getDayZeroCheckpoint(): Promise<CheckpointRow | undefined> {
-  return db.checkpoint.where('day').equals(0).first();
+export interface CheckpointInstruments {
+  selfEfficacy?: SelfEfficacy['items'];
+  automaticity?: Automaticity['items'];
+  enjoyment?: Enjoyment['items'];
 }
 
-export function selfEfficacyIsComplete(checkpoint: CheckpointRow | undefined): boolean {
+function meanOf(values: readonly number[]): number {
+  return values.reduce((a, b) => a + b, 0) / values.length;
+}
+
+/** Self-efficacy is the one instrument every administration always
+ * includes, so its presence alone is a reliable "has this checkpoint's
+ * instrument round been done" signal — same semantics the old
+ * Day-0-only `selfEfficacyIsComplete` had, just generalised to any
+ * checkpoint day. */
+export function instrumentsComplete(checkpoint: CheckpointRow | undefined): boolean {
   if (!checkpoint) return false;
   return Object.keys(checkpoint.self_efficacy).length > 0;
 }
 
-export async function saveSelfEfficacy(items: SelfEfficacy['items']): Promise<void> {
-  const checkpoint = await getDayZeroCheckpoint();
-  if (!checkpoint) {
-    return;
-  }
-  const mean = items.reduce((sum, v) => sum + v, 0) / items.length;
-  const self_efficacy: SelfEfficacy = { items, mean };
-  await db.checkpoint.update(checkpoint.id, {
-    self_efficacy: self_efficacy as unknown as Record<string, unknown>,
-  });
-}
-
 export async function getCheckpoint(day: Checkpoint['day']): Promise<CheckpointRow | undefined> {
   return db.checkpoint.where('day').equals(day).first();
+}
+
+/**
+ * Writes whichever instrument fields are provided onto the day-`day`
+ * checkpoint, creating the row if it doesn't exist yet (mirrors
+ * markExported's create-if-missing pattern, minus `export_verified` —
+ * an instrument has nothing to do with the export gate). Deliberately
+ * ignores `sealed_at`: unlike markExported/sealCheckpoint, which guard
+ * the frozen evidence gate, these three fields are self-report data a
+ * person might fill in before OR after sealing, and sealing's
+ * immutability is about the gate result, not about this.
+ */
+export async function saveCheckpointInstruments(
+  day: Checkpoint['day'],
+  instruments: CheckpointInstruments,
+  deps: { newId(): string }
+): Promise<void> {
+  const patch: Partial<CheckpointRow> = {};
+  if (instruments.selfEfficacy) {
+    const self_efficacy: SelfEfficacy = { items: instruments.selfEfficacy, mean: meanOf(instruments.selfEfficacy) };
+    patch.self_efficacy = self_efficacy as unknown as Record<string, unknown>;
+  }
+  if (instruments.automaticity) {
+    const automaticity: Automaticity = { items: instruments.automaticity, mean: meanOf(instruments.automaticity) };
+    patch.automaticity = automaticity as unknown as Record<string, unknown>;
+  }
+  if (instruments.enjoyment) {
+    const enjoyment: Enjoyment = { items: instruments.enjoyment, mean: meanOf(instruments.enjoyment) };
+    patch.enjoyment = enjoyment as unknown as Record<string, unknown>;
+  }
+
+  const existing = await getCheckpoint(day);
+  if (existing) {
+    await db.checkpoint.update(existing.id, patch);
+    return;
+  }
+  const row: CheckpointRow = {
+    id: deps.newId(),
+    day,
+    export_verified: false,
+    metrics: {},
+    self_efficacy: {},
+    automaticity: {},
+    enjoyment: {},
+    rank_before: 'E',
+    gates: {},
+    controlled: {},
+    external: {},
+    quest_templates_snapshot: {},
+    ...patch,
+  };
+  await db.checkpoint.add(row);
 }
 
 /** The rank as of the most recently sealed checkpoint, or 'E' before any

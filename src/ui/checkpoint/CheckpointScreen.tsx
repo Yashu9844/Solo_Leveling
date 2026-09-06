@@ -13,6 +13,7 @@ import {
 import { realDeps } from '../../store/deps';
 import { RankAdvancedMoment } from '../moments/RankAdvancedMoment';
 import { CheckpointMoment } from '../moments/CheckpointMoment';
+import { CheckpointInstrumentsCard } from '../components/CheckpointInstrumentsCard';
 
 interface CheckpointScreenProps {
   day: Checkpoint['day'];
@@ -31,14 +32,13 @@ function triggerDownload(filename: string, contents: string) {
 }
 
 /** final/06 §5's checkpoint screen and final/01 §4.3's "most important
- * sentence" — the ✓/✗ gate checklist. The mockup also shows manual
- * weight/waist/1RM entry and self-efficacy/automaticity/enjoyment
- * instruments on this same screen; deferred here (see the Slice 12
- * report) — this screen's job is the gate mechanics the Slice 12 done
- * criterion actually names: real evidence, the export gate, sealing,
- * and the verdict text. Body metrics already have their own entry path
- * (store/training.ts's logBodyMetric); the instruments have no engine
- * behind them yet. */
+ * sentence" — the ✓/✗ gate checklist, real evidence, the export gate,
+ * sealing, and the verdict text. Body metrics have their own standalone
+ * entry point (ui/components/BodyMetricsCard.tsx, on Profile — not tied
+ * to a specific checkpoint day, since a weight/waist/1RM reading isn't
+ * inherently a checkpoint-day event). Self-efficacy/automaticity/
+ * enjoyment ARE tied to specific checkpoint days (docs/04 §5.2-5.3) and
+ * render below via CheckpointInstrumentsCard. */
 export function CheckpointScreen({ day, today, onClose }: CheckpointScreenProps) {
   const [report, setReport] = useState<CheckpointReport | null>(null);
   const [exporting, setExporting] = useState(false);
@@ -130,6 +130,14 @@ export function CheckpointScreen({ day, today, onClose }: CheckpointScreenProps)
       </div>
 
       {error && <p className="mt-3 text-xs text-state-alert">{error}</p>}
+
+      {/* docs/04 §5.2-5.3 — self-efficacy/automaticity/enjoyment are
+          administered at Day 0/30/60/90/120, not Day 14. Supplementary
+          self-report, not part of the gate — shown regardless of
+          sealed state. */}
+      {day !== 14 && (
+        <CheckpointInstrumentsCard day={day} label={`Record Day ${day} instruments`} />
+      )}
 
       {sealed ? (
         <p className="mt-4 text-sm text-accent">Sealed. Rank {report.checkpoint?.rank_after}.</p>

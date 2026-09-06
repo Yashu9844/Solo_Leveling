@@ -6,28 +6,58 @@ import { db } from '../../db/db';
 import { getDsaSkillsOverview, getFoundationSkillsOverview, getCareerTreeOverview, type TopicMastery, type CareerTreeOverview } from '../../store/skills';
 import { getInterviewBenchmarkHistory, getInterviewBenchmarkPassed, logInterviewBenchmark } from '../../store/training';
 import type { MasteryState } from '../../engine/types';
-import { ScreenHeader } from '../kit';
+import {
+  ArtLayer,
+  FramedPanel,
+  PrimaryButton,
+  ScreenHeader,
+  SectionLabel,
+  SecondaryButton,
+  SegmentBar,
+} from '../kit';
 
 // final/03 §1's "5-segment bar, never a percentage" — one segment per
 // state, filled cumulatively up to the current one.
 const MASTERY_ORDER: MasteryState[] = ['unseen', 'introduced', 'applied', 'fluent', 'retained'];
 
-function MasteryBar({ state }: { state: MasteryState }) {
-  const filled = MASTERY_ORDER.indexOf(state);
-  return (
-    <div className="flex gap-1" aria-label={state}>
-      {MASTERY_ORDER.map((_, i) => (
-        <div key={i} className={`h-1.5 w-4 rounded-pill ${i < filled ? 'bg-accent' : 'bg-surface-2'}`} />
-      ))}
-    </div>
-  );
-}
-
 function TopicRow({ item }: { item: TopicMastery }) {
+  const filled = MASTERY_ORDER.indexOf(item.state);
+  const touched = filled > 0;
+
+  // NOTE: skills.spec reaches the bar with
+  // getByText('Arrays', { exact: true }).locator('..'), so the topic's
+  // own element and the aria-labelled bar have to stay siblings under a
+  // single parent. Any regrouping here must keep that shape.
   return (
-    <div className="flex items-center justify-between py-1.5">
-      <span className="text-sm text-text-dim">{item.topic}</span>
-      <MasteryBar state={item.state} />
+    <div
+      className="flex items-center gap-3 py-2"
+      style={{ borderBottom: '1px solid var(--hair-faint)' }}
+    >
+      <span
+        className={[
+          'min-w-0 flex-1 truncate text-sm',
+          touched ? 'text-ink-300' : 'text-ink-700',
+        ].join(' ')}
+      >
+        {item.topic}
+      </span>
+      {/* The state spelled out, not only encoded in the bar: five levels
+          of a two-tone bar are not tellable apart at a glance, and the
+          word is the thing someone actually wants to read. Hidden from
+          assistive tech because SegmentBar already announces it.
+
+          Printed only once a topic has been touched. Eighteen rows all
+          shouting UNSEEN is noise that buries the two lines that matter,
+          and the empty bar already says it. Width is intrinsic rather
+          than a fixed column — "INTRODUCED" is nearly twice the width of
+          "FLUENT", and a column sized for the longest word steals space
+          from the topic name on every other row. */}
+      {touched && (
+        <span className="shrink-0 text-xxs uppercase text-accent-mid" aria-hidden>
+          {item.state}
+        </span>
+      )}
+      <SegmentBar filled={filled} label={item.state} className="shrink-0" />
     </div>
   );
 }
@@ -89,64 +119,104 @@ export function Skills() {
     };
   }, []);
 
+  const dsaTouched = dsa?.filter((t) => t.state !== 'unseen').length ?? 0;
+  const foundationsTouched = foundations?.filter((t) => t.state !== 'unseen').length ?? 0;
+
   return (
     <>
       <ScreenHeader title="SKILLS" />
-      <div className="px-gutter pb-6 pt-4">
-
-      <Section title="DSA">
-        {dsa?.map((item) => <TopicRow key={item.topic} item={item} />)}
-      </Section>
-
-      <Section title="SE Foundations">
-        {foundations?.map((item) => <TopicRow key={item.topic} item={item} />)}
-      </Section>
-
-      <Section title="AI / Agentic tiers">
-        {AI_TIERS.map((tier) => (
-          <div key={tier.title} className="mb-3">
-            <div className="mb-1 text-xs text-text-dim">{tier.title}</div>
-            <div className="flex flex-wrap gap-1.5">
-              {tier.items.map((item) => (
-                <span key={item} className="rounded-pill border border-border px-2 py-0.5 text-xxs text-text-faint">
-                  {item}
-                </span>
-              ))}
-            </div>
+      <div className="pb-6">
+        {/* The band. Skills is a long list screen and needs one place to
+            look first; two counts on the plate say how far into the two
+            tracked trees this arc has actually gone. Counts, not
+            percentages — mastery here is ordinal (final/03 §1), and a
+            percentage would claim a precision the model does not have. */}
+        <div className="relative mt-4 h-[132px] overflow-hidden">
+          <ArtLayer slot="skills" scrim="band" focal="50% 35%" />
+          <div className="absolute inset-x-0 bottom-0 flex items-end gap-8 px-gutter pb-4">
+            <BandStat value={dsaTouched} total={dsa?.length ?? 0} label="DSA topics" />
+            <BandStat value={foundationsTouched} total={foundations?.length ?? 0} label="Foundations" />
           </div>
-        ))}
-      </Section>
+        </div>
 
-      {careerTree && (
-        <Section title="Career tree">
-          <TreeRow label="Software engineering -> foundations" value={`${foundations?.filter((f) => f.state !== 'unseen').length ?? 0}/9`} />
-          <TreeRow label="AI / Agentic -> tiers" value="reference above" />
-          <TreeRow
-            label="Projects -> artifacts"
-            value={Object.entries(careerTree.artifactsByKind)
-              .filter(([, n]) => (n ?? 0) > 0)
-              .map(([kind, n]) => `${n} ${kind}`)
-              .join(' · ') || '0'}
-          />
-          <TreeRow label="Resume -> versions" value={String(careerTree.resumeVersions)} />
-          <TreeRow label="Applications" value={`${careerTree.applications} (${careerTree.qualityApplications} quality)`} />
-          <TreeRow label="Interviews" value={String(careerTree.interviews)} />
-          <TreeRow label="Offer" value={String(careerTree.offers)} />
-        </Section>
-      )}
+        <div className="px-gutter">
+          <Section title="DSA">{dsa?.map((item) => <TopicRow key={item.topic} item={item} />)}</Section>
 
-        <Section title="Interview-readiness benchmark">
-          <InterviewBenchmarkCard />
-        </Section>
+          <Section title="SE Foundations">
+            {foundations?.map((item) => <TopicRow key={item.topic} item={item} />)}
+          </Section>
+
+          <Section title="AI / Agentic tiers">
+            {/* Reference material, and styled to say so: no bars, no
+                counts, nothing that implies these are being measured. */}
+            {AI_TIERS.map((tier) => (
+              <div key={tier.title} className="mb-4 last:mb-0">
+                <div className="mb-2 text-xs text-ink-500">{tier.title}</div>
+                <div className="flex flex-wrap gap-1.5">
+                  {tier.items.map((item) => (
+                    <span
+                      key={item}
+                      className="rounded-pill px-2.5 py-1 text-xxs text-ink-700"
+                      style={{ border: '1px solid var(--hair)', background: 'var(--surface)' }}
+                    >
+                      {item}
+                    </span>
+                  ))}
+                </div>
+              </div>
+            ))}
+          </Section>
+
+          {careerTree && (
+            <Section title="Career tree">
+              <TreeRow label="Software engineering → foundations" value={`${foundationsTouched}/9`} />
+              <TreeRow label="AI / Agentic → tiers" value="reference above" />
+              <TreeRow
+                label="Projects → artifacts"
+                value={
+                  Object.entries(careerTree.artifactsByKind)
+                    .filter(([, n]) => (n ?? 0) > 0)
+                    .map(([kind, n]) => `${n} ${kind}`)
+                    .join(' · ') || '0'
+                }
+              />
+              <TreeRow label="Resume → versions" value={String(careerTree.resumeVersions)} />
+              <TreeRow
+                label="Applications"
+                value={`${careerTree.applications} (${careerTree.qualityApplications} quality)`}
+              />
+              <TreeRow label="Interviews" value={String(careerTree.interviews)} />
+              <TreeRow label="Offer" value={String(careerTree.offers)} />
+            </Section>
+          )}
+
+          <Section title="Interview-readiness benchmark">
+            <InterviewBenchmarkCard />
+          </Section>
+        </div>
       </div>
     </>
+  );
+}
+
+function BandStat({ value, total, label }: { value: number; total: number; label: string }) {
+  return (
+    <div className="flex flex-col gap-1">
+      <span className="font-mono text-lg leading-none tabular-nums text-ink-100">
+        <span className="glow-text">{value}</span>
+        <span className="text-sm text-ink-700"> / {total}</span>
+      </span>
+      <span className="text-xxs uppercase text-ink-700">{label}</span>
+    </div>
   );
 }
 
 function Section({ title, children }: { title: string; children: React.ReactNode }) {
   return (
     <div className="mt-6">
-      <div className="mb-1 border-b border-border pb-1 text-xxs uppercase tracking-wide text-text-faint">{title}</div>
+      <SectionLabel rule className="mb-2">
+        {title}
+      </SectionLabel>
       {children}
     </div>
   );
@@ -154,9 +224,12 @@ function Section({ title, children }: { title: string; children: React.ReactNode
 
 function TreeRow({ label, value }: { label: string; value: string }) {
   return (
-    <div className="flex items-center justify-between py-1">
-      <span className="text-sm text-text-dim">{label}</span>
-      <span className="font-mono text-sm text-text">{value}</span>
+    <div
+      className="flex items-center gap-3 py-2"
+      style={{ borderBottom: '1px solid var(--hair-faint)' }}
+    >
+      <span className="min-w-0 flex-1 truncate text-sm text-ink-500">{label}</span>
+      <span className="shrink-0 font-mono text-xs tabular-nums text-ink-300">{value}</span>
     </div>
   );
 }
@@ -195,39 +268,45 @@ function InterviewBenchmarkCard() {
 
   if (!arcId) return null;
 
+  // The framed panel is this screen's one piece of ceremony, and it is
+  // spent here deliberately: everything above is a readout, and this is
+  // the only thing on the screen you can actually do — a self-
+  // administered gate whose result is a rank input.
   return (
-    <div>
-      <p className="text-sm text-text-dim">
-        3 randomly-drawn mediums, 90 minutes total, unseen, first-attempt, a working solution, and a stated complexity.
+    <FramedPanel className="px-4 py-4">
+      <p className="text-sm leading-[1.55] text-ink-500">
+        3 randomly-drawn mediums, 90 minutes total, unseen, first-attempt, a working solution, and a
+        stated complexity.
       </p>
-      <p className="mt-2 text-sm text-text">{passed ? '✓ Passed.' : 'Not yet passed.'}</p>
-      <div className="mt-2 flex gap-2">
-        <button
-          type="button"
-          disabled={submitting}
-          onClick={() => void handleLog(true)}
-          className="min-h-[44px] flex-1 rounded-md border border-accent text-sm text-accent disabled:opacity-40"
-        >
+
+      <p className={['mt-3 text-sm', passed ? 'glow-text text-accent-mid' : 'text-ink-700'].join(' ')}>
+        {passed ? '✓ Passed.' : 'Not yet passed.'}
+      </p>
+
+      <div className="mt-4 flex gap-2">
+        <PrimaryButton size="md" disabled={submitting} onClick={() => void handleLog(true)} className="flex-1">
           Passed
-        </button>
-        <button
-          type="button"
-          disabled={submitting}
-          onClick={() => void handleLog(false)}
-          className="min-h-[44px] flex-1 rounded-md border border-border text-sm text-text-dim disabled:opacity-40"
-        >
+        </PrimaryButton>
+        <SecondaryButton disabled={submitting} onClick={() => void handleLog(false)} className="flex-1">
           Not yet
-        </button>
+        </SecondaryButton>
       </div>
+
       {history.length > 0 && (
-        <ul className="mt-2 space-y-0.5">
+        <ul className="mt-4 flex flex-col gap-1">
           {history.map((h, i) => (
-            <li key={i} className="text-xs text-text-faint">
-              {h.local_date} — {h.passed ? 'passed' : 'not yet'}
+            <li
+              key={i}
+              className="flex items-center justify-between font-mono text-xxs tabular-nums text-faint"
+            >
+              <span>{h.local_date}</span>
+              <span className={h.passed ? 'text-accent-mid' : undefined}>
+                {h.passed ? 'passed' : 'not yet'}
+              </span>
             </li>
           ))}
         </ul>
       )}
-    </div>
+    </FramedPanel>
   );
 }

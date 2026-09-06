@@ -105,12 +105,12 @@ reading.
 
 | Edge | Motion | Duration |
 |---|---|---|
-| Splash → Start / Today | cross-fade + 1.02 → 1.0 scale | 420 ms |
+| Splash → Start / Today | cross-fade | 320 ms |
 | Start → Onboarding | push left, hero parallaxes at 0.4× | 320 ms |
 | Onboarding step → step | push left / right, step rail advances | 260 ms |
-| Tab → Tab (lateral) | fade + 14px rise, no horizontal travel | 200 ms |
-| Tab → child route (Settings, Checkpoint) | push left | 280 ms |
-| Child → parent (back) | push right | 240 ms |
+| Tab → Tab (lateral) | cross-fade, no movement | 180 ms |
+| Tab → child route (Settings, Checkpoint) | overlay pushes left; tab content cross-fades | 220 ms |
+| Child → parent (back) | overlay pushes right; tab content cross-fades | 180 ms |
 | Any → Sheet | scrim fades, sheet springs up from below | 300 ms spring |
 | Sheet → dismissed | drag-follow, then settle down | follows gesture |
 | Any → Moment | scrim to full black, panel `ring-pop` | 260 + 240 + 200 ms |
@@ -118,6 +118,15 @@ reading.
 
 Lateral moves never travel horizontally; hierarchical moves always do. That single rule is
 what makes the app feel navigable rather than merely animated.
+
+**Route *content* never translates or scales — only overlays move.** This is not a
+stylistic preference; it was measured. An earlier version slid and scaled the entering
+screen, which reads beautifully and cost 597 ms against the app's hard 300 ms tap-to-XP
+budget: while a screen is moving its buttons are moving, so the first tap after arriving
+waits out the animation before it can land. `final/06` §4.3 requires that nothing
+functional depend on animation, and the core loop's primary action is as functional as it
+gets. Hierarchy is therefore carried by things layered *above* the content — sheets
+springing up, pushed screens sliding in — where nothing time-critical sits underneath.
 
 At `[data-motion="reduced"]` every row above collapses to an instant state change with a
 120 ms opacity fade, and nothing else.

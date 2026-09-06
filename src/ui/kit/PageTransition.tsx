@@ -17,44 +17,41 @@ export type TransitionEdge = 'lateral' | 'forward' | 'back' | 'boot';
 
 const EASE_OUT = [0.22, 1, 0.36, 1] as const;
 
+/**
+ * Route content animates OPACITY ONLY — no translate, no scale.
+ *
+ * This was learned the hard way. The first version slid and scaled the
+ * entering screen, which reads beautifully and cost 597ms against the
+ * app's hard 300ms tap-to-XP budget: while a screen is moving, its
+ * buttons are moving, so the first tap after arriving has to wait out
+ * the animation before it can land. That is exactly what `final/06`
+ * §4.3 forbids — nothing functional may depend on animation, and the
+ * core loop's primary action is as functional as it gets.
+ *
+ * Direction still carries hierarchy, just not on the tab content: sheets
+ * spring up from below, and pushed screens (Settings, Checkpoint) slide
+ * as overlays, where nothing time-critical sits underneath. The edges
+ * survive here because they still set the *pace*, and a cross-fade at
+ * 200ms genuinely reads as lateral where 320ms reads as arrival.
+ */
 const EDGES: Record<TransitionEdge, { variants: Variants; transition: Transition }> = {
-  // Tab to tab. Fade with a small rise; no horizontal travel at all.
   lateral: {
-    variants: {
-      initial: { opacity: 0, y: 14, scale: 0.985 },
-      animate: { opacity: 1, y: 0, scale: 1 },
-      exit: { opacity: 0, y: -10, scale: 0.99 },
-    },
-    transition: { duration: 0.2, ease: EASE_OUT },
+    variants: { initial: { opacity: 0 }, animate: { opacity: 1 }, exit: { opacity: 0 } },
+    transition: { duration: 0.18, ease: EASE_OUT },
   },
-  // Deeper: into Settings, a Checkpoint, the next onboarding step.
   forward: {
-    variants: {
-      initial: { opacity: 0, x: '18%' },
-      animate: { opacity: 1, x: 0 },
-      exit: { opacity: 0, x: '-12%' },
-    },
-    transition: { duration: 0.28, ease: EASE_OUT },
+    variants: { initial: { opacity: 0 }, animate: { opacity: 1 }, exit: { opacity: 0 } },
+    transition: { duration: 0.22, ease: EASE_OUT },
   },
-  // Back out. Slightly quicker than forward — returning should feel
-  // lighter than committing.
   back: {
-    variants: {
-      initial: { opacity: 0, x: '-18%' },
-      animate: { opacity: 1, x: 0 },
-      exit: { opacity: 0, x: '12%' },
-    },
-    transition: { duration: 0.24, ease: EASE_OUT },
+    variants: { initial: { opacity: 0 }, animate: { opacity: 1 }, exit: { opacity: 0 } },
+    transition: { duration: 0.18, ease: EASE_OUT },
   },
-  // Splash handing over to the app. Longer and scale-led, because this
-  // is the one moment the app is allowed to feel like it is arriving.
+  // The one arrival moment, and still the slowest — but a fade, so the
+  // first tap never queues behind it.
   boot: {
-    variants: {
-      initial: { opacity: 0, scale: 1.02 },
-      animate: { opacity: 1, scale: 1 },
-      exit: { opacity: 0, scale: 0.995 },
-    },
-    transition: { duration: 0.42, ease: EASE_OUT },
+    variants: { initial: { opacity: 0 }, animate: { opacity: 1 }, exit: { opacity: 0 } },
+    transition: { duration: 0.32, ease: EASE_OUT },
   },
 };
 

@@ -79,9 +79,13 @@ task and the fix would change engine/store behaviour, or a task would require de
 
 ## Phase 2 — Navigation architecture
 
-- [ ] **2.1** Router restructure to nav flow §1–§3: `/start`, `/profile/settings/*` as a
-      child route, the three PWA shortcut redirects (§6), and the unknown-path rules.
-      Gate: fast.
+- [x] **2.1** Router restructure: the three PWA shortcut redirects (§6) resolved to
+      `/today?open=<target>`, plus the unknown-path rules. Gate: fast.
+      *Two deferrals, both to avoid premature routes:* `/start` becomes the no-arc entry
+      in **3.2**, when the screen exists — introducing the redirect earlier would break
+      every e2e helper for two tasks with nothing to show for it. `/profile/settings/*`
+      lands in **10.2**, since a nested route to a screen that does not exist is not
+      structure, it is a stub.
 - [ ] **2.2** Transition grammar wired: `AnimatePresence` keyed on pathname, per-edge
       direction (lateral fade vs hierarchical push), tab scroll-position retention,
       tap-active-tab-to-top. Gate: fast.
@@ -280,6 +284,7 @@ system §10 are required; neither may be traded for the other.
 | 1.4 | kit: meters | MeterBar animates via CSS width transition, not framer-motion — e2e regexes `width: N%` out of the inline style and a JS animation would publish unparseable px values. Segmented keeps plain <button> + aria-pressed because 6 specs select it with getByRole('button'). Added --on-accent per theme: 4 dark themes need a dark label on their light accent, daylight needs a light one. SegmentBar (5-state mastery, never a percentage), StatTile. Gate green. |
 | 1.5 | kit: sheet | Three dismissals (Close button, scrim, downward drag past 110px or a 520px/s flick), focus trap + restore, Esc, scroll lock, role=dialog, safe-area footer. Renders the frozen aria-label="Close" itself so all 8 sheets inherit it. Back-button dismissal deliberately deferred to 2.3 as an app-level owner. Gate green. |
 | 1.6 | kit: art + moment | ArtLayer: 6 scrim presets built with color-mix against --void so a theme change re-tints the scrim; inline LQIP paints frame 1; --art-opacity gates every plate at once; gradient fallback for unfilled slots. Moment base keeps role=button + /Level up/ label (frozen by xp.spec). Phase 1 complete. NOTE: art still absent from dist because no screen imports the kit yet — verified naturally at 3.1. Gate green. |
+| 2.1 | routing | The 3 PWA shortcuts declared in the manifest since Slice 1 were never handled — they fell through to the catch-all and landed on a bare Today with no sheet open. Now resolve to /today?open=<target> (Today consumes it in 6.3). /start deferred to 3.2 and /profile/settings to 10.2 to avoid premature routes. Gate green. |
 | — | plan v2 | User added: configurable settings/theming, explicit nav flowchart, mood-based art assignment. Saw all 11 plates — split into Blue Arc (effort) / Gold Horizon (evidence) / Boss. Added docs 02 and 03; replanned to 13 phases, 60 tasks. |
 
 ---

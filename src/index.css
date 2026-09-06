@@ -186,6 +186,64 @@ body {
 }
 
 /* ─────────────────────────────────────────────────────────────────────
+ * Range sliders
+ * The three checkpoint instruments are the only sliders in the app, and
+ * a default OS slider on this surface looks like a browser control that
+ * wandered in. Track and thumb are drawn from the same tokens as
+ * MeterBar so a slider reads as a meter you can push.
+ *
+ * The thumb is 24px — larger than it looks, because the visible circle
+ * is 16px with a ring. final/06 §7 wants 44px targets; a range input's
+ * whole track is draggable, so the row already clears that, and an
+ * oversized thumb would just cover the value it is setting.
+ * ───────────────────────────────────────────────────────────────────── */
+input[type='range'] {
+  -webkit-appearance: none;
+  appearance: none;
+  height: 24px;
+  background: transparent;
+  cursor: pointer;
+}
+
+input[type='range']::-webkit-slider-runnable-track {
+  height: 6px;
+  border-radius: 999px;
+  background: var(--fill-faint);
+}
+
+input[type='range']::-webkit-slider-thumb {
+  -webkit-appearance: none;
+  appearance: none;
+  margin-top: -5px; /* centres a 16px thumb on a 6px track */
+  height: 16px;
+  width: 16px;
+  border-radius: 999px;
+  background: var(--accent-soft);
+  border: 2px solid var(--void);
+  box-shadow: var(--glow-sm);
+}
+
+input[type='range']::-moz-range-track {
+  height: 6px;
+  border-radius: 999px;
+  background: var(--fill-faint);
+}
+
+input[type='range']::-moz-range-thumb {
+  height: 16px;
+  width: 16px;
+  border-radius: 999px;
+  background: var(--accent-soft);
+  border: 2px solid var(--void);
+  box-shadow: var(--glow-sm);
+}
+
+input[type='range']:focus-visible::-webkit-slider-thumb {
+  outline: 2px solid var(--accent-bright);
+  outline-offset: 2px;
+}
+
+/* ─────────────────────────────────────────────────────────────────────
  * Motion
  * Three states, per design/03-SETTINGS-AND-THEMING.md §1:
  *   reduced → always still

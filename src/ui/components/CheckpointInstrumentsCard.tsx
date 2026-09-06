@@ -11,6 +11,7 @@ import {
   type AutomaticityItems,
   type EnjoymentItems,
 } from './InstrumentSliders';
+import { Panel, PrimaryButton } from '../kit';
 
 interface CheckpointInstrumentsCardProps {
   day: Checkpoint['day'];
@@ -65,21 +66,25 @@ export function CheckpointInstrumentsCard({ day, label, header, saveLabel = 'Sav
   }
 
   return (
-    <div className="mt-4 rounded-md border border-border p-3">
+    <Panel cut="md" className="mt-4 px-4 py-4">
       {!expanded ? (
         <button
           type="button"
           onClick={() => setExpanded(true)}
-          className="min-h-[44px] w-full text-left text-sm text-accent"
+          className="flex w-full items-center justify-between text-left text-sm text-accent"
+          style={{ minHeight: 44 }}
         >
           {label}
+          <span aria-hidden className="text-ink-700">
+            +
+          </span>
         </button>
       ) : (
-        <div className="space-y-6">
+        <div className="flex flex-col gap-7">
           {header && (
             <div>
-              <div className="text-md text-text">{header.title}</div>
-              <p className="text-sm text-text-dim">{header.subtitle}</p>
+              <p className="font-display text-lg leading-tight text-ink-100">{header.title}</p>
+              <p className="mt-2 text-sm leading-[1.5] text-ink-500">{header.subtitle}</p>
             </div>
           )}
 
@@ -111,16 +116,11 @@ export function CheckpointInstrumentsCard({ day, label, header, saveLabel = 'Sav
             step={1}
           />
 
-          <button
-            type="button"
-            disabled={saving}
-            onClick={() => void handleSave()}
-            className="min-h-[44px] w-full rounded-md bg-accent text-sm font-medium text-bg disabled:opacity-40"
-          >
+          <PrimaryButton size="md" disabled={saving} onClick={() => void handleSave()}>
             {saving ? 'Saving…' : saveLabel}
-          </button>
+          </PrimaryButton>
         </div>
       )}
-    </div>
+    </Panel>
   );
 }

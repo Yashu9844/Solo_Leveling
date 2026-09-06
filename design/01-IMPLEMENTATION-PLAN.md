@@ -176,7 +176,7 @@ task and the fix would change engine/store behaviour, or a task would require de
 - [x] **9.2** Data cards: `BackupCard`, `PaperImportCard`, `InstallCard`,
       `BodyMetricsCard`, arc pause, dev-only blocks quarantined in `--state-alert`.
       Gate: fast.
-- [ ] **9.3** `CheckpointScreen` + `CheckpointInstrumentsCard` + `InstrumentSliders`.
+- [x] **9.3** `CheckpointScreen` + `CheckpointInstrumentsCard` + `InstrumentSliders`.
       The report is a **Gold Horizon** surface (`checkpoint` art) — it is the screen that
       says something real changed. Rank gates as ✓/✗ shapes. Gate: fast.
 - [ ] **9.4** `EveningReview` (Blue, `review` art) and `WeeklyReview` (Blue, with a Gold
@@ -319,6 +319,7 @@ system §10 are required; neither may be traded for the other.
 | 8.4 | phase 8 gate | 80/80 e2e, first run, no retries. |
 | 9.1 | profile | Hero opens with the main quest — the one sentence the arc is measured against — then LV / XP / RANK. The next gate is the screen's only FramedPanel and turns Gold when due. BossList gained a locked state on the `boss-throne` plate: it rendered nothing at all before Day 25, which wasted the one thing bosses are for. Boss conditions are shape-coded, not colour-coded. Achievements became chips; a dot-joined sentence read as one long clause. |
 | 9.2 | data cards | All five on `Panel` with kit buttons. Two colour rules made explicit in code: the import confirmation keeps `--state-alert` because it really does destroy data, and a paused arc takes the recovery amber instead, because a pause is a state and not a warning. Dev blocks quarantined behind a dashed alert fence — shape as well as colour, so the boundary survives a colour-blind read. |
+| 9.3 | checkpoint | The app's Gold Horizon surface: `checkpoint` plate, DAY n in dawn, the verdict in the screen's only frame. Gate conditions are filled/hollow squares carrying a tick or a cross, so shape and colour say the same thing. Portalled and given a top safe-area inset — the close button sat under the notch. Range inputs styled from MeterBar's tokens; the instrument titles are sentences, so they had to stop being SectionLabels, which ran a full sentence off the right edge. |
 | — | plan v2 | User added: configurable settings/theming, explicit nav flowchart, mood-based art assignment. Saw all 11 plates — split into Blue Arc (effort) / Gold Horizon (evidence) / Boss. Added docs 02 and 03; replanned to 13 phases, 60 tasks. |
 
 ---

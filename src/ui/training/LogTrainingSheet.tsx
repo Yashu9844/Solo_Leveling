@@ -4,6 +4,7 @@ import { realDeps } from '../../store/deps';
 import { logTrainingSession, logSteps } from '../../store/training';
 import { SingleChipSelect } from '../components/SingleChipSelect';
 import { Stepper } from '../components/Stepper';
+import { ArtLayer, PrimaryButton, Sheet } from '../kit';
 
 const MODES = ['Session', 'Steps'] as const;
 const TYPES = ['Push', 'Pull', 'Legs', 'Full', 'Conditioning'] as const;
@@ -43,18 +44,25 @@ export function LogTrainingSheet({ today, arcId, onClose }: LogTrainingSheetProp
   }
 
   return (
-    <div className="fixed inset-0 z-50 flex items-end bg-black/50" onClick={onClose}>
-      <div
-        className="flex max-h-[85vh] w-full flex-col gap-3 overflow-y-auto rounded-t-md border-t border-border bg-surface p-4"
-        style={{ paddingBottom: 'calc(env(safe-area-inset-bottom) + 16px)' }}
-        onClick={(e) => e.stopPropagation()}
-      >
-        <div className="flex items-center justify-between">
-          <h2 className="text-lg font-semibold text-text">LOG TRAINING</h2>
-          <button type="button" onClick={onClose} aria-label="Close" className="min-h-[44px] min-w-[44px] text-text-dim">
-            ✕
-          </button>
-        </div>
+    <Sheet
+      open
+      onClose={onClose}
+      title="Log training"
+      footer={
+        <PrimaryButton size="md" disabled={!canLog || submitting} onClick={() => void handleLog()}>
+          {submitting ? 'Logging…' : mode === 'Session' ? 'Log session' : 'Log steps'}
+        </PrimaryButton>
+      }
+    >
+      {/* The one log sheet with a plate. TRAINING is the only domain
+          whose evidence is physical, and the physique plate carries the
+          body-part-to-attribute mapping the app already models. Kept as
+          a short band at low opacity — this is a form, not a stage. */}
+      <div className="relative -mx-gutter mb-4 h-[110px] overflow-hidden">
+        <ArtLayer slot="training" scrim="band" focal="50% 32%" />
+      </div>
+
+      <div className="flex flex-col gap-4">
 
         <SingleChipSelect label="Mode" options={MODES} labelFor={(m) => m} selected={mode} onSelect={setMode} />
 
@@ -68,15 +76,7 @@ export function LogTrainingSheet({ today, arcId, onClose }: LogTrainingSheetProp
           <Stepper label="Steps" value={steps} step={500} min={0} onChange={setSteps} />
         )}
 
-        <button
-          type="button"
-          disabled={!canLog || submitting}
-          onClick={() => void handleLog()}
-          className="min-h-[44px] rounded-md bg-accent text-sm font-medium text-bg disabled:opacity-40"
-        >
-          {submitting ? 'Logging…' : mode === 'Session' ? 'Log session' : 'Log steps'}
-        </button>
       </div>
-    </div>
+    </Sheet>
   );
 }

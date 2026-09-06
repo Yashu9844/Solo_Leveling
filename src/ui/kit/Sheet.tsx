@@ -1,4 +1,4 @@
-import { AnimatePresence, motion, type PanInfo } from 'framer-motion';
+import { motion, type PanInfo } from 'framer-motion';
 import { useCallback, useEffect, useId, useRef, useState, type ReactNode } from 'react';
 import { createPortal } from 'react-dom';
 import { useBackDismiss } from '../routing/OverlayStack';
@@ -43,6 +43,19 @@ interface SheetProps {
  * paints on top and silently swallows every tap aimed at the sheet.
  * That happened once and cost fourteen e2e failures; a portal makes it
  * structurally impossible rather than a question of z-index discipline.
+ *
+ * The entrance is a CSS animation, not a JavaScript one, for the same
+ * reason route transitions are. A framer-driven `y: 100% -> 0` leaves
+ * the sheet parked off-screen if requestAnimationFrame is ever starved,
+ * and it still counts as visible — so taps land on nothing and the app
+ * appears frozen. CSS settles on its final frame regardless. framer is
+ * still used for the drag, which affects position only while a finger
+ * is on it and cannot strand the sheet.
+ *
+ * There is no exit animation, and there was never really one: every
+ * caller renders this as `{isOpen && <SomeSheet/>}`, so closing unmounts
+ * the whole subtree and an AnimatePresence exit never had a chance to
+ * play.
  */
 export function Sheet({ open, onClose, title, children, footer, testId }: SheetProps) {
   const panelRef = useRef<HTMLDivElement>(null);
@@ -109,21 +122,24 @@ export function Sheet({ open, onClose, title, children, footer, testId }: SheetP
 
   if (!mounted) return null;
 
+  if (!open) return null;
+
   return createPortal(
-    <AnimatePresence>
-      {open && (
-        <div className="fixed inset-0 z-50 flex items-end justify-center" onKeyDown={onKeyDown}>
-          <motion.div
+    <div className="fixed inset-0 z-50 flex items-end justify-center" onKeyDown={onKeyDown}>
+          <div
             aria-hidden
             onClick={onClose}
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            exit={{ opacity: 0 }}
-            transition={{ duration: 0.2 }}
             className="absolute inset-0"
-            style={{ background: 'var(--scrim)' }}
+            style={{
+              background: 'var(--scrim)',
+              animation: 'scrim-in 200ms ease-out both',
+            }}
           />
 
+          <div
+            className="relative w-full max-w-shell"
+            style={{ animation: 'sheet-in 280ms cubic-bezier(0.22, 1, 0.36, 1) both' }}
+          >
           <motion.div
             ref={panelRef}
             role="dialog"
@@ -131,15 +147,11 @@ export function Sheet({ open, onClose, title, children, footer, testId }: SheetP
             aria-labelledby={titleId}
             data-testid={testId}
             tabIndex={-1}
-            initial={{ y: '100%' }}
-            animate={{ y: 0 }}
-            exit={{ y: '100%' }}
-            transition={{ type: 'spring', stiffness: 380, damping: 36 }}
             drag="y"
             dragConstraints={{ top: 0, bottom: 0 }}
             dragElastic={{ top: 0, bottom: 0.6 }}
             onDragEnd={handleDragEnd}
-            className="relative flex max-h-[86dvh] w-full max-w-shell flex-col outline-none"
+            className="relative flex max-h-[86dvh] w-full flex-col outline-none"
             style={{
               background: 'linear-gradient(180deg, var(--panel-top) 0%, var(--surface) 100%)',
               borderTop: '1px solid var(--hair-strong)',
@@ -192,9 +204,8 @@ export function Sheet({ open, onClose, title, children, footer, testId }: SheetP
               />
             )}
           </motion.div>
-        </div>
-      )}
-    </AnimatePresence>,
+          </div>
+    </div>,
     document.body
   );
 }

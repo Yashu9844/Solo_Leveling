@@ -149,6 +149,27 @@ body {
   }
 }
 
+/* Sheet entrance. CSS for the same reason route transitions are: a
+ * JS-driven transform that never completes leaves the sheet parked
+ * off-screen while still counting as visible. */
+@keyframes sheet-in {
+  from {
+    transform: translateY(100%);
+  }
+  to {
+    transform: translateY(0);
+  }
+}
+
+@keyframes scrim-in {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
 @keyframes ring-pop {
   0% {
     transform: scale(0.6);

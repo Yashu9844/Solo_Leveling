@@ -9,6 +9,7 @@ import { SingleChipSelect } from '../components/SingleChipSelect';
 import { Stepper } from '../components/Stepper';
 import { MasteryMoment } from '../moments/MasteryMoment';
 import { DeepWorkTimer } from '../components/DeepWorkTimer';
+import { Field, PrimaryButton, Sheet, TextInput } from '../kit';
 
 const SYSTEM_DESIGN_MODES = ['studied', 'written_up', 'explained_aloud'] as const;
 type SystemDesignMode = (typeof SYSTEM_DESIGN_MODES)[number];
@@ -81,33 +82,30 @@ export function LearningBlockSheet({ today, arcId, onClose }: LearningBlockSheet
   }
 
   return (
-    <div className="fixed inset-0 z-50 flex items-end bg-black/50" onClick={onClose}>
-      <div
-        className="flex max-h-[85vh] w-full flex-col gap-3 overflow-y-auto rounded-t-md border-t border-border bg-surface p-4"
-        style={{ paddingBottom: 'calc(env(safe-area-inset-bottom) + 16px)' }}
-        onClick={(e) => e.stopPropagation()}
+    <>
+      <Sheet
+        open
+        onClose={onClose}
+        title="Learning block"
+        footer={
+          <PrimaryButton
+            size="md"
+            disabled={!canLog || submitting}
+            onClick={() => void handleLog()}
+          >
+            {submitting ? 'Logging…' : `Log · +${DEFAULT_CONFIG.learningBlockXp} XP`}
+          </PrimaryButton>
+        }
       >
-        <div className="flex items-center justify-between">
-          <h2 className="text-lg font-semibold text-text">LEARNING BLOCK</h2>
-          <button type="button" onClick={onClose} aria-label="Close" className="min-h-[44px] min-w-[44px] text-text-dim">
-            ✕
-          </button>
-        </div>
+        <div className="flex flex-col gap-4">
 
         <SingleChipSelect label="Topic" options={FOUNDATION_TOPICS} labelFor={(t) => t} selected={topic} onSelect={setTopic} />
 
         {isSystemDesign && (
           <>
-            <label className="block">
-              <span className="text-xxs uppercase tracking-wide text-text-dim">System</span>
-              <input
-                type="text"
-                value={system}
-                onChange={(e) => setSystem(e.target.value)}
-                placeholder="e.g. URL shortener"
-                className="mt-1 w-full min-h-[44px] rounded-md border border-border bg-surface-2 px-3 text-text"
-              />
-            </label>
+            <Field label="System">
+              <TextInput type="text" value={system} onChange={(e) => setSystem(e.target.value)} placeholder="e.g. URL shortener" />
+            </Field>
             <SingleChipSelect
               label="Mode"
               options={SYSTEM_DESIGN_MODES}
@@ -115,44 +113,27 @@ export function LearningBlockSheet({ today, arcId, onClose }: LearningBlockSheet
               selected={mode}
               onSelect={setMode}
             />
-            <label className="block">
-              <span className="text-xxs uppercase tracking-wide text-text-dim">Artifact URL (optional)</span>
-              <input
-                type="text"
-                value={artifactUrl}
-                onChange={(e) => setArtifactUrl(e.target.value)}
-                className="mt-1 w-full min-h-[44px] rounded-md border border-border bg-surface-2 px-3 text-text"
-              />
-            </label>
+            <Field label="Artifact URL (optional)">
+              <TextInput type="text" value={artifactUrl} onChange={(e) => setArtifactUrl(e.target.value)} />
+            </Field>
           </>
         )}
 
         <Stepper label="Minutes" value={minutes} step={5} min={5} suffix="min" onChange={setMinutes} />
         <DeepWorkTimer onStop={setMinutes} />
 
-        <label className="block">
-          <span className="text-xxs uppercase tracking-wide text-text-dim">Note (optional)</span>
-          <input
-            type="text"
-            value={note}
-            onChange={(e) => setNote(e.target.value)}
-            className="mt-1 w-full min-h-[44px] rounded-md border border-border bg-surface-2 px-3 text-text"
-          />
-        </label>
+        <Field label="Note (optional)">
+          <TextInput type="text" value={note} onChange={(e) => setNote(e.target.value)} />
+        </Field>
 
-        <button
-          type="button"
-          disabled={!canLog || submitting}
-          onClick={() => void handleLog()}
-          className="min-h-[44px] rounded-md bg-accent text-sm font-medium text-bg disabled:opacity-40"
-        >
-          {submitting ? 'Logging…' : `Log · +${DEFAULT_CONFIG.learningBlockXp} XP`}
-        </button>
-      </div>
+        </div>
+      </Sheet>
 
+      {/* Outside the Sheet: a Moment is a ceremony in its own right and
+          must not be trapped inside the sheet that fired it. */}
       {masteryMoment && (
         <MasteryMoment topic={masteryMoment.topic} state={masteryMoment.state} onDismiss={onClose} />
       )}
-    </div>
+    </>
   );
 }

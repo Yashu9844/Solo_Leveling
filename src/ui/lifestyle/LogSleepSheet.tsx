@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { DEFAULT_CONFIG } from '../../engine/config';
 import { realDeps } from '../../store/deps';
 import { logSleep } from '../../store/lifestyle';
+import { Field, PrimaryButton, Sheet, TextInput } from '../kit';
 
 interface LogSleepSheetProps {
   today: string;
@@ -28,48 +29,26 @@ export function LogSleepSheet({ today, arcId, onClose }: LogSleepSheetProps) {
   }
 
   return (
-    <div className="fixed inset-0 z-50 flex items-end bg-black/50" onClick={onClose}>
-      <div
-        className="flex max-h-[85vh] w-full flex-col gap-3 overflow-y-auto rounded-t-md border-t border-border bg-surface p-4"
-        style={{ paddingBottom: 'calc(env(safe-area-inset-bottom) + 16px)' }}
-        onClick={(e) => e.stopPropagation()}
-      >
-        <div className="flex items-center justify-between">
-          <h2 className="text-lg font-semibold text-text">LOG SLEEP</h2>
-          <button type="button" onClick={onClose} aria-label="Close" className="min-h-[44px] min-w-[44px] text-text-dim">
-            ✕
-          </button>
-        </div>
-
-        <label className="block">
-          <span className="text-xxs uppercase tracking-wide text-text-dim">Wake time</span>
-          <input
-            type="time"
-            value={wakeTime}
-            onChange={(e) => setWakeTime(e.target.value)}
-            className="mt-1 w-full min-h-[44px] rounded-md border border-border bg-surface-2 px-3 text-text"
-          />
-        </label>
-
-        <label className="block">
-          <span className="text-xxs uppercase tracking-wide text-text-dim">Sleep time (optional)</span>
-          <input
-            type="time"
-            value={sleepTime}
-            onChange={(e) => setSleepTime(e.target.value)}
-            className="mt-1 w-full min-h-[44px] rounded-md border border-border bg-surface-2 px-3 text-text"
-          />
-        </label>
-
-        <button
-          type="button"
-          disabled={submitting}
-          onClick={() => void handleLog()}
-          className="min-h-[44px] rounded-md bg-accent text-sm font-medium text-bg disabled:opacity-40"
-        >
+    <Sheet
+      open
+      onClose={onClose}
+      title="Log sleep"
+      footer={
+        <PrimaryButton size="md" disabled={submitting} onClick={() => void handleLog()}>
           {submitting ? 'Logging…' : 'Log wake time'}
-        </button>
+        </PrimaryButton>
+      }
+    >
+      <div className="flex flex-col gap-4">
+
+        <Field label="Wake time">
+          <TextInput type="time" value={wakeTime} onChange={(e) => setWakeTime(e.target.value)} />
+        </Field>
+
+        <Field label="Sleep time (optional)">
+          <TextInput type="time" value={sleepTime} onChange={(e) => setSleepTime(e.target.value)} />
+        </Field>
       </div>
-    </div>
+    </Sheet>
   );
 }

@@ -8,6 +8,7 @@ import type { MasteryState } from '../../engine/types';
 import { SingleChipSelect } from '../components/SingleChipSelect';
 import { Stepper } from '../components/Stepper';
 import { MasteryMoment } from '../moments/MasteryMoment';
+import { DeepWorkTimer } from '../components/DeepWorkTimer';
 
 const SYSTEM_DESIGN_MODES = ['studied', 'written_up', 'explained_aloud'] as const;
 type SystemDesignMode = (typeof SYSTEM_DESIGN_MODES)[number];
@@ -127,6 +128,7 @@ export function LearningBlockSheet({ today, arcId, onClose }: LearningBlockSheet
         )}
 
         <Stepper label="Minutes" value={minutes} step={5} min={5} suffix="min" onChange={setMinutes} />
+        <DeepWorkTimer onStop={setMinutes} />
 
         <label className="block">
           <span className="text-xxs uppercase tracking-wide text-text-dim">Note (optional)</span>

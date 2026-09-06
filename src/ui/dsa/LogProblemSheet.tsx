@@ -8,6 +8,7 @@ import type { MasteryState } from '../../engine/types';
 import { SingleChipSelect } from '../components/SingleChipSelect';
 import { Stepper } from '../components/Stepper';
 import { MasteryMoment } from '../moments/MasteryMoment';
+import { DeepWorkTimer } from '../components/DeepWorkTimer';
 
 const TOPICS = ['Arrays', 'Strings', 'Hashing', 'Two Pointers', 'Sliding Window', 'Stacks', 'Trees', 'Graphs', 'DP'] as const;
 const DIFFICULTIES = ['E', 'M', 'H'] as const;
@@ -117,6 +118,7 @@ export function LogProblemSheet({ today, arcId, onClose }: LogProblemSheetProps)
         />
 
         <Stepper label="Minutes" value={minutes} step={5} min={5} onChange={setMinutes} />
+        <DeepWorkTimer onStop={setMinutes} />
 
         <label className="block">
           <span className="text-xxs uppercase tracking-wide text-text-dim">Insight (optional)</span>

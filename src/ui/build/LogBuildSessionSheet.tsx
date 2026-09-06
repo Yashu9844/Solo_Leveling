@@ -5,6 +5,7 @@ import { logBuildSession } from '../../store/build';
 import { SingleChipSelect } from '../components/SingleChipSelect';
 import { Stepper } from '../components/Stepper';
 import { EvidenceAcceptedMoment } from '../moments/EvidenceAcceptedMoment';
+import { DeepWorkTimer } from '../components/DeepWorkTimer';
 
 const MODES = ['LEARN', 'SHIP'] as const;
 
@@ -72,6 +73,7 @@ export function LogBuildSessionSheet({ today, arcId, onClose }: LogBuildSessionS
         </label>
 
         <Stepper label="Minutes" value={minutes} step={5} min={5} onChange={setMinutes} />
+        <DeepWorkTimer onStop={setMinutes} />
 
         {mode === 'SHIP' && (
           <label className="block">

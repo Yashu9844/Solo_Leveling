@@ -7,7 +7,18 @@
 import { addDays, format, parseISO } from 'date-fns';
 import type { EngineConfig } from '../engine/types';
 import { evaluateRules, type RuleProposal } from '../engine/rules';
-import { attributeDeltas, weeklyReviewFor, type WeeklyReviewResult } from '../engine/weeklyReview';
+import {
+  attributeDeltas,
+  weeklyReviewFor,
+  resumeNudgeFor,
+  sleepDsaCorrelation,
+  type WeeklyReviewResult,
+  type SleepDsaCorrelation,
+  type WakeRecord,
+  type DsaDayRate,
+} from '../engine/weeklyReview';
+import { withinWakeWindowMinutes } from '../engine/sleep';
+import { SLEEP_TOLERANCE_MINUTES } from './lifestyle';
 import { getAttributes } from './attributes';
 import { getAllEvents } from '../db/events';
 import { db } from '../db/db';
@@ -70,26 +81,60 @@ async function metricsFor(dates: string[]): Promise<WeeklyMetrics> {
   };
 }
 
+async function computeSleepDsaCorrelation(thisWeekDates: string[], config: EngineConfig): Promise<SleepDsaCorrelation | null> {
+  const [metricSamples, dsaAttempts] = await Promise.all([db.metric_sample.toArray(), db.dsa_attempt.toArray()]);
+
+  const wakeRecords: WakeRecord[] = metricSamples
+    .filter((s) => s.kind === 'wake_time' && thisWeekDates.includes(s.local_date))
+    .map((s) => ({
+      local_date: s.local_date,
+      onTime: withinWakeWindowMinutes(s.value, config.wakeTargetTime, SLEEP_TOLERANCE_MINUTES),
+    }));
+
+  // DSA rate per day across the whole event log, not just this week —
+  // a wake record near the week's edge needs the following day's rate,
+  // which can fall just outside the week window.
+  const byDate = new Map<string, { firstAttempt: number; total: number }>();
+  for (const a of dsaAttempts.filter((a) => !a.is_revisit)) {
+    const bucket = byDate.get(a.local_date) ?? { firstAttempt: 0, total: 0 };
+    bucket.total += 1;
+    if (a.outcome === 'first_attempt') bucket.firstAttempt += 1;
+    byDate.set(a.local_date, bucket);
+  }
+  const dsaRates: DsaDayRate[] = [...byDate.entries()].map(([local_date, b]) => ({
+    local_date,
+    firstAttemptRate: b.firstAttempt / b.total,
+  }));
+
+  return sleepDsaCorrelation(wakeRecords, dsaRates);
+}
+
 export interface WeeklyReviewReport {
   thisWeek: WeeklyMetrics;
   lastWeek: WeeklyMetrics;
   review: WeeklyReviewResult;
+  resumeNudge: string | null;
+  sleepDsaCorrelation: SleepDsaCorrelation | null;
 }
 
 export async function getWeeklyReview(today: string, config: EngineConfig): Promise<WeeklyReviewReport> {
   const thisWeekDates = weekDates(today);
   const lastWeekDates = weekDates(shiftDate(today, -7));
+  const dateSet = new Set(thisWeekDates);
 
-  const [thisWeek, lastWeek, afterAttributes, beforeAttributes, events] = await Promise.all([
+  const [thisWeek, lastWeek, afterAttributes, beforeAttributes, events, artifacts, correlation] = await Promise.all([
     metricsFor(thisWeekDates),
     metricsFor(lastWeekDates),
     getAttributes(today, config),
     getAttributes(shiftDate(today, -7), config),
     getAllEvents(),
+    db.artifact.toArray(),
+    computeSleepDsaCorrelation(thisWeekDates, config),
   ]);
 
   const proposals: RuleProposal[] = evaluateRules(events, today);
   const review = weeklyReviewFor(attributeDeltas(beforeAttributes, afterAttributes), proposals);
+  const resumeNudge = resumeNudgeFor(artifacts.filter((a) => dateSet.has(a.local_date)).length);
 
-  return { thisWeek, lastWeek, review };
+  return { thisWeek, lastWeek, review, resumeNudge, sleepDsaCorrelation: correlation };
 }

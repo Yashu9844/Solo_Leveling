@@ -25,8 +25,10 @@ const REBUILD_ADJACENT_TABLES = [
 ];
 
 // Mirrors engine/quests.ts's CORE_QUEST_CRITERIA — same convention as
-// store/training.ts's STEPS_COMPLETION_THRESHOLD.
-const SLEEP_TOLERANCE_MINUTES = 30;
+// store/training.ts's STEPS_COMPLETION_THRESHOLD. Exported so
+// store/weeklyReview.ts's sleep/DSA correlation uses the exact same
+// tolerance, not a fourth hand-copied 30.
+export const SLEEP_TOLERANCE_MINUTES = 30;
 const ATTENTION_LIMIT_MINUTES = 60;
 
 async function findCoreInstance(today: string, key: 'sleep' | 'attention') {

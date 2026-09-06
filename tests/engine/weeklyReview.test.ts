@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { attributeDeltas, bottleneckFrom, improvedFrom, declinedFrom, weeklyReviewFor } from '../../src/engine/weeklyReview';
+import { attributeDeltas, bottleneckFrom, improvedFrom, declinedFrom, weeklyReviewFor, resumeNudgeFor, sleepDsaCorrelation } from '../../src/engine/weeklyReview';
 import type { AttributeResult } from '../../src/engine/attributes';
 import type { RuleProposal } from '../../src/engine/rules';
 
@@ -92,5 +92,74 @@ describe('weeklyReviewFor — fixture week end-to-end (final/08\'s Slice 11 done
     expect(review.improved).toEqual([]);
     expect(review.declined).toEqual([]);
     expect(review.proposals).toEqual([]);
+  });
+});
+
+describe('resumeNudgeFor', () => {
+  it('is null when nothing shipped', () => {
+    expect(resumeNudgeFor(0)).toBeNull();
+  });
+
+  it('singular for exactly one artifact', () => {
+    expect(resumeNudgeFor(1)).toBe('You shipped 1 artifact this week. Does your resume say so?');
+  });
+
+  it('plural for more than one, matching final/02 §5s pattern', () => {
+    expect(resumeNudgeFor(2)).toBe('You shipped 2 artifacts this week. Does your resume say so?');
+  });
+});
+
+describe('sleepDsaCorrelation', () => {
+  it('is null with no wake records or no DSA rates at all', () => {
+    expect(sleepDsaCorrelation([], [])).toBeNull();
+    expect(sleepDsaCorrelation([{ local_date: '2026-09-05', onTime: false }], [])).toBeNull();
+  });
+
+  it('is null when every wake record is on the same side (no miss or no on-time to compare)', () => {
+    const wakeRecords = [
+      { local_date: '2026-09-01', onTime: true },
+      { local_date: '2026-09-02', onTime: true },
+    ];
+    const dsaRates = [
+      { local_date: '2026-09-02', firstAttemptRate: 0.5 },
+      { local_date: '2026-09-03', firstAttemptRate: 0.6 },
+    ];
+    expect(sleepDsaCorrelation(wakeRecords, dsaRates)).toBeNull();
+  });
+
+  it("matches final/05 §6's example shape: a real gap, positive deltaPoints when misses correlate with a lower next-day rate", () => {
+    const wakeRecords = [
+      { local_date: '2026-09-01', onTime: false }, // miss -> next day 0.2
+      { local_date: '2026-09-02', onTime: false }, // miss -> next day 0.3
+      { local_date: '2026-09-03', onTime: true }, // on-time -> next day 0.6
+      { local_date: '2026-09-04', onTime: true }, // on-time -> next day 0.7
+    ];
+    const dsaRates = [
+      { local_date: '2026-09-02', firstAttemptRate: 0.2 },
+      { local_date: '2026-09-03', firstAttemptRate: 0.3 },
+      { local_date: '2026-09-04', firstAttemptRate: 0.6 },
+      { local_date: '2026-09-05', firstAttemptRate: 0.7 },
+    ];
+    const result = sleepDsaCorrelation(wakeRecords, dsaRates);
+    expect(result).not.toBeNull();
+    expect(result!.missedNights).toBe(2);
+    expect(result!.afterMissRate).toBeCloseTo(0.25);
+    expect(result!.afterOnTimeRate).toBeCloseTo(0.65);
+    expect(result!.deltaPoints).toBe(40);
+  });
+
+  it('a wake record with no following-day DSA data is simply excluded, not treated as a zero', () => {
+    const wakeRecords = [
+      { local_date: '2026-09-01', onTime: false }, // no DSA data the next day -- excluded
+      { local_date: '2026-09-02', onTime: false }, // next day 0.2
+      { local_date: '2026-09-03', onTime: true }, // next day 0.8
+    ];
+    const dsaRates = [
+      { local_date: '2026-09-03', firstAttemptRate: 0.2 },
+      { local_date: '2026-09-04', firstAttemptRate: 0.8 },
+    ];
+    const result = sleepDsaCorrelation(wakeRecords, dsaRates);
+    expect(result!.afterMissRate).toBe(0.2);
+    expect(result!.afterOnTimeRate).toBe(0.8);
   });
 });

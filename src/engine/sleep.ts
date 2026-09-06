@@ -12,3 +12,11 @@ function toMinutes(hhmm: string): number {
 export function withinWakeWindow(wakeTime: string, targetTime: string, toleranceMinutes: number): boolean {
   return Math.abs(toMinutes(wakeTime) - toMinutes(targetTime)) <= toleranceMinutes;
 }
+
+/** Pure. Same comparison, but for a wake time already in minutes-since-
+ * midnight (db.metric_sample's stored `kind: 'wake_time'` unit) rather
+ * than an "HH:mm" string — store/weeklyReview.ts's sleep/DSA
+ * correlation reads that table directly. */
+export function withinWakeWindowMinutes(wakeMinutes: number, targetTime: string, toleranceMinutes: number): boolean {
+  return Math.abs(wakeMinutes - toMinutes(targetTime)) <= toleranceMinutes;
+}

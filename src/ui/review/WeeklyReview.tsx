@@ -47,11 +47,9 @@ function Delta({ current, previous, suffix = '' }: { current: number; previous: 
   );
 }
 
-/** final/05 §6 — 3 minutes, ends in decisions. Real numbers only: the
- * correlational insight sentence and the resume-content nudge in the
- * mockup are deferred (need either real correlation analysis or
- * free-text authoring this slice doesn't build — see the Slice 11
- * report); everything shown here is a real, computed number. */
+/** final/05 §6 — 3 minutes, ends in decisions. Every number here,
+ * including the resume-content nudge and the sleep/DSA correlational
+ * insight, is real and computed (store/weeklyReview.ts). */
 export function WeeklyReview({ today, onClose }: WeeklyReviewProps) {
   const [report, setReport] = useState<WeeklyReviewReport | null>(null);
   const [backupStatus, setBackupStatus] = useState<BackupStatus | null>(null);
@@ -131,7 +129,16 @@ export function WeeklyReview({ today, onClose }: WeeklyReviewProps) {
             )}
           </div>
 
-          {report.review.proposals.length > 0 && (
+          {report.sleepDsaCorrelation && report.sleepDsaCorrelation.deltaPoints > 0 && (
+            <p className="border-t border-border pt-3 text-xs text-text-dim" data-testid="sleep-dsa-insight">
+              {report.sleepDsaCorrelation.missedNights} missed wake window
+              {report.sleepDsaCorrelation.missedNights === 1 ? '' : 's'} this week. Your DSA first-attempt rate the
+              day after a missed window is {report.sleepDsaCorrelation.deltaPoints} points lower than after an
+              on-time one.
+            </p>
+          )}
+
+          {(report.review.proposals.length > 0 || report.resumeNudge) && (
             <div className="border-t border-border pt-3">
               <div className="mb-1 text-xxs uppercase tracking-wide text-text-faint">Next week — proposed</div>
               {report.review.proposals.map((p) => (
@@ -139,6 +146,7 @@ export function WeeklyReview({ today, onClose }: WeeklyReviewProps) {
                   → {p.message}
                 </p>
               ))}
+              {report.resumeNudge && <p className="text-xs text-text-dim" data-testid="resume-nudge">→ {report.resumeNudge}</p>}
             </div>
           )}
 

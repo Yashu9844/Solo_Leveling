@@ -96,6 +96,8 @@
   --state-alert: #d95c5c; /* RESERVED: data-loss + safety warnings only */
   --boss: #ff4d6d; /* RESERVED: BOSS surfaces only */
 
+  --on-accent: #061019;
+
   --glow-sm: 0 0 12px rgba(77, 163, 255, 0.45);
   --glow-md: 0 0 26px rgba(77, 163, 255, 0.28);
   --glow-lg: 0 0 40px rgba(77, 163, 255, 0.18);
@@ -148,6 +150,8 @@
   --state-alert: #e07070;
   --boss: #ff6b5c;
 
+  --on-accent: #140d02;
+
   --glow-sm: 0 0 12px rgba(232, 161, 60, 0.45);
   --glow-md: 0 0 26px rgba(232, 161, 60, 0.28);
   --glow-lg: 0 0 40px rgba(232, 161, 60, 0.18);
@@ -197,6 +201,8 @@
   --state-alert: #c96a6a;
   --boss: #d95c6b;
 
+  --on-accent: #05070a;
+
   /* deliberately no glow — this theme exists to lower stimulation */
   --glow-sm: none;
   --glow-md: none;
@@ -240,6 +246,8 @@
   --ink-700: #c4c4c4; /* 11.2:1 */
   --ink-900: #a8a8a8; /*  7.8:1 */
   --faint: #949494; /*  6.0:1 — floor */
+
+  --on-accent: #000000;
 
   --state-complete: #56e0aa;
   --state-pending: #949494;
@@ -290,6 +298,8 @@
   --ink-700: #47576b; /*  6.6:1 */
   --ink-900: #5a6b80; /*  5.0:1 */
   --faint: #63758a; /*  4.6:1 — floor */
+
+  --on-accent: #ffffff;
 
   --state-complete: #157a56;
   --state-pending: #63758a;

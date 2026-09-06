@@ -8,3 +8,5 @@ export { ScreenHeader, SectionLabel } from './ScreenHeader';
 export { QuoteCard } from './QuoteCard';
 export { PrimaryButton, SecondaryButton, QuietButton, type ButtonTone } from './Button';
 export { IconTile } from './IconTile';
+export { MeterBar, SegmentBar, StatTile, MASTERY_SEGMENTS } from './Meter';
+export { Segmented } from './Segmented';

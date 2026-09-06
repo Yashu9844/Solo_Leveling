@@ -33,6 +33,7 @@ export default {
         'accent-bright': 'var(--accent-bright)',
         'accent-soft': 'var(--accent-soft)',
         'accent-core': 'var(--accent-core)',
+        'on-accent': 'var(--on-accent)',
 
         // ── dawn — Gold Horizon surfaces only (design system §2.2) ──
         'dawn-deep': 'var(--dawn-deep)',

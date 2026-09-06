@@ -68,7 +68,7 @@ task and the fix would change engine/store behaviour, or a task would require de
 - [x] **1.3** `PrimaryButton`, `SecondaryButton`, `QuietButton`, `IconTile`. All ≥44px at
       every text scale and density, forwarding `aria-*`, `disabled`, `data-testid`.
       Gate: fast.
-- [ ] **1.4** `MeterBar`, `SegmentBar`, `StatTile`, `Segmented`. Gate: fast.
+- [x] **1.4** `MeterBar`, `SegmentBar`, `StatTile`, `Segmented`. Gate: fast.
 - [ ] **1.5** `Sheet` base: scrim, `max-h-[86dvh]`, drag-to-dismiss, focus trap, `Esc`,
       scroll lock, `role="dialog"`, **and a history entry so back closes it**
       (nav flow §5). Gate: fast.
@@ -273,6 +273,7 @@ system §10 are required; neither may be traded for the other.
 | 1.1 | kit: shell | ScreenShell (dvh, radial ground, 430px device frame >=640px), SafeTop/SafeBottom (real insets, no fake status bar), PageTransition (4 edges: lateral/forward/back/boot). Kit barrel added. Gate green. |
 | 1.2 | kit: panels | Panel draws its border as a two-layer clip so the bevel keeps a 1px edge (a plain border+clip-path leaves the diagonals bare). FramedPanel = corner brackets + inset glow, tone accent/dawn/boss. ScreenHeader carries the frozen h1 contract. SectionLabel, QuoteCard. Gate green. |
 | 1.3 | kit: buttons | Primary/Secondary/Quiet + IconTile. Sized by explicit min-height, not padding, so text-scale XS (0.88x) cannot shrink a button under the 44px target. Tones accent/dawn/boss. Native button props forwarded (aria, disabled, data-testid); framer-motion's conflicting drag/animation handlers omitted from the type. Gate green. |
+| 1.4 | kit: meters | MeterBar animates via CSS width transition, not framer-motion — e2e regexes `width: N%` out of the inline style and a JS animation would publish unparseable px values. Segmented keeps plain <button> + aria-pressed because 6 specs select it with getByRole('button'). Added --on-accent per theme: 4 dark themes need a dark label on their light accent, daylight needs a light one. SegmentBar (5-state mastery, never a percentage), StatTile. Gate green. |
 | — | plan v2 | User added: configurable settings/theming, explicit nav flowchart, mood-based art assignment. Saw all 11 plates — split into Blue Arc (effort) / Gold Horizon (evidence) / Boss. Added docs 02 and 03; replanned to 13 phases, 60 tasks. |
 
 ---

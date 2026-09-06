@@ -6,6 +6,7 @@ import { logBodyMetric } from '../../store/training';
 import { db } from '../../db/db';
 import { SingleChipSelect } from './SingleChipSelect';
 import { Stepper } from './Stepper';
+import { Panel, PrimaryButton, SectionLabel } from '../kit';
 
 const KINDS = ['weight_kg', 'waist_cm', 'bodyfat_pct'] as const;
 type Kind = (typeof KINDS)[number];
@@ -55,36 +56,42 @@ export function BodyMetricsCard() {
   if (!arcId) return null;
 
   return (
-    <div className="mt-6 rounded-md border border-border p-3">
+    <Panel cut="md" className="mt-4 px-4 py-4">
       {!expanded ? (
+        // Collapsed by default: this is a real but occasional action, and
+        // an always-open form would outweigh the readouts above it.
         <button
           type="button"
           onClick={() => setExpanded(true)}
-          className="min-h-[44px] w-full text-left text-sm text-accent"
+          className="flex w-full items-center justify-between text-left text-sm text-accent"
+          style={{ minHeight: 44 }}
         >
           Log body metric
+          <span aria-hidden className="text-ink-700">
+            +
+          </span>
         </button>
       ) : (
-        <div className="space-y-3">
+        <div className="flex flex-col gap-4">
           <div className="flex items-center justify-between">
-            <span className="text-xxs uppercase tracking-wide text-text-dim">Body metric</span>
-            <button type="button" onClick={() => setExpanded(false)} aria-label="Close" className="min-h-[44px] min-w-[44px] text-text-dim">
+            <SectionLabel>Body metric</SectionLabel>
+            <button
+              type="button"
+              onClick={() => setExpanded(false)}
+              aria-label="Close"
+              className="-mr-2 min-h-tap min-w-[44px] text-ink-700"
+            >
               ✕
             </button>
           </div>
           <SingleChipSelect label="Metric" options={KINDS} labelFor={(k) => KIND_LABELS[k]} selected={kind} onSelect={selectKind} />
           <Stepper label={KIND_LABELS[kind]} value={value} step={KIND_STEP[kind]} min={0} onChange={setValue} />
-          <button
-            type="button"
-            disabled={submitting}
-            onClick={() => void handleLog()}
-            className="min-h-[44px] w-full rounded-md bg-accent text-sm font-medium text-bg disabled:opacity-40"
-          >
+          <PrimaryButton size="md" disabled={submitting} onClick={() => void handleLog()}>
             {submitting ? 'Logging…' : 'Log'}
-          </button>
-          {savedAt !== null && <p className="text-xs text-text-faint">Saved.</p>}
+          </PrimaryButton>
+          {savedAt !== null && <p className="text-xs text-faint">Saved.</p>}
         </div>
       )}
-    </div>
+    </Panel>
   );
 }

@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useState } from 'react';
+import { useCallback, useEffect, useState, type ReactNode } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { DEFAULT_CONFIG } from '../../engine/config';
 import { levelFor } from '../../engine/level';
@@ -23,7 +23,7 @@ import { BackupCard } from '../components/BackupCard';
 import { PaperImportCard } from '../components/PaperImportCard';
 import { BodyMetricsCard } from '../components/BodyMetricsCard';
 import { CheckpointInstrumentsCard } from '../components/CheckpointInstrumentsCard';
-import { FramedPanel, MeterBar, Panel, ScreenHeader, SectionLabel } from '../kit';
+import { FramedPanel, MeterBar, Panel, ScreenHeader, SectionLabel, SecondaryButton } from '../kit';
 
 const CHECKPOINT_DAYS: Checkpoint['day'][] = [14, 30, 60, 90, 120];
 const ARC_LENGTH_DAYS = 120;
@@ -284,39 +284,45 @@ function ArcPauseControl() {
   if (arcId === null) return null;
 
   return (
-    <div className="mt-6 rounded-md border border-border p-3">
-      <div className="text-xxs uppercase tracking-wide text-text-dim">Arc pause</div>
+    <Panel
+      cut="md"
+      className="mt-4 px-4 py-4"
+      // A paused arc is a state, not a warning, so its edge takes the
+      // recovery amber the app already uses for reduced mode — never red.
+      style={pausedToday ? { background: 'var(--state-recover)' } : undefined}
+    >
+      <SectionLabel className="mb-2">Arc pause</SectionLabel>
       {pausedToday ? (
         <>
-          <p className="mt-1 text-sm text-text-dim">Paused. No quests generate. Zero penalty.</p>
-          <button
-            type="button"
-            disabled={busy}
-            onClick={() => void handleResume()}
-            className="mt-2 min-h-[44px] w-full rounded-md border border-border text-sm text-text disabled:opacity-40"
-          >
-            Resume now
-          </button>
+          <p className="text-sm leading-[1.5] text-ink-300">
+            Paused. No quests generate. Zero penalty.
+          </p>
+          <div className="mt-4">
+            <SecondaryButton disabled={busy} onClick={() => void handleResume()}>
+              Resume now
+            </SecondaryButton>
+          </div>
         </>
       ) : (
         <>
-          <p className="mt-1 text-sm text-text-dim">Illness, travel, a work crisis. One tap, up to 7 days.</p>
-          <div className="mt-2 flex gap-2">
+          <p className="text-sm leading-[1.5] text-ink-500">
+            Illness, travel, a work crisis. One tap, up to 7 days.
+          </p>
+          <div className="mt-4 flex gap-2">
             {[1, 3, 7].map((days) => (
-              <button
+              <SecondaryButton
                 key={days}
-                type="button"
                 disabled={busy}
                 onClick={() => void handlePause(days)}
-                className="min-h-[44px] flex-1 rounded-md border border-border text-sm text-text disabled:opacity-40"
+                className="flex-1"
               >
                 {days}d
-              </button>
+              </SecondaryButton>
             ))}
           </div>
         </>
       )}
-    </div>
+    </Panel>
   );
 }
 
@@ -337,18 +343,40 @@ function DevResetArc() {
   }
 
   return (
-    <div className="mt-8 rounded-md border border-state-alert p-3">
-      <div className="text-xxs uppercase tracking-wide text-state-alert">Dev only</div>
+    <DevBlock className="mt-8">
       <button
         type="button"
         onClick={handleReset}
-        className="mt-2 min-h-[44px] w-full rounded-md border border-state-alert text-sm text-state-alert"
+        className="cut-sm mt-3 w-full px-4 text-xs font-medium uppercase tracking-button text-state-alert"
+        style={{ minHeight: 46, border: '1px solid var(--state-alert)' }}
       >
         Reset arc
       </button>
-      <p className="mt-2 text-xs text-text-faint">
+      <p className="mt-3 text-xs leading-[1.5] text-faint">
         Deletes all events and projections, clears the arc, returns to onboarding.
       </p>
+    </DevBlock>
+  );
+}
+
+/**
+ * Quarantine for the two dev-only blocks.
+ *
+ * They are fenced in --state-alert deliberately, and it is the one use
+ * of that colour that is not itself an error: these buttons destroy
+ * data, they never ship (import.meta.env.DEV is false in a build), and
+ * while they are on screen they must not be mistakable for part of the
+ * app. The dashed edge says the same thing a second way, for anyone who
+ * cannot separate the two tones.
+ */
+function DevBlock({ children, className = '' }: { children: ReactNode; className?: string }) {
+  return (
+    <div
+      className={['cut-sm p-4', className].join(' ')}
+      style={{ border: '1px dashed var(--state-alert)' }}
+    >
+      <div className="text-xxs uppercase tracking-wide text-state-alert">Dev only</div>
+      {children}
     </div>
   );
 }
@@ -371,18 +399,18 @@ function DevVerifyIntegrity() {
   }
 
   return (
-    <div className="mt-4 rounded-md border border-state-alert p-3">
-      <div className="text-xxs uppercase tracking-wide text-state-alert">Dev only</div>
+    <DevBlock className="mt-4">
       <button
         type="button"
         disabled={running}
         onClick={() => void handleVerify()}
-        className="mt-2 min-h-[44px] w-full rounded-md border border-state-alert text-sm text-state-alert disabled:opacity-40"
+        className="cut-sm mt-3 w-full px-4 text-xs font-medium uppercase tracking-button text-state-alert disabled:opacity-40"
+        style={{ minHeight: 46, border: '1px solid var(--state-alert)' }}
       >
         {running ? 'Verifying…' : 'Verify integrity'}
       </button>
       {report && (
-        <div className="mt-2 text-xs text-text-faint">
+        <div className="mt-3 text-xs text-faint">
           {report.clean ? (
             <p>Clean — rebuild matches the live tables exactly.</p>
           ) : (
@@ -394,6 +422,6 @@ function DevVerifyIntegrity() {
           )}
         </div>
       )}
-    </div>
+    </DevBlock>
   );
 }

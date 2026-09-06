@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react';
+import { Panel, SecondaryButton } from '../kit';
 
 interface BeforeInstallPromptEvent extends Event {
   prompt(): Promise<void>;
@@ -46,16 +47,14 @@ export function InstallCard() {
   }
 
   return (
-    <div className="mt-3 rounded-md border border-border p-3" data-testid="install-card">
-      <p className="text-sm text-text">Install this as an app.</p>
-      <p className="mt-1 text-xs text-text-faint">Full screen, works offline, no browser chrome.</p>
-      <button
-        type="button"
-        onClick={() => void handleInstall()}
-        className="mt-2 min-h-[44px] w-full rounded-md border border-accent text-sm text-accent"
-      >
-        Install
-      </button>
+    <div className="mt-4" data-testid="install-card">
+      <Panel cut="md" className="px-4 py-4">
+        <p className="text-sm text-ink-100">Install this as an app.</p>
+        <p className="mt-1.5 text-xs text-faint">Full screen, works offline, no browser chrome.</p>
+        <div className="mt-4">
+          <SecondaryButton onClick={() => void handleInstall()}>Install</SecondaryButton>
+        </div>
+      </Panel>
     </div>
   );
 }

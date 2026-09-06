@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState, type ChangeEvent } from 'react';
 import { DEFAULT_CONFIG } from '../../engine/config';
 import { realDeps } from '../../store/deps';
+import { Panel, SecondaryButton, SectionLabel } from '../kit';
 import { exportSnapshotJson, importSnapshotJson, getBackupStatus, ImportValidationError, type BackupStatus } from '../../store/checkpoint';
 
 // docs/07-data-model.md: "if no export exists in 14 days, the Profile
@@ -106,71 +107,73 @@ export function BackupCard({ onExported }: BackupCardProps = {}) {
   }
 
   return (
-    <div className="mt-3 rounded-md border border-border p-3" data-testid="backup-card">
-      <div className="mb-2 text-xxs uppercase tracking-wide text-text-faint">Data safety</div>
+    // The testid lives on a wrapper rather than on Panel, which draws
+    // its border as two nested elements and takes no passthrough props.
+    <div className="mt-4" data-testid="backup-card">
+      <Panel cut="md" className="px-4 py-4">
+        <SectionLabel className="mb-2">Data safety</SectionLabel>
 
-      {status && (
-        <p
-          className={`mb-2 text-xs ${status.daysSince >= RED_THRESHOLD_DAYS ? 'text-state-alert' : 'text-text-faint'}`}
-          data-testid="backup-status"
-        >
-          {backupStatusLabel(status)}
-        </p>
-      )}
-
-      <button
-        type="button"
-        disabled={exporting}
-        onClick={() => void handleExport()}
-        className="min-h-[44px] w-full rounded-md border border-border text-sm text-text disabled:opacity-40"
-      >
-        {exporting ? 'Exporting…' : 'Export backup'}
-      </button>
-
-      <input
-        ref={fileInputRef}
-        type="file"
-        accept="application/json"
-        hidden
-        data-testid="backup-import-input"
-        onChange={(e) => void handleFileSelected(e)}
-      />
-      <button
-        type="button"
-        onClick={() => fileInputRef.current?.click()}
-        className="mt-2 min-h-[44px] w-full rounded-md border border-border text-sm text-text"
-      >
-        Import backup
-      </button>
-
-      {done && <p className="mt-2 text-xs text-accent">{done}</p>}
-      {error && <p className="mt-2 text-xs text-state-alert">{error}</p>}
-
-      {pendingImport && (
-        <div className="mt-3 rounded-md border border-state-alert p-3" data-testid="import-confirm">
-          <p className="text-sm text-text">
-            Replace ALL current data with "{pendingImport.fileName}" ({pendingImport.eventCount} events)?
+        {status && (
+          <p
+            className={`text-xs ${status.daysSince >= RED_THRESHOLD_DAYS ? 'text-state-alert' : 'text-faint'}`}
+            data-testid="backup-status"
+          >
+            {backupStatusLabel(status)}
           </p>
-          <p className="mt-1 text-xs text-text-faint">This cannot be undone unless you have another backup.</p>
-          <div className="mt-2 flex gap-2">
-            <button
-              type="button"
-              onClick={() => setPendingImport(null)}
-              className="min-h-[44px] flex-1 rounded-md border border-border text-sm text-text"
-            >
-              Cancel
-            </button>
-            <button
-              type="button"
-              disabled={importing}
-              onClick={() => void handleConfirmImport()}
-              className="min-h-[44px] flex-1 rounded-md bg-state-alert text-sm font-medium text-bg disabled:opacity-40"
-            >
-              {importing ? 'Importing…' : 'Replace and import'}
-            </button>
-          </div>
+        )}
+
+        <div className="mt-4 flex flex-col gap-2">
+          <SecondaryButton disabled={exporting} onClick={() => void handleExport()}>
+            {exporting ? 'Exporting…' : 'Export backup'}
+          </SecondaryButton>
+
+          <input
+            ref={fileInputRef}
+            type="file"
+            accept="application/json"
+            hidden
+            data-testid="backup-import-input"
+            onChange={(e) => void handleFileSelected(e)}
+          />
+          <SecondaryButton onClick={() => fileInputRef.current?.click()}>Import backup</SecondaryButton>
         </div>
-      )}
+
+        {done && <p className="mt-3 text-xs text-accent-mid">{done}</p>}
+        {error && <p className="mt-3 text-xs text-state-alert">{error}</p>}
+
+        {pendingImport && (
+          // --state-alert is reserved for exactly this: an action that
+          // destroys data. Import replaces the entire local database, so
+          // the confirmation is allowed to look like a warning.
+          <div
+            className="cut-sm mt-4 p-4"
+            data-testid="import-confirm"
+            style={{ border: '1px solid var(--state-alert)', background: 'var(--surface-2)' }}
+          >
+            <p className="text-sm leading-[1.5] text-ink-100">
+              Replace ALL current data with &ldquo;{pendingImport.fileName}&rdquo; (
+              {pendingImport.eventCount} events)?
+            </p>
+            <p className="mt-2 text-xs text-ink-700">
+              This cannot be undone unless you have another backup.
+            </p>
+            <div className="mt-4 flex gap-2">
+              <SecondaryButton onClick={() => setPendingImport(null)} className="flex-1">
+                Cancel
+              </SecondaryButton>
+              <button
+                type="button"
+                disabled={importing}
+                onClick={() => void handleConfirmImport()}
+                className="cut-md flex-1 px-4 text-xs font-medium uppercase tracking-button text-ink-100 disabled:opacity-40"
+                style={{ minHeight: 46, background: 'var(--state-alert)' }}
+              >
+                {importing ? 'Importing…' : 'Replace and import'}
+              </button>
+            </div>
+          </div>
+        )}
+      </Panel>
     </div>
   );
 }

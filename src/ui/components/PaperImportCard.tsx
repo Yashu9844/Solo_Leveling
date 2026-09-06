@@ -4,6 +4,7 @@ import { realDeps } from '../../store/deps';
 import { db } from '../../db/db';
 import { parseDailyLog, parseDsaLog, type DailyLogEntry, type DsaLogEntry } from '../../engine/paperImport';
 import { importDailyLog, importDsaLog, type ImportSummary } from '../../store/paperImport';
+import { Panel, PrimaryButton, SecondaryButton, SectionLabel } from '../kit';
 
 type Pending =
   | { kind: 'daily'; fileName: string; entries: DailyLogEntry[]; errors: string[] }
@@ -67,77 +68,76 @@ export function PaperImportCard() {
   }
 
   return (
-    <div className="mt-3 rounded-md border border-border p-3" data-testid="paper-import-card">
-      <div className="mb-2 text-xxs uppercase tracking-wide text-text-faint">Paper log import</div>
-      <p className="mb-2 text-xs text-text-faint">For days tracked on paper before this app existed.</p>
+    <div className="mt-4" data-testid="paper-import-card">
+      <Panel cut="md" className="px-4 py-4">
+        <SectionLabel className="mb-2">Paper log import</SectionLabel>
+        <p className="text-xs leading-[1.5] text-faint">
+          For days tracked on paper before this app existed.
+        </p>
 
-      <input
-        ref={dailyInputRef}
-        type="file"
-        accept=".csv,text/csv"
-        hidden
-        data-testid="paper-import-daily-input"
-        onChange={(e) => void handleDailyFile(e)}
-      />
-      <button
-        type="button"
-        onClick={() => dailyInputRef.current?.click()}
-        className="min-h-[44px] w-full rounded-md border border-border text-sm text-text"
-      >
-        Import daily log CSV
-      </button>
+        <div className="mt-4 flex flex-col gap-2">
+          <input
+            ref={dailyInputRef}
+            type="file"
+            accept=".csv,text/csv"
+            hidden
+            data-testid="paper-import-daily-input"
+            onChange={(e) => void handleDailyFile(e)}
+          />
+          <SecondaryButton onClick={() => dailyInputRef.current?.click()}>
+            Import daily log CSV
+          </SecondaryButton>
 
-      <input
-        ref={dsaInputRef}
-        type="file"
-        accept=".csv,text/csv"
-        hidden
-        data-testid="paper-import-dsa-input"
-        onChange={(e) => void handleDsaFile(e)}
-      />
-      <button
-        type="button"
-        onClick={() => dsaInputRef.current?.click()}
-        className="mt-2 min-h-[44px] w-full rounded-md border border-border text-sm text-text"
-      >
-        Import DSA log CSV
-      </button>
-
-      {summary && <p className="mt-2 text-xs text-accent">{summary}</p>}
-
-      {pending && (
-        <div className="mt-3 rounded-md border border-border p-3" data-testid="paper-import-preview">
-          <p className="text-sm text-text">
-            "{pending.fileName}" — {pending.entries.length} {pending.kind === 'daily' ? 'days' : 'problems'} parsed
-            {pending.errors.length > 0 ? `, ${pending.errors.length} rows skipped` : ''}.
-          </p>
-          {pending.errors.length > 0 && (
-            <ul className="mt-1 list-disc space-y-0.5 pl-4 text-xs text-state-alert">
-              {pending.errors.slice(0, 10).map((err, i) => (
-                <li key={i}>{err}</li>
-              ))}
-              {pending.errors.length > 10 && <li>...and {pending.errors.length - 10} more</li>}
-            </ul>
-          )}
-          <div className="mt-2 flex gap-2">
-            <button
-              type="button"
-              onClick={() => setPending(null)}
-              className="min-h-[44px] flex-1 rounded-md border border-border text-sm text-text"
-            >
-              Cancel
-            </button>
-            <button
-              type="button"
-              disabled={importing || pending.entries.length === 0}
-              onClick={() => void handleImport()}
-              className="min-h-[44px] flex-1 rounded-md bg-accent text-sm font-medium text-bg disabled:opacity-40"
-            >
-              {importing ? 'Importing…' : `Import ${pending.entries.length}`}
-            </button>
-          </div>
+          <input
+            ref={dsaInputRef}
+            type="file"
+            accept=".csv,text/csv"
+            hidden
+            data-testid="paper-import-dsa-input"
+            onChange={(e) => void handleDsaFile(e)}
+          />
+          <SecondaryButton onClick={() => dsaInputRef.current?.click()}>
+            Import DSA log CSV
+          </SecondaryButton>
         </div>
-      )}
+
+        {summary && <p className="mt-3 text-xs text-accent-mid">{summary}</p>}
+
+        {pending && (
+          <div
+            className="cut-sm mt-4 p-4"
+            data-testid="paper-import-preview"
+            style={{ border: '1px solid var(--hair)', background: 'var(--surface-2)' }}
+          >
+            <p className="text-sm leading-[1.5] text-ink-100">
+              &ldquo;{pending.fileName}&rdquo; — {pending.entries.length}{' '}
+              {pending.kind === 'daily' ? 'days' : 'problems'} parsed
+              {pending.errors.length > 0 ? `, ${pending.errors.length} rows skipped` : ''}.
+            </p>
+            {pending.errors.length > 0 && (
+              <ul className="mt-2 flex flex-col gap-1 text-xs text-state-alert">
+                {pending.errors.slice(0, 10).map((err, i) => (
+                  <li key={i}>{err}</li>
+                ))}
+                {pending.errors.length > 10 && <li>...and {pending.errors.length - 10} more</li>}
+              </ul>
+            )}
+            <div className="mt-4 flex gap-2">
+              <SecondaryButton onClick={() => setPending(null)} className="flex-1">
+                Cancel
+              </SecondaryButton>
+              <PrimaryButton
+                size="md"
+                disabled={importing || pending.entries.length === 0}
+                onClick={() => void handleImport()}
+                className="flex-1"
+              >
+                {importing ? 'Importing…' : `Import ${pending.entries.length}`}
+              </PrimaryButton>
+            </div>
+          </div>
+        )}
+      </Panel>
     </div>
   );
 }

@@ -173,7 +173,7 @@ task and the fix would change engine/store behaviour, or a task would require de
       important sentence"* — strongest non-Moment treatment on the screen) + `BossList`
       (`boss` / `boss-throne` art, the **only** place `--boss` red appears) +
       `AchievementsList`. Gate: fast.
-- [ ] **9.2** Data cards: `BackupCard`, `PaperImportCard`, `InstallCard`,
+- [x] **9.2** Data cards: `BackupCard`, `PaperImportCard`, `InstallCard`,
       `BodyMetricsCard`, arc pause, dev-only blocks quarantined in `--state-alert`.
       Gate: fast.
 - [ ] **9.3** `CheckpointScreen` + `CheckpointInstrumentsCard` + `InstrumentSliders`.
@@ -318,6 +318,7 @@ system §10 are required; neither may be traded for the other.
 | 8.3 | skills | `skills` band with two ordinal counts (never a percentage — final/03 §1). Mastery rows print the state word only once a topic is touched: eighteen rows shouting UNSEEN buried the one line that mattered, and the empty bar already says it. The word's width is intrinsic, not a fixed column, because "INTRODUCED" is nearly twice "FLUENT" and a column sized for the longest steals from every topic name. Benchmark is the screen's only FramedPanel — it is the only thing here you can do. |
 | 8.4 | phase 8 gate | 80/80 e2e, first run, no retries. |
 | 9.1 | profile | Hero opens with the main quest — the one sentence the arc is measured against — then LV / XP / RANK. The next gate is the screen's only FramedPanel and turns Gold when due. BossList gained a locked state on the `boss-throne` plate: it rendered nothing at all before Day 25, which wasted the one thing bosses are for. Boss conditions are shape-coded, not colour-coded. Achievements became chips; a dot-joined sentence read as one long clause. |
+| 9.2 | data cards | All five on `Panel` with kit buttons. Two colour rules made explicit in code: the import confirmation keeps `--state-alert` because it really does destroy data, and a paused arc takes the recovery amber instead, because a pause is a state and not a warning. Dev blocks quarantined behind a dashed alert fence — shape as well as colour, so the boundary survives a colour-blind read. |
 | — | plan v2 | User added: configurable settings/theming, explicit nav flowchart, mood-based art assignment. Saw all 11 plates — split into Blue Arc (effort) / Gold Horizon (evidence) / Boss. Added docs 02 and 03; replanned to 13 phases, 60 tasks. |
 
 ---

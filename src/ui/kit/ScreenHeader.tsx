@@ -1,0 +1,64 @@
+import type { ReactNode } from 'react';
+
+interface ScreenHeaderProps {
+  /**
+   * The screen's name. Rendered as the page's `h1`.
+   *
+   * For the four tabs this string is frozen by the test contract
+   * (design/00-DESIGN-SYSTEM.md §10): smoke.spec.ts asserts a heading
+   * named TODAY / PROGRESS / SKILLS / PROFILE matching each nav link.
+   */
+  title: string;
+  /** Optional trailing control — an icon button, a segmented switch. */
+  right?: ReactNode;
+  /** Hide the title visually but keep it for assistive tech and tests.
+   * For screens where art carries the name (Splash, Start, Moments). */
+  visuallyHidden?: boolean;
+  className?: string;
+}
+
+/**
+ * Every screen's top bar: the name in accent, an optional control, and a
+ * rule that fades to transparent at both ends.
+ *
+ * That fading rule is doing real work — a full-width 1px line would box
+ * the content in and fight the full-bleed art behind it. Fading at the
+ * ends lets the header sit *on* the screen rather than on a strip.
+ */
+export function ScreenHeader({
+  title,
+  right,
+  visuallyHidden = false,
+  className = '',
+}: ScreenHeaderProps) {
+  return (
+    <div className={['relative shrink-0', className].join(' ')}>
+      <div className="flex items-center justify-between px-gutter pt-3">
+        <h1 className={visuallyHidden ? 'sr-only' : 'text-h1 text-accent-mid'}>{title}</h1>
+        {right}
+      </div>
+      <div className="hairline mx-gutter mt-3" aria-hidden />
+    </div>
+  );
+}
+
+interface SectionLabelProps {
+  children: ReactNode;
+  /** Extends a hairline from the label to the right edge. */
+  rule?: boolean;
+  className?: string;
+}
+
+/**
+ * The uppercase, wide-tracked label that opens a block — TODAY'S QUESTS,
+ * MIND, THIS WEEK. Tracking is the signature of this design; at 0.16em
+ * these read as system labels rather than as headings.
+ */
+export function SectionLabel({ children, rule = false, className = '' }: SectionLabelProps) {
+  return (
+    <div className={['flex items-center gap-3', className].join(' ')}>
+      <span className="shrink-0 text-xxs uppercase text-ink-700">{children}</span>
+      {rule && <span className="hairline min-w-0 flex-1" aria-hidden />}
+    </div>
+  );
+}

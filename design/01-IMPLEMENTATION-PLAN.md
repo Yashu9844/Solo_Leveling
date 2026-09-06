@@ -63,7 +63,7 @@ task and the fix would change engine/store behaviour, or a task would require de
 
 - [x] **1.1** `ScreenShell`, `SafeTop` (real insets — **no fake status bar**),
       `PageTransition` implementing the per-edge grammar in nav flow §4. Gate: fast.
-- [ ] **1.2** `ScreenHeader`, `SectionLabel`, `Panel`, `FramedPanel`, `QuoteCard`.
+- [x] **1.2** `ScreenHeader`, `SectionLabel`, `Panel`, `FramedPanel`, `QuoteCard`.
       Gate: fast.
 - [ ] **1.3** `PrimaryButton`, `SecondaryButton`, `QuietButton`, `IconTile`. All ≥44px at
       every text scale and density, forwarding `aria-*`, `disabled`, `data-testid`.
@@ -271,6 +271,7 @@ system §10 are required; neither may be traded for the other.
 | 0.5 | art | All 20 plates reviewed and classified; 16 slots filled, 0 on gradient fallback. 2.2MB on disk, largest file 154KB. Budget guard fired at first run (2544KB) and forced a quality retune — then the total cap itself was corrected: per-file is the real budget (= per-screen weight), total is a sanity ceiling, since art will be runtime-cached not precached. 4 boss plates parked in overflow. |
 | 0.6 | pwa | Art excluded from precache; CacheFirst runtime rule instead. Precache holds at 20 entries / 702KB. FULL GATE GREEN: 62/62 e2e. Known intermittent: reflections.spec:20 and weekly-review.spec:44 (both recovery-card, 10s timeout) failed once under parallel load then passed 12/12 isolated and 62/62 in-suite. weekly-review:44 also fails on the untouched baseline, so it is pre-existing. Watch, do not chase. |
 | 1.1 | kit: shell | ScreenShell (dvh, radial ground, 430px device frame >=640px), SafeTop/SafeBottom (real insets, no fake status bar), PageTransition (4 edges: lateral/forward/back/boot). Kit barrel added. Gate green. |
+| 1.2 | kit: panels | Panel draws its border as a two-layer clip so the bevel keeps a 1px edge (a plain border+clip-path leaves the diagonals bare). FramedPanel = corner brackets + inset glow, tone accent/dawn/boss. ScreenHeader carries the frozen h1 contract. SectionLabel, QuoteCard. Gate green. |
 | — | plan v2 | User added: configurable settings/theming, explicit nav flowchart, mood-based art assignment. Saw all 11 plates — split into Blue Arc (effort) / Gold Horizon (evidence) / Boss. Added docs 02 and 03; replanned to 13 phases, 60 tasks. |
 
 ---

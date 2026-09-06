@@ -31,9 +31,13 @@ export function ScreenShell({ children, className = '' }: ScreenShellProps) {
     <div className="flex min-h-dvh w-full justify-center sm:py-8" style={pageGround}>
       <div
         className={[
-          'relative flex min-h-dvh w-full max-w-shell flex-col overflow-hidden bg-void',
+          // `h-dvh`, not `min-h-dvh`. The column has to be height-bound or
+          // a `flex-1 overflow-y-auto` child never gets a scrollable box:
+          // the document scrolls instead, and the bottom nav — which is a
+          // sibling, not a fixed element — scrolls away with the content.
+          'relative flex h-dvh w-full max-w-shell flex-col overflow-hidden bg-void',
           // The device frame — only from 640px up.
-          'sm:min-h-0 sm:h-[min(880px,92dvh)] sm:rounded-[40px] sm:border sm:border-hair',
+          'sm:h-[min(880px,92dvh)] sm:min-h-0 sm:rounded-[40px] sm:border sm:border-hair',
           'sm:shadow-[0_24px_70px_rgba(0,0,0,0.6)]',
           className,
         ].join(' ')}

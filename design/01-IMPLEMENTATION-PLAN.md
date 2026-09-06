@@ -108,7 +108,7 @@ task and the fix would change engine/store behaviour, or a task would require de
 
 ## Phase 4 — Shell & navigation chrome
 
-- [ ] **4.1** `AppShell`: `ScreenShell` + phosphor bottom nav, active `accent-mid` +
+- [x] **4.1** `AppShell`: `ScreenShell` + phosphor bottom nav, active `accent-mid` +
       `fill`, safe-area bottom. **Frozen:** `role="navigation"`, `aria-label="Primary"`,
       link names `TODAY PROGRESS SKILLS PROFILE`. Gate: fast.
 - [ ] **4.2** Every screen onto `ScreenHeader` with its frozen `h1`. ⛓ Gate: full
@@ -290,6 +290,7 @@ system §10 are required; neither may be traded for the other.
 | 3.1 | splash | First screen to render art. Four-beat reveal (plate/wordmark/rule/creed), 900ms minimum held only on cold start. ART PIPELINE VERIFIED END TO END: 32 hashed webp in dist, 0 in precache (runtime-cached as designed). Bundle 194KB gz vs 320KB budget; all 16 inlined LQIPs total just 3KB. E2E 72/72 with the splash in every boot path (suite 53s -> 1.1m, the expected cost). |
 | 3.2 | start | Gold Horizon front door. Screenshotting it caught two bugs code review would not have: PrimaryButton rendered as a solid slab (translucent inner fill over a solid border layer — affected every primary button), and the plate's marginal text was sliced in half by cover-cropping. Fixed both; added ArtLayer zoom. Route added but `/` still points at /onboarding — 3.3 flips it with the helper change so every commit stays green. |
 | 3.3 | boot path | /start is now the no-arc landing for every route, shortcut and unknown path. One sanctioned helper click added. New boot.spec (6 tests). Two existing specs updated for the deliberate behaviour change (onboarding's fresh-boot destination, backup's post-wipe destination) — both now assert Start, which is the correct first-run state. Phase 3 complete. FULL SUITE 78/78. |
+| 4.1 | shell + nav | Phosphor bottom nav (House/ChartLineUp/TreeStructure/UserCircle), active glow + fill weight, whileTap 0.88. AppShell now sits in ScreenShell so the desktop device frame applies app-wide. Caught a real layout bug the screenshot missed but the scroll tests found: ScreenShell used min-h-dvh, so the document scrolled instead of main and the bottom nav would scroll away on any long screen. Now h-dvh. Full e2e 78/78. |
 | — | plan v2 | User added: configurable settings/theming, explicit nav flowchart, mood-based art assignment. Saw all 11 plates — split into Blue Arc (effort) / Gold Horizon (evidence) / Boss. Added docs 02 and 03; replanned to 13 phases, 60 tasks. |
 
 ---

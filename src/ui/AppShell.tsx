@@ -1,14 +1,25 @@
 import { useLayoutEffect, useRef } from 'react';
 import { NavLink, Outlet, useLocation } from 'react-router-dom';
-import { PageTransition } from './kit';
+import { motion } from 'framer-motion';
+import { House, ChartLineUp, TreeStructure, UserCircle, type Icon } from '@phosphor-icons/react';
+import { PageTransition, ScreenShell } from './kit';
 import { useTransitionEdge } from './routing/useTransitionEdge';
 
-const TABS = [
-  { to: '/today', label: 'TODAY' },
-  { to: '/progress', label: 'PROGRESS' },
-  { to: '/skills', label: 'SKILLS' },
-  { to: '/profile', label: 'PROFILE' },
-] as const;
+/**
+ * The four peers.
+ *
+ * Labels and order are frozen by the test contract
+ * (design/00-DESIGN-SYSTEM.md §10): smoke.spec.ts asserts a link and a
+ * matching heading for each. Icons are chosen for what the screen holds
+ * rather than for theme — TODAY is home, SKILLS is a tree because that
+ * is literally what the data is.
+ */
+const TABS: { to: string; label: string; icon: Icon }[] = [
+  { to: '/today', label: 'TODAY', icon: House },
+  { to: '/progress', label: 'PROGRESS', icon: ChartLineUp },
+  { to: '/skills', label: 'SKILLS', icon: TreeStructure },
+  { to: '/profile', label: 'PROFILE', icon: UserCircle },
+];
 
 export function AppShell() {
   const { pathname } = useLocation();
@@ -81,18 +92,19 @@ export function AppShell() {
   }
 
   return (
-    <div className="flex h-full flex-col bg-bg text-text">
-      <main ref={scroller} onScroll={rememberScroll} className="flex-1 overflow-y-auto">
+    <ScreenShell>
+      <main
+        ref={scroller}
+        onScroll={rememberScroll}
+        className="no-scrollbar min-h-0 flex-1 overflow-y-auto"
+      >
         {/*
           Keyed on pathname so the entering screen re-mounts and plays its
           own animation. Deliberately NOT wrapped in AnimatePresence with
           mode="wait": that makes mounting the next screen wait on the
           previous screen's exit animation finishing, which would put a
           navigation behind an animation. final/06 §4.3 requires that
-          nothing functional depend on animation, and a dropped frame or
-          an interrupted transition should never be able to strand the
-          user on a blank screen. Entering-only reads almost identically
-          at 200-280ms and cannot fail that way.
+          nothing functional depend on animation.
         */}
         <PageTransition key={pathname} edge={edge}>
           <Outlet />
@@ -100,27 +112,51 @@ export function AppShell() {
       </main>
 
       <nav
-        className="flex shrink-0 border-t border-border bg-surface"
-        style={{ paddingBottom: 'env(safe-area-inset-bottom)' }}
         aria-label="Primary"
+        className="relative flex shrink-0"
+        style={{
+          borderTop: '1px solid var(--hair)',
+          background: 'color-mix(in srgb, var(--panel-bot) 92%, transparent)',
+          paddingTop: 10,
+          paddingBottom: 'max(env(safe-area-inset-bottom), 12px)',
+        }}
       >
-        {TABS.map((tab) => (
-          <NavLink
-            key={tab.to}
-            to={tab.to}
-            onClick={() => handleTabClick(tab.to)}
-            className={({ isActive }) =>
-              [
-                'flex flex-1 items-center justify-center py-3 text-xs font-medium tracking-wide',
-                'min-h-[44px]',
-                isActive ? 'text-accent' : 'text-text-dim',
-              ].join(' ')
-            }
-          >
-            {tab.label}
-          </NavLink>
-        ))}
+        {TABS.map((tab) => {
+          const active = pathname === tab.to;
+          const Glyph = tab.icon;
+          return (
+            <NavLink
+              key={tab.to}
+              to={tab.to}
+              onClick={() => handleTabClick(tab.to)}
+              className="flex min-h-tap flex-1 flex-col items-center justify-center gap-1.5"
+              style={{ color: active ? 'var(--accent-mid)' : 'var(--ink-900)' }}
+            >
+              <motion.span
+                // Scales harder than a button (0.88 vs 0.97) because the
+                // target is an icon, not a slab — a subtle press would be
+                // invisible at this size.
+                whileTap={{ scale: 0.88 }}
+                transition={{ type: 'spring', stiffness: 500, damping: 28 }}
+                className="flex flex-col items-center gap-1.5"
+              >
+                <Glyph
+                  size={20}
+                  weight={active ? 'fill' : 'regular'}
+                  style={active ? { filter: 'drop-shadow(0 0 8px var(--accent))' } : undefined}
+                  aria-hidden
+                />
+                <span
+                  className="text-micro uppercase"
+                  style={{ fontWeight: active ? 600 : 500 }}
+                >
+                  {tab.label}
+                </span>
+              </motion.span>
+            </NavLink>
+          );
+        })}
       </nav>
-    </div>
+    </ScreenShell>
   );
 }

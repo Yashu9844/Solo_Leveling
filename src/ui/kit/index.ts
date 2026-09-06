@@ -13,3 +13,4 @@ export { Segmented } from './Segmented';
 export { Sheet } from './Sheet';
 export { ArtLayer, artHasText, type Scrim } from './ArtLayer';
 export { Moment } from './Moment';
+export { Field, TextInput, TextArea, StepTitle } from './Field';

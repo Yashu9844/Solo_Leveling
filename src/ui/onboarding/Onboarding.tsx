@@ -9,11 +9,14 @@ import { ChipToggle } from '../components/ChipToggle';
 import { Stepper } from '../components/Stepper';
 import {
   ArtLayer,
+  Field,
   FramedPanel,
   PrimaryButton,
   SafeTop,
   ScreenShell,
   SecondaryButton,
+  StepTitle,
+  TextInput,
 } from '../kit';
 
 const TOTAL_STEPS = 6;
@@ -228,17 +231,13 @@ export function Onboarding({ onComplete }: OnboardingProps) {
           <SafeTop />
           <StepRail step={step} />
 
-          {/* The two art steps hold little content, so their panel is
-              centred rather than top-aligned — top-aligning left a large
-              dead zone under it. The four form steps are tall and stay
-              top-aligned so they scroll naturally. */}
-          <div
-            className={[
-              'no-scrollbar flex min-h-0 flex-1 flex-col overflow-y-auto px-gutter pb-4 pt-5',
-              showArt ? 'justify-center' : '',
-            ].join(' ')}
-          >
-            <FramedPanel className="shrink-0 px-5 py-6">
+          {/* `my-auto` rather than `justify-center`: auto margins absorb
+              free space when a step is short (steps 1, 2 and 4 leave a
+              large dead zone otherwise) and collapse to nothing when it
+              is tall, so steps 3, 5 and 6 still scroll from their top.
+              justify-center would clip the top of an overflowing step. */}
+          <div className="no-scrollbar flex min-h-0 flex-1 flex-col overflow-y-auto px-gutter pb-4 pt-5">
+            <FramedPanel className="my-auto shrink-0 px-5 py-6">
         {step === 1 && (
           <Step1Framing name={form.name} onChangeName={(v) => update('name', v)} />
         )}
@@ -346,21 +345,25 @@ export function Onboarding({ onComplete }: OnboardingProps) {
 
 function Step1Framing({ name, onChangeName }: { name: string; onChangeName: (v: string) => void }) {
   return (
-    <div className="space-y-4">
-      <p className="text-md text-text">This system asks for evidence, not effort.</p>
-      <p className="text-sm text-text-dim">
+    <div className="space-y-6">
+      {/* The first sentence carries the whole product's premise, so it is
+          set at display weight rather than as body copy. */}
+      <p className="font-display text-title leading-[1.25] text-ink-100">
+        This system asks for evidence, not effort.
+      </p>
+      <p className="text-sm text-ink-500">
         It will tell you whether four months changed anything.
       </p>
-      <label className="block">
-        <span className="text-xxs uppercase tracking-wide text-text-dim">Name</span>
-        <input
+      <div className="hairline" aria-hidden />
+      <Field label="Name">
+        <TextInput
           type="text"
           value={name}
           onChange={(e) => onChangeName(e.target.value)}
-          className="mt-1 w-full min-h-[44px] rounded-md border border-border bg-surface-2 px-3 text-text"
           placeholder="Your name"
+          autoComplete="given-name"
         />
-      </label>
+      </Field>
     </div>
   );
 }
@@ -377,28 +380,24 @@ function Step2Arc({
   onChangeEnd: (v: string) => void;
 }) {
   return (
-    <div className="space-y-4">
-      <h1 className="text-lg font-semibold">ARC</h1>
-      <label className="block">
-        <span className="text-xxs uppercase tracking-wide text-text-dim">Start</span>
-        <input
-          type="date"
-          value={startDate}
-          onChange={(e) => onChangeStart(e.target.value)}
-          className="mt-1 w-full min-h-[44px] rounded-md border border-border bg-surface-2 px-3 text-text"
-        />
-      </label>
-      <label className="block">
-        <span className="text-xxs uppercase tracking-wide text-text-dim">End</span>
-        <input
-          type="date"
-          value={endDate}
-          onChange={(e) => onChangeEnd(e.target.value)}
-          className="mt-1 w-full min-h-[44px] rounded-md border border-border bg-surface-2 px-3 text-text"
-        />
-      </label>
-      <p className="text-sm text-text-dim">{dayCount(startDate, endDate)} days</p>
-      <p className="text-xs text-text-faint">Timezone Asia/Kolkata. Day rolls over at 04:00.</p>
+    <div className="space-y-5">
+      <StepTitle>Arc</StepTitle>
+      <Field label="Start">
+        <TextInput type="date" value={startDate} onChange={(e) => onChangeStart(e.target.value)} />
+      </Field>
+      <Field label="End">
+        <TextInput type="date" value={endDate} onChange={(e) => onChangeEnd(e.target.value)} />
+      </Field>
+
+      {/* The length is the number that makes the commitment concrete, so
+          it gets the mono treatment every other real figure gets. */}
+      <div className="flex items-baseline gap-2">
+        <span className="font-mono text-xl tabular-nums text-accent-mid">
+          {dayCount(startDate, endDate)}
+        </span>
+        <span className="text-xxs uppercase text-ink-700">days</span>
+      </div>
+      <p className="text-xs text-faint">Timezone Asia/Kolkata. Day rolls over at 04:00.</p>
     </div>
   );
 }
@@ -431,27 +430,17 @@ function Step3Rhythm({
   onChangeAttentionApps: (v: string[]) => void;
 }) {
   return (
-    <div className="space-y-4">
-      <h1 className="text-lg font-semibold">RHYTHM</h1>
-      <label className="block">
-        <span className="text-xxs uppercase tracking-wide text-text-dim">Wake target</span>
-        <input
-          type="time"
-          value={wakeTime}
-          onChange={(e) => onChangeWake(e.target.value)}
-          className="mt-1 w-full min-h-[44px] rounded-md border border-border bg-surface-2 px-3 text-text"
-        />
-      </label>
-      <label className="block">
-        <span className="text-xxs uppercase tracking-wide text-text-dim">Sleep target</span>
-        <input
-          type="time"
-          value={sleepTime}
-          onChange={(e) => onChangeSleep(e.target.value)}
-          className="mt-1 w-full min-h-[44px] rounded-md border border-border bg-surface-2 px-3 text-text"
-        />
-      </label>
-      <p className="text-xs text-text-faint">Day closes at 03:00.</p>
+    <div className="space-y-5">
+      <StepTitle>Rhythm</StepTitle>
+      <div className="grid grid-cols-2 gap-3">
+        <Field label="Wake">
+          <TextInput type="time" value={wakeTime} onChange={(e) => onChangeWake(e.target.value)} />
+        </Field>
+        <Field label="Sleep">
+          <TextInput type="time" value={sleepTime} onChange={(e) => onChangeSleep(e.target.value)} />
+        </Field>
+      </div>
+      <p className="text-xs text-faint">Day closes at 03:00.</p>
       <ChipToggle
         label="Training days"
         options={TRAINING_DAY_OPTIONS}

@@ -9,7 +9,11 @@ export default defineConfig({
       registerType: 'prompt',
       injectRegister: 'auto',
       workbox: {
-        globPatterns: ['**/*.{js,css,html,ico,png,svg,webmanifest}'],
+        // woff2 is not optional here: the three self-hosted families are
+        // the type system (design/00-DESIGN-SYSTEM.md §4), and this app is
+        // offline-first by design. Without them precached, an offline
+        // launch silently falls back to system fonts.
+        globPatterns: ['**/*.{js,css,html,ico,png,svg,webmanifest,woff2}'],
         navigateFallback: '/index.html',
         // No runtime caching rules — the app makes no network requests.
         runtimeCaching: [],

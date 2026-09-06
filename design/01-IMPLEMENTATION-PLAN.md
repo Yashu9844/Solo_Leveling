@@ -43,7 +43,7 @@ task and the fix would change engine/store behaviour, or a task would require de
       Keep every v1 token name as an alias. Extend `tailwind.config.js` with the ramps,
       three font families, the `--type-scale`-aware type scale, cut sizes and glows.
       Record measured contrast per theme in comments. Gate: fast.
-- [ ] **0.3** `src/index.css`: `.cut-sm/.cut-md/.cut-lg`, `.glow-text`, `.no-scrollbar`,
+- [x] **0.3** `src/index.css`: `.cut-sm/.cut-md/.cut-lg`, `.glow-text`, `.no-scrollbar`,
       `.hairline`, focus-visible ring, `@keyframes pulse-glow / shimmer-sweep / ring-pop`.
       Wire the three font families in `main.tsx` (enumerated weights only). Gate: fast.
 - [ ] **0.4** Settings foundation: typed schema + `localStorage` codec at
@@ -231,6 +231,23 @@ The new configurable layer. `design/03-SETTINGS-AND-THEMING.md` is the spec.
 
 ---
 
+## The bar
+
+Stated by the user on 2026-09-06, and it outranks speed on every task:
+
+> Get the finest award-winning mobile application UI. It should look like the
+> finest designer would have designed it — the buttons, the quest rows, the
+> whole thing — and everything should match the Solo Leveling vibe. Mobile-first
+> responsiveness, always.
+
+The original complaint was never that the UI was broken. It was that it was
+"simple and basic". So **a task is not done when its gate goes green** — it is
+done when the surface would look at home in a design showcase. Push past the
+first working version. Both this bar and the frozen test contract in design
+system §10 are required; neither may be traded for the other.
+
+---
+
 ## Standing rules
 
 - **New art mid-flight is expected** — classify, manifest, `npm run art`, separate commit.
@@ -249,6 +266,7 @@ The new configurable layer. `design/03-SETTINGS-AND-THEMING.md` is the spec.
 | — | plan v1 | baseline green: 47 files / 358 tests |
 | 0.1 | deps | framer-motion 11.18.2, phosphor 2.1.10, 3 font families, sharp. Gate green. |
 | 0.2 | tokens | Three-layer theme-able token system: 5 themes (arc/dawn/abyss/contrast/daylight), text-scale/density/art modifiers, v1 aliases retained. Tailwind wraps every size in calc(* --type-scale) and uses unitless leading so text size scales the whole scale. Build 19.6KB CSS, all 5 themes present. Gate green. |
+| 0.3 | global css | Utilities (.cut-*, .glow-text, .hairline, .no-scrollbar, .art-layer), focus-visible ring, keyframes, 3-state motion (reduced/full/system). 8 latin-subset font files, 192KB. Found and fixed: woff2 was missing from the PWA globPatterns, so fonts would NOT have been precached — an offline launch would have silently fallen back to system fonts. Precache 12→20 entries, 698KB. Gate green. |
 | — | plan v2 | User added: configurable settings/theming, explicit nav flowchart, mood-based art assignment. Saw all 11 plates — split into Blue Arc (effort) / Gold Horizon (evidence) / Boss. Added docs 02 and 03; replanned to 13 phases, 60 tasks. |
 
 ---

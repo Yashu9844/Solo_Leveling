@@ -4,11 +4,11 @@
 @tailwind components;
 @tailwind utilities;
 
-/* Dark only — this app is opened at 08:30 and 02:00 (final/06 §4.1). */
-:root {
-  color-scheme: dark;
-}
-
+/* ─────────────────────────────────────────────────────────────────────
+ * Base
+ * `color-scheme` is no longer pinned here — each theme declares its own
+ * in tokens.css, so the light theme can actually be light.
+ * ───────────────────────────────────────────────────────────────────── */
 html,
 body,
 #root {
@@ -17,24 +17,164 @@ body,
 
 body {
   margin: 0;
-  background: var(--bg);
-  color: var(--text);
+  background: var(--void);
+  color: var(--ink-300);
   font-family:
     Inter,
+    system-ui,
     -apple-system,
     BlinkMacSystemFont,
     'Segoe UI',
     Roboto,
     sans-serif;
   font-variant-numeric: tabular-nums;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
   -webkit-tap-highlight-color: transparent;
+  overscroll-behavior: none;
 }
 
-/* Nothing functional depends on animation (final/06 §4.3). */
+::selection {
+  background: color-mix(in srgb, var(--accent) 35%, transparent);
+  color: var(--ink-100);
+}
+
+/* ─────────────────────────────────────────────────────────────────────
+ * Focus
+ * A dark ground swallows the default ring, so it is replaced rather
+ * than removed (design system §9). Pointer users don't see it;
+ * keyboard users always do.
+ * ───────────────────────────────────────────────────────────────────── */
+:focus-visible {
+  outline: 2px solid var(--accent-bright);
+  outline-offset: 2px;
+  border-radius: 2px;
+}
+
+@layer utilities {
+  /* The reference's signature panel shape — a bevel off two opposite
+   * corners. clip-path rather than border-radius because the cut has to
+   * read as machined, not soft. */
+  .cut-sm {
+    clip-path: polygon(
+      var(--cut-sm) 0,
+      100% 0,
+      100% calc(100% - var(--cut-sm)),
+      calc(100% - var(--cut-sm)) 100%,
+      0 100%,
+      0 var(--cut-sm)
+    );
+  }
+  .cut-md {
+    clip-path: polygon(
+      var(--cut-md) 0,
+      100% 0,
+      100% calc(100% - var(--cut-md)),
+      calc(100% - var(--cut-md)) 100%,
+      0 100%,
+      0 var(--cut-md)
+    );
+  }
+  .cut-lg {
+    clip-path: polygon(
+      var(--cut-lg) 0,
+      100% 0,
+      100% calc(100% - var(--cut-lg)),
+      calc(100% - var(--cut-lg)) 100%,
+      0 100%,
+      0 var(--cut-lg)
+    );
+  }
+
+  /* Resolves to `none` under abyss, contrast, daylight and
+   * [data-art="off"] — the glow budget is a token, not a decision made
+   * at each call site. */
+  .glow-text {
+    text-shadow: var(--glow-text);
+  }
+
+  /* A rule that fades to nothing at both ends. Used under every screen
+   * header and between sections. */
+  .hairline {
+    height: 1px;
+    background: linear-gradient(to right, transparent, var(--hair-strong), transparent);
+  }
+
+  .no-scrollbar::-webkit-scrollbar {
+    display: none;
+  }
+  .no-scrollbar {
+    -ms-overflow-style: none;
+    scrollbar-width: none;
+  }
+
+  /* Art layers honour [data-art] without every component reading the
+   * setting itself. */
+  .art-layer {
+    opacity: var(--art-opacity);
+    pointer-events: none;
+  }
+}
+
+/* ─────────────────────────────────────────────────────────────────────
+ * Keyframes
+ * ───────────────────────────────────────────────────────────────────── */
+@keyframes pulse-glow {
+  0%,
+  100% {
+    opacity: 0.55;
+  }
+  50% {
+    opacity: 1;
+  }
+}
+
+@keyframes shimmer-sweep {
+  0% {
+    background-position: -200% 0;
+  }
+  100% {
+    background-position: 200% 0;
+  }
+}
+
+@keyframes ring-pop {
+  0% {
+    transform: scale(0.6);
+    opacity: 0;
+  }
+  60% {
+    transform: scale(1.15);
+    opacity: 1;
+  }
+  100% {
+    transform: scale(1);
+    opacity: 1;
+  }
+}
+
+/* ─────────────────────────────────────────────────────────────────────
+ * Motion
+ * Three states, per design/03-SETTINGS-AND-THEMING.md §1:
+ *   reduced → always still
+ *   full    → always animated, even if the OS asks for less
+ *   system  → follow prefers-reduced-motion (the default)
+ * Nothing functional depends on animation (final/06 §4.3), so killing
+ * it is always safe.
+ * ───────────────────────────────────────────────────────────────────── */
+[data-motion='reduced'] *,
+[data-motion='reduced'] *::before,
+[data-motion='reduced'] *::after {
+  animation-duration: 0.01ms !important;
+  animation-iteration-count: 1 !important;
+  transition-duration: 0.01ms !important;
+  scroll-behavior: auto !important;
+}
+
 @media (prefers-reduced-motion: reduce) {
-  *,
-  *::before,
-  *::after {
+  :root:not([data-motion='full']) *,
+  :root:not([data-motion='full']) *::before,
+  :root:not([data-motion='full']) *::after {
     animation-duration: 0.01ms !important;
     animation-iteration-count: 1 !important;
     transition-duration: 0.01ms !important;

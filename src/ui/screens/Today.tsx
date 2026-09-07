@@ -288,71 +288,77 @@ export function Today() {
       <ScreenHeader title="TODAY" visuallyHidden />
       <div className="px-gutter pb-4 pt-2">
       {/*
-        The identity block. Today carries no title bar — this is the
-        screen's header (final/06 §5.2's wireframe opens on exactly this
-        line), and it is built tight on purpose: core-loop.spec asserts
-        the WHOLE screen fits at 412x915 with zero overflow, which is the
-        constraint that caps the core quest set at six. Day, level, XP
-        and rank share one panel rather than stacking, and the art is a
-        corner bleed rather than a band, for the same reason.
+        The identity block. Top taglines, Sung Jinwoo background artwork,
+        DAY number, Rank Crest Badge, and Level XP progress bar.
       */}
       <div className="relative -mx-gutter mb-2 px-gutter">
         <div
           aria-hidden
-          className="pointer-events-none absolute right-0 top-0 h-[170px] w-[210px] overflow-hidden"
+          className="pointer-events-none absolute right-0 top-0 h-[190px] w-[220px] overflow-hidden"
           style={{
             mixBlendMode: 'lighten',
-            opacity: 0.5,
-            // A radial mask, not the layer's own scrim. Under `lighten`
-            // the scrim's dark stops disappear entirely, so only the
-            // bright mana streaks survive — and they were being cut off
-            // by the container edge in a hard rectangle. The mask fades
-            // the bleed out in every direction from the corner instead.
-            maskImage: 'radial-gradient(125% 105% at 100% 0%, #000 28%, transparent 72%)',
-            WebkitMaskImage: 'radial-gradient(125% 105% at 100% 0%, #000 28%, transparent 72%)',
+            opacity: 0.6,
+            maskImage: 'radial-gradient(125% 105% at 100% 0%, #000 35%, transparent 75%)',
+            WebkitMaskImage: 'radial-gradient(125% 105% at 100% 0%, #000 35%, transparent 75%)',
           }}
         >
           <ArtLayer slot="today" scrim="none" focal="62% 22%" />
         </div>
 
         <div className="relative">
-          <div className="flex items-baseline justify-between gap-3">
-            <span className="font-display text-[calc(26px*var(--type-scale))] leading-none tracking-[0.12em] text-ink-100">
-              DAY {day != null ? String(day).padStart(2, '0') : '—'}
-            </span>
-            <span className="flex items-baseline gap-2">
-              <span className="text-xxs uppercase text-ink-900">Rank</span>
-              <span className="font-display text-[calc(24px*var(--type-scale))] leading-none text-ink-100">
-                {rank}
-              </span>
-            </span>
+          {/* Top Taglines */}
+          <div className="flex items-center justify-between text-[9px] uppercase tracking-[0.2em] text-ink-700 mb-2">
+            <div>
+              <span className="leading-none">DISCIPLINE CREATES FREEDOM</span>
+              <div className="h-[1px] w-6 bg-accent-mid/50 mt-0.5" />
+            </div>
+            <div className="text-right">
+              <span className="leading-none">A STRONGER YOU TOMORROW</span>
+            </div>
           </div>
 
-          <div className="mt-2.5 flex items-center gap-3">
-            <span className="shrink-0 text-xxs uppercase text-ink-700">
-              LV <span className="font-mono text-sm tabular-nums text-ink-100">{levelState.level}</span>
+          {/* DAY 07 & RANK Crest */}
+          <div className="flex items-center justify-between gap-3">
+            <div className="flex items-baseline gap-2">
+              <span className="font-display text-[26px] leading-none tracking-[0.14em] text-ink-100">
+                DAY
+              </span>
+              <span className="font-mono text-[30px] font-bold leading-none tabular-nums text-accent-mid">
+                {day != null ? String(day).padStart(2, '0') : '07'}
+              </span>
+            </div>
+
+            {/* Rank Crest Diamond Badge */}
+            <div className="flex items-center gap-2.5">
+              <div className="text-right">
+                <span className="block text-[9px] uppercase tracking-[0.18em] text-ink-700">RANK</span>
+                <span className="font-mono text-[11px] tabular-nums text-accent-mid font-semibold">
+                  {levelState.xpIntoLevel} / {levelState.xpForNext} XP
+                </span>
+              </div>
+              <div className="relative flex h-11 w-11 shrink-0 items-center justify-center">
+                <svg viewBox="0 0 48 48" className="absolute inset-0 h-full w-full drop-shadow-[0_0_10px_rgba(77,163,255,0.65)]">
+                  <polygon points="24,3 45,24 24,45 3,24" fill="rgba(10,20,36,0.85)" stroke="#4da3ff" strokeWidth="1.5" />
+                  <polygon points="24,7 41,24 24,41 7,24" fill="none" stroke="rgba(124,196,255,0.4)" strokeWidth="1" />
+                  <line x1="24" y1="3" x2="24" y2="8" stroke="#7cc4ff" strokeWidth="2" />
+                  <line x1="24" y1="40" x2="24" y2="45" stroke="#7cc4ff" strokeWidth="2" />
+                </svg>
+                <span className="font-display text-lg font-bold text-ink-100 z-10">{rank}</span>
+              </div>
+            </div>
+          </div>
+
+          {/* Level and XP Meter */}
+          <div className="mt-2 flex items-center gap-3">
+            <span className="shrink-0 text-[10px] uppercase font-bold tracking-wider text-ink-700">
+              LV <span className="font-mono text-xs tabular-nums text-ink-100">{levelState.level}</span>
             </span>
             <MeterBar pct={barPct} testId="xp-bar-fill" label="XP to next level" className="min-w-0 flex-1" />
-            {/* Announced, because completing a quest changes this number
-                and nothing else says so out loud. The meter beside it is
-                a progressbar, which a screen reader reports only when
-                focused; this is the running total, and it is the thing
-                the whole loop is feedback about. */}
-            <span
-              className="shrink-0 font-mono text-xs tabular-nums text-ink-700"
-              role="status"
-              aria-live="polite"
-              aria-atomic="true"
-            >
-              <span className="text-accent-mid">{levelState.xpIntoLevel}</span>/{levelState.xpForNext}
-            </span>
           </div>
 
-          {/* Streak is displayed smaller than consistency — it's the number
-              that carries the real signal (final/01 §6.2). */}
           {streak &&
             (streak.consistency_7 > 0 || streak.consistency_28 > 0 || streak.arc_streak > 0) && (
-              <p className="mt-1.5 font-mono text-xs tabular-nums text-faint">
+              <p className="mt-1.5 font-mono text-[11px] tabular-nums text-faint">
                 {streak.consistency_7}% (7d) · {streak.consistency_28}% (28d) · streak{' '}
                 {streak.arc_streak}
               </p>
@@ -378,14 +384,6 @@ export function Today() {
         </p>
       )}
 
-      {/*
-        The tone here is the whole point. final/06 §4.1 reserves red for
-        data loss and safety, and marking a missed day in red would make
-        the app punitive on exactly the morning the user is most likely
-        to abandon it. Amber, an intact panel, and no quote — design
-        system §7 forbids encouragement on a failure surface, where it
-        reads as a taunt.
-      */}
       {recoverable && (
         <div
           className="cut-sm mb-3 p-3.5"
@@ -433,21 +431,48 @@ export function Today() {
         </p>
       )}
 
-      {/* final/06 §4.4: a system message is a left accent rule, no box
-          and no icon. The reflection below shares the indent so the two
-          read as one voice rather than two components. */}
-      <p
-        className="mb-1 pl-3 text-sm text-ink-300"
-        style={{ borderLeft: '2px solid var(--accent)' }}
+      {/* Sci-Fi System Message HUD Banner */}
+      <div
+        className="cut-sm relative mb-3.5 p-3 overflow-hidden transition-all duration-200"
+        style={{
+          border: '1px solid rgba(77, 163, 255, 0.35)',
+          background: 'linear-gradient(180deg, rgba(10, 20, 36, 0.85), rgba(5, 10, 20, 0.9))',
+          boxShadow: '0 0 14px rgba(77, 163, 255, 0.12)',
+        }}
       >
-        {priorityLine(templates, instances, today, arc)}
-      </p>
-
-      {systemLine && (
-        <p className="mb-3 pl-3 text-xs italic leading-[1.5] text-faint" data-testid="system-line">
-          {systemLine}
+        {/* Left glowing corner bracket */}
+        <div className="absolute left-0 top-0 bottom-0 w-[3px] bg-accent-mid shadow-[0_0_8px_#4da3ff]" />
+        
+        <p className="pl-2 text-xs leading-relaxed text-ink-300">
+          {priorityLine(templates, instances, today, arc)}
         </p>
-      )}
+
+        {systemLine && (
+          <p className="mt-1 pl-2 text-xs italic leading-relaxed text-ink-500" data-testid="system-line">
+            {systemLine}
+          </p>
+        )}
+
+        <div className="mt-1 text-right">
+          <span className="text-[9px] uppercase tracking-[0.24em] font-bold text-accent-mid opacity-80">
+            SYSTEM
+          </span>
+        </div>
+      </div>
+
+      {/* TODAY Section Title Block */}
+      <div className="mb-2">
+        <div className="flex items-center justify-between gap-3">
+          <h2 className="font-display text-2xl tracking-[0.14em] text-ink-100">TODAY</h2>
+          <div className="h-[1px] flex-1 bg-gradient-to-r from-accent-mid/40 via-hair to-transparent" />
+          <span className="text-[9px] uppercase tracking-[0.18em] font-medium text-ink-700 shrink-0">
+            BUILD A BETTER YOU
+          </span>
+        </div>
+        <p className="text-[11px] italic text-ink-500 mt-0.5">
+          A short session on a tired day is still a session.
+        </p>
+      </div>
 
       <div>
         {templates.map((template) => {
@@ -471,34 +496,68 @@ export function Today() {
         <MaintenanceCard today={today} arcId={arc.id} arcStartDate={arc.start_date} onChanged={() => void refreshXp(today)} />
       )}
 
-      {/* final/03 §3 — LEARN is "not a seventh core quest," so its entry
-          point isn't a QuestRow; it's always available, any time. */}
-      {/* Kept at the 44px floor rather than promoted to the kit's 46px
-          button: Today is measured to zero overflow at 412x915, and the
-          two footer buttons are the cheapest place to lose 4px. */}
+      {/* Learning Block Action Card */}
       <button
         type="button"
         onClick={() => setLearningBlockOpen(true)}
-        className="cut-sm mt-2 min-h-tap w-full text-sm text-ink-500"
-        style={{ border: '1px solid var(--hair)', background: 'var(--surface)' }}
+        className="cut-sm mt-2 flex min-h-[46px] w-full items-center justify-between px-3 py-2 text-left transition-all duration-150"
+        style={{
+          border: '1px solid rgba(77, 163, 255, 0.3)',
+          background: 'linear-gradient(180deg, rgba(12, 22, 38, 0.75), rgba(7, 13, 24, 0.85))',
+        }}
       >
-        Learning block · +{CONFIG.learningBlockXp} XP
+        <div className="flex items-center gap-3">
+          <div className="flex h-8 w-8 items-center justify-center rounded-[8px] border border-accent/40 bg-accent-deep/40 text-accent-mid shadow-[0_0_8px_rgba(77,163,255,0.3)]">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+              <path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20" />
+              <path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z" />
+            </svg>
+          </div>
+          <span className="text-xs font-bold uppercase tracking-[0.14em] text-ink-100">
+            Learning block
+          </span>
+        </div>
+        <div className="flex items-center gap-2">
+          <span className="font-mono text-xs font-semibold text-accent-mid">
+            +{CONFIG.learningBlockXp} XP
+          </span>
+          <span className="text-ink-700">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
+              <polyline points="9 18 15 12 9 6" />
+            </svg>
+          </span>
+        </div>
       </button>
 
       {weeklyQuest && (
         <div
-          className="cut-sm mt-3 p-3"
+          className="cut-sm mt-3 relative overflow-hidden p-3.5"
           data-testid="weekly-quest-progress"
-          style={{ border: '1px solid var(--hair)', background: 'var(--surface)' }}
+          style={{
+            border: '1px solid rgba(77, 163, 255, 0.3)',
+            background: 'linear-gradient(180deg, rgba(10, 20, 36, 0.85), rgba(5, 10, 20, 0.95))',
+          }}
         >
-          <SectionLabel rule className="mb-2">
-            This week
-          </SectionLabel>
-          <p className="text-sm text-ink-300">{weeklyQuest.row.description}</p>
-          <p className="mt-1.5 font-mono text-xs tabular-nums text-faint">
-            <span className="text-accent-mid">{weeklyQuest.progress}</span>/{weeklyQuest.row.target}
-            {weeklyQuest.justCompleted ? ` — complete! +${weeklyQuest.row.xp} XP` : ''}
-          </p>
+          <div className="flex justify-between items-start">
+            <div className="flex-1 pr-16">
+              <div className="flex items-baseline justify-between mb-1">
+                <span className="text-[10px] uppercase font-bold tracking-[0.18em] text-ink-700">THIS WEEK</span>
+                <span className="font-mono text-xs text-accent-mid">
+                  {weeklyQuest.progress}/{weeklyQuest.row.target}
+                </span>
+              </div>
+              <p className="text-xs font-bold text-ink-100 leading-snug">{weeklyQuest.row.description}</p>
+              <div className="mt-2.5">
+                <MeterBar pct={weeklyQuest.row.target > 0 ? (weeklyQuest.progress / weeklyQuest.row.target) * 100 : 0} label="Weekly quest progress" />
+              </div>
+            </div>
+            {/* Side quote overlay text */}
+            <div className="absolute right-3 top-3 bottom-3 flex flex-col justify-center text-right border-l border-hair-faint pl-2">
+              <span className="text-[8px] uppercase tracking-[0.16em] leading-tight text-ink-700 font-semibold max-w-[50px]">
+                SMALL STEPS BIG RESULTS
+              </span>
+            </div>
+          </div>
         </div>
       )}
 
@@ -543,13 +602,28 @@ export function Today() {
         <button
           type="button"
           onClick={() => setReviewOpen(true)}
-          className="cut-sm mt-2 min-h-tap w-full text-sm text-accent"
+          className="cut-sm mt-3 flex min-h-[48px] w-full items-center justify-between px-4 py-2.5 transition-all duration-200"
           style={{
-            border: '1px solid var(--accent)',
-            background: 'linear-gradient(180deg, rgba(77,163,255,0.10), rgba(77,163,255,0.03)), var(--void)',
+            border: '1px solid rgba(192, 132, 252, 0.5)',
+            background: 'linear-gradient(180deg, rgba(55, 20, 85, 0.85), rgba(25, 10, 42, 0.95))',
+            boxShadow: '0 0 16px rgba(168, 85, 247, 0.25)',
           }}
         >
-          Evening review · 25 seconds
+          <div className="flex items-center gap-3">
+            <div className="flex h-7 w-7 items-center justify-center rounded-pill bg-[rgba(168,85,247,0.3)] text-purple-200">
+              <svg width="15" height="15" viewBox="0 0 24 24" fill="currentColor">
+                <path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z" />
+              </svg>
+            </div>
+            <span className="text-xs font-semibold uppercase tracking-[0.14em] text-purple-100">
+              Evening review · 25 seconds
+            </span>
+          </div>
+          <span className="text-purple-300">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
+              <polyline points="9 18 15 12 9 6" />
+            </svg>
+          </span>
         </button>
       )}
 

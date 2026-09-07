@@ -2,6 +2,8 @@ import { motion } from 'framer-motion';
 import {
   Barbell,
   Briefcase,
+  CaretRight,
+  Check,
   Code,
   Cpu,
   Eye,
@@ -9,7 +11,6 @@ import {
   type Icon,
 } from '@phosphor-icons/react';
 import type { CoreQuestKey, QuestInstance, QuestTemplate } from '../../engine/types';
-import { IconTile } from '../kit';
 import { ROW_SUMMARY } from './criterionText';
 
 /** One glyph per domain, so a row is recognisable before it is read. */
@@ -20,6 +21,46 @@ const QUEST_ICON: Record<CoreQuestKey, Icon> = {
   training: Barbell,
   sleep: MoonStars,
   attention: Eye,
+};
+
+/** Tile color scheme for domain icon box matching reference design */
+const DOMAIN_THEME: Record<CoreQuestKey, { bg: string; border: string; color: string; glow: string }> = {
+  attention: {
+    bg: 'rgba(15, 45, 85, 0.65)',
+    border: 'rgba(77, 163, 255, 0.45)',
+    color: '#5fb2ff',
+    glow: '0 0 10px rgba(77, 163, 255, 0.35)',
+  },
+  build: {
+    bg: 'rgba(15, 45, 85, 0.65)',
+    border: 'rgba(77, 163, 255, 0.45)',
+    color: '#5fb2ff',
+    glow: '0 0 10px rgba(77, 163, 255, 0.35)',
+  },
+  career: {
+    bg: 'rgba(55, 20, 85, 0.65)',
+    border: 'rgba(192, 132, 252, 0.45)',
+    color: '#c084fc',
+    glow: '0 0 10px rgba(192, 132, 252, 0.35)',
+  },
+  dsa: {
+    bg: 'rgba(55, 20, 85, 0.65)',
+    border: 'rgba(192, 132, 252, 0.45)',
+    color: '#c084fc',
+    glow: '0 0 10px rgba(192, 132, 252, 0.35)',
+  },
+  sleep: {
+    bg: 'rgba(55, 20, 85, 0.65)',
+    border: 'rgba(192, 132, 252, 0.45)',
+    color: '#c084fc',
+    glow: '0 0 10px rgba(192, 132, 252, 0.35)',
+  },
+  training: {
+    bg: 'rgba(55, 20, 85, 0.65)',
+    border: 'rgba(192, 132, 252, 0.45)',
+    color: '#c084fc',
+    glow: '0 0 10px rgba(192, 132, 252, 0.35)',
+  },
 };
 
 interface QuestRowProps {
@@ -35,34 +76,33 @@ interface QuestRowProps {
 }
 
 /**
- * 64px row, two >= 44px tap targets: the circle (complete/undo) and the
- * rest of the row (opens the detail sheet). final/06 §4.4.
- *
- * The circle sits on the right, following the reference dashboard: it is
- * where a thumb rests, and the circles still align into a scannable
- * column. The domain tile leads instead, which gives each row an
- * identity at a glance.
- *
- * Complete and pending differ by shape as well as colour — a filled disc
- * inside a solid ring versus an empty ring — because final/06 §7 forbids
- * colour-only state, and roughly one man in twelve would otherwise be
- * reading this list by brightness alone.
+ * Cut-corner HUD card row matching the exact reference image.
+ * 64px min height, two >= 44px tap targets: the circle (complete/undo) and the
+ * rest of the row (opens the detail sheet).
  */
 export function QuestRow({ template, instance, dayClosed, xp, onToggle, onOpen }: QuestRowProps) {
   const complete = instance.state === 'complete';
   const disabled = dayClosed;
   const displayedXp = complete ? (xp?.amount ?? template.xp) : template.xp;
   const capped = complete && xp?.cappedFrom !== undefined;
-  const Glyph = QUEST_ICON[template.key as CoreQuestKey] ?? Code;
+  const key = template.key as CoreQuestKey;
+  const Glyph = QUEST_ICON[key] ?? Code;
+  const theme = DOMAIN_THEME[key] ?? DOMAIN_THEME.attention;
 
   return (
     <div
       data-testid={`quest-row-${template.key}`}
       className={[
-        'flex min-h-row items-center gap-3',
+        'cut-sm mb-1.5 flex min-h-row items-center gap-3 px-3 py-2 transition-all duration-150',
         disabled ? 'opacity-40' : '',
       ].join(' ')}
-      style={{ borderBottom: '1px solid var(--hair-faint)' }}
+      style={{
+        border: complete ? '1px solid rgba(192, 132, 252, 0.4)' : '1px solid rgba(77, 163, 255, 0.22)',
+        background: complete
+          ? 'linear-gradient(180deg, rgba(35, 18, 55, 0.75), rgba(18, 10, 32, 0.85))'
+          : 'linear-gradient(180deg, rgba(12, 22, 38, 0.75), rgba(7, 13, 24, 0.85))',
+        boxShadow: complete ? '0 0 14px rgba(168, 85, 247, 0.15)' : 'none',
+      }}
     >
       <button
         type="button"
@@ -71,23 +111,37 @@ export function QuestRow({ template, instance, dayClosed, xp, onToggle, onOpen }
         data-testid={`quest-row-${template.key}-open`}
         className="flex min-h-tap min-w-0 flex-1 items-center gap-3 text-left"
       >
-        <IconTile icon={Glyph} size={34} active={complete} />
-        <span className="flex min-w-0 flex-col">
-          <span className="truncate text-md text-ink-100">{template.title}</span>
-          <span className="truncate text-xs text-ink-900">{ROW_SUMMARY[template.key as CoreQuestKey]}</span>
+        {/* Futuristic Icon Tile Box */}
+        <div
+          aria-hidden
+          className="flex h-9 w-9 shrink-0 items-center justify-center rounded-[8px] transition-transform duration-150"
+          style={{
+            background: theme.bg,
+            border: `1px solid ${theme.border}`,
+            boxShadow: theme.glow,
+          }}
+        >
+          <Glyph size={18} weight="fill" color={theme.color} />
+        </div>
+
+        <span className="flex min-w-0 flex-col justify-center">
+          <span className="truncate text-xs font-bold uppercase tracking-[0.14em] text-ink-100">
+            {template.title}
+          </span>
+          <span className="truncate text-[11px] text-ink-900">
+            {ROW_SUMMARY[key]}
+          </span>
         </span>
       </button>
 
       <span
-        className={[
-          'shrink-0 font-mono text-sm tabular-nums',
-          complete ? 'text-accent-mid' : 'text-faint',
-        ].join(' ')}
+        className="shrink-0 font-mono text-xs font-semibold tabular-nums text-accent-mid"
       >
-        +{displayedXp}
-        {capped && <span className="ml-1 text-xs text-faint">capped</span>}
+        +{displayedXp} XP
+        {capped && <span className="ml-1 text-[10px] text-faint">capped</span>}
       </span>
 
+      {/* Completion Status Checkbox Target */}
       <motion.button
         type="button"
         onClick={onToggle}
@@ -99,22 +153,31 @@ export function QuestRow({ template, instance, dayClosed, xp, onToggle, onOpen }
         className="flex h-[44px] w-[44px] shrink-0 items-center justify-center"
       >
         <span
-          className="flex h-[22px] w-[22px] items-center justify-center rounded-pill transition-colors duration-[180ms]"
+          className="flex h-6 w-6 items-center justify-center rounded-pill transition-all duration-200"
           style={{
-            border: `1.5px solid ${complete ? 'var(--accent)' : 'var(--state-pending)'}`,
-            boxShadow: complete ? 'var(--glow-sm)' : 'none',
+            border: complete ? 'none' : '1.5px solid rgba(120, 140, 165, 0.5)',
+            background: complete ? 'linear-gradient(135deg, #c084fc, #9333ea)' : 'transparent',
+            boxShadow: complete ? '0 0 12px rgba(168, 85, 247, 0.6)' : 'none',
           }}
         >
-          <motion.span
-            aria-hidden
-            initial={false}
-            animate={{ opacity: complete ? 1 : 0, scale: complete ? 1 : 0.4 }}
-            transition={{ type: 'spring', stiffness: 500, damping: 25 }}
-            className="h-[11px] w-[11px] rounded-pill"
-            style={{ background: 'var(--accent)' }}
-          />
+          {complete ? (
+            <Check size={14} weight="bold" color="#ffffff" />
+          ) : null}
         </span>
       </motion.button>
+
+      {/* Right Chevron */}
+      <button
+        type="button"
+        onClick={onOpen}
+        disabled={disabled}
+        aria-hidden
+        tabIndex={-1}
+        className="shrink-0 text-ink-700"
+      >
+        <CaretRight size={14} weight="bold" />
+      </button>
     </div>
   );
 }
+

@@ -20,44 +20,11 @@ interface SheetProps {
   /** Pinned below the scroll area — the sheet's primary action. */
   footer?: ReactNode;
   testId?: string;
+  /** Hide standard header bar for custom hero art headers */
+  hideHeader?: boolean;
 }
 
-/**
- * The bottom sheet every log surface is built on.
- *
- * Three dismissals, because a phone user will reach for whichever is
- * closest to their thumb: the Close button, the scrim, and a downward
- * drag. `aria-label="Close"` on that button is frozen by the test
- * contract (design/00-DESIGN-SYSTEM.md §10) and is rendered here so all
- * eight sheets inherit it rather than each spelling it out.
- *
- * Back closes the sheet rather than the screen, via the app-level
- * OverlayStack (design/02-NAVIGATION-FLOW.md §5). The stack is central
- * rather than per-sheet because a sheet opened from another sheet would
- * otherwise push two history entries and race to unwind them.
- *
- * Rendered through a portal into <body>. A sheet is opened by a screen,
- * so without one it lives inside the route wrapper — whose CSS animation
- * creates a stacking context that a `position: fixed` child cannot
- * escape however high its z-index. The bottom nav, a later sibling, then
- * paints on top and silently swallows every tap aimed at the sheet.
- * That happened once and cost fourteen e2e failures; a portal makes it
- * structurally impossible rather than a question of z-index discipline.
- *
- * The entrance is a CSS animation, not a JavaScript one, for the same
- * reason route transitions are. A framer-driven `y: 100% -> 0` leaves
- * the sheet parked off-screen if requestAnimationFrame is ever starved,
- * and it still counts as visible — so taps land on nothing and the app
- * appears frozen. CSS settles on its final frame regardless. framer is
- * still used for the drag, which affects position only while a finger
- * is on it and cannot strand the sheet.
- *
- * There is no exit animation, and there was never really one: every
- * caller renders this as `{isOpen && <SomeSheet/>}`, so closing unmounts
- * the whole subtree and an AnimatePresence exit never had a chance to
- * play.
- */
-export function Sheet({ open, onClose, title, children, footer, testId }: SheetProps) {
+export function Sheet({ open, onClose, title, children, footer, testId, hideHeader = false }: SheetProps) {
   const panelRef = useRef<HTMLDivElement>(null);
   const titleId = useId();
 
@@ -151,38 +118,45 @@ export function Sheet({ open, onClose, title, children, footer, testId }: SheetP
             dragConstraints={{ top: 0, bottom: 0 }}
             dragElastic={{ top: 0, bottom: 0.6 }}
             onDragEnd={handleDragEnd}
-            className="relative flex max-h-[86dvh] w-full flex-col outline-none"
+            className="relative flex max-h-[86dvh] w-full flex-col outline-none cut-md"
             style={{
-              background: 'linear-gradient(180deg, var(--panel-top) 0%, var(--surface) 100%)',
-              borderTop: '1px solid var(--hair-strong)',
-              boxShadow: '0 -20px 60px rgba(0,0,0,0.6)',
+              background: 'linear-gradient(180deg, rgba(12, 22, 38, 0.96) 0%, rgba(5, 10, 20, 0.98) 100%)',
+              borderTop: '1px solid rgba(77, 163, 255, 0.4)',
+              boxShadow: '0 -20px 60px rgba(0,0,0,0.8)',
             }}
           >
-            {/* Grab handle. Decorative, but it is the affordance that
-                tells a thumb the sheet can be dragged away. */}
+            {/* Grab handle */}
             <div className="flex shrink-0 justify-center pt-3" aria-hidden>
               <span
                 className="h-1 w-10 rounded-pill"
-                style={{ background: 'var(--hair-strong)' }}
+                style={{ background: 'rgba(77, 163, 255, 0.4)' }}
               />
             </div>
 
-            <div className="flex shrink-0 items-start justify-between gap-3 px-gutter pt-3">
-              <h2 id={titleId} className="text-lg text-ink-100">
+            {hideHeader ? (
+              <h2 id={titleId} className="sr-only">
                 {title}
               </h2>
-              <button
-                type="button"
-                onClick={onClose}
-                aria-label="Close"
-                className="-mr-2 -mt-2 flex min-h-tap min-w-[44px] items-center justify-center text-ink-700"
-              >
-                <span aria-hidden className="text-lg">
-                  ✕
-                </span>
-              </button>
-            </div>
-            <div className="hairline mx-gutter mt-2 shrink-0" aria-hidden />
+            ) : (
+              <>
+                <div className="flex shrink-0 items-start justify-between gap-3 px-gutter pt-3">
+                  <h2 id={titleId} className="text-lg font-display tracking-wider text-ink-100">
+                    {title}
+                  </h2>
+                  <button
+                    type="button"
+                    onClick={onClose}
+                    aria-label="Close"
+                    className="-mr-2 -mt-2 flex min-h-tap min-w-[44px] items-center justify-center text-ink-700 hover:text-accent-bright"
+                  >
+                    <span aria-hidden className="text-lg">
+                      ✕
+                    </span>
+                  </button>
+                </div>
+                <div className="hairline mx-gutter mt-2 shrink-0" aria-hidden />
+              </>
+            )}
 
             <div className="no-scrollbar min-h-0 flex-1 overflow-y-auto px-gutter py-4">
               {children}

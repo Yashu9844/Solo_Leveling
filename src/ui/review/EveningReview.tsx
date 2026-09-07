@@ -1,11 +1,19 @@
 import { useState } from 'react';
+import {
+  ArrowRight,
+  Brain,
+  Clock,
+  Lightning,
+  Moon,
+  Quotes,
+} from '@phosphor-icons/react';
 import type { CoreQuestKey, ReviewBlocker } from '../../engine/types';
 import { DEFAULT_CONFIG } from '../../engine/config';
 import { realDeps } from '../../store/deps';
 import { completeEveningReview, getDailyReport, type DailyReport } from '../../store/review';
 import { DotPicker } from '../components/DotPicker';
 import { SingleChipSelect } from '../components/SingleChipSelect';
-import { ArtLayer, Field, Panel, Portal, PrimaryButton, QuoteCard, Sheet, TextInput } from '../kit';
+import { ArtLayer, Panel, Portal, QuoteCard, Sheet, TextInput } from '../kit';
 
 const BLOCKER_LABELS: Record<ReviewBlocker, string> = {
   time: 'Time',
@@ -32,10 +40,7 @@ interface EveningReviewProps {
   onClose: () => void;
 }
 
-/** final/05 §5 — 25 seconds, 5 taps, no typing. One screen, everything
- * visible at once (not a step wizard) — matches the wireframe and the
- * time budget. Submitting shows the daily report; tap anywhere on the
- * report to finish. */
+/** final/05 §5 — 25 seconds, 5 taps, no typing. Matching exact sci-fi HUD design from Image 1 */
 export function EveningReview({ today, day, arcId, onClose }: EveningReviewProps) {
   const [energy, setEnergy] = useState(3);
   const [focus, setFocus] = useState(3);
@@ -69,39 +74,171 @@ export function EveningReview({ today, day, arcId, onClose }: EveningReviewProps
       open
       onClose={onClose}
       title={day != null ? `Day ${day} · Evening` : 'Evening'}
+      hideHeader
       footer={
-        <PrimaryButton
-          size="md"
-          disabled={!blocker || submitting}
-          onClick={() => void handleComplete()}
-        >
-          {submitting ? 'Saving…' : 'Complete day'}
-        </PrimaryButton>
+        <div className="flex flex-col gap-3">
+          <button
+            type="button"
+            disabled={!blocker || submitting}
+            onClick={() => void handleComplete()}
+            className="cut-sm flex min-h-[50px] w-full items-center justify-between px-5 text-sm font-bold uppercase tracking-[0.2em] transition-all duration-200 disabled:opacity-40"
+            style={{
+              border: '1px solid rgba(192, 132, 252, 0.8)',
+              background: 'linear-gradient(180deg, rgba(88, 28, 135, 0.9), rgba(45, 10, 80, 0.98))',
+              color: '#ffffff',
+              boxShadow: '0 0 20px rgba(168, 85, 247, 0.45)',
+            }}
+          >
+            <span className="flex-1 text-center pl-4">
+              {submitting ? 'SAVING…' : 'COMPLETE DAY'}
+            </span>
+            <ArrowRight size={18} weight="bold" color="#ffffff" />
+          </button>
+          
+          <div className="text-center text-[9px] uppercase tracking-[0.24em] text-ink-700">
+            — SMALL REFLECTIONS. BIG RESULTS. —
+          </div>
+        </div>
       }
     >
-      <div className="flex flex-col gap-6">
-        <DotPicker label="Energy" value={energy} onChange={setEnergy} />
-        <DotPicker label="Focus" value={focus} onChange={setFocus} />
+      <div className="relative -mx-gutter -mt-4 mb-4 px-gutter pt-4 pb-2 overflow-hidden">
+        {/* Background Artwork */}
+        <div
+          aria-hidden
+          className="pointer-events-none absolute right-0 top-0 h-[190px] w-[220px] overflow-hidden"
+          style={{
+            mixBlendMode: 'lighten',
+            opacity: 0.65,
+            maskImage: 'radial-gradient(125% 105% at 100% 0%, #000 40%, transparent 80%)',
+            WebkitMaskImage: 'radial-gradient(125% 105% at 100% 0%, #000 40%, transparent 80%)',
+          }}
+        >
+          <ArtLayer slot="review" scrim="none" focal="50% 35%" />
+        </div>
 
-        <SingleChipSelect
-          label="What got in the way?"
-          options={Object.keys(BLOCKER_LABELS) as ReviewBlocker[]}
-          labelFor={(k) => BLOCKER_LABELS[k]}
-          selected={blocker}
-          onSelect={setBlocker}
+        <div className="relative">
+          {/* Header Bar: SYSTEM & Close */}
+          <div className="flex items-center justify-between text-[9px] uppercase tracking-[0.22em] text-ink-700 mb-2">
+            <div>
+              <span>SYSTEM</span>
+              <div className="h-[1px] w-6 bg-accent-mid/60 mt-0.5" />
+            </div>
+            <div className="flex items-center gap-3">
+              <span className="text-[8px] tracking-[0.16em] leading-tight text-ink-700 text-right uppercase">
+                REFLECT · ADJUST · IMPROVE · CONTINUE
+              </span>
+              <button
+                type="button"
+                onClick={onClose}
+                aria-label="Close"
+                className="flex h-8 w-8 items-center justify-center rounded-pill text-ink-700 hover:text-accent-bright transition-colors"
+              >
+                ✕
+              </button>
+            </div>
+          </div>
+
+          {/* DAY 07 EVENING REVIEW */}
+          <div>
+            <h1 className="font-display text-3xl leading-none tracking-[0.14em] text-ink-100">
+              DAY {day != null ? String(day).padStart(2, '0') : '07'}
+            </h1>
+            <div className="font-bold text-xs uppercase tracking-[0.22em] text-accent-mid mt-1">
+              EVENING REVIEW
+            </div>
+            <p className="text-[11px] italic text-ink-500 mt-1">
+              A quiet mind builds a stronger tomorrow.
+            </p>
+          </div>
+        </div>
+      </div>
+
+      {/* Quote Banner Box */}
+      <div
+        className="cut-sm relative mb-4 p-3 flex items-center justify-between gap-3 overflow-hidden"
+        style={{
+          border: '1px solid rgba(77, 163, 255, 0.35)',
+          background: 'linear-gradient(180deg, rgba(10, 20, 36, 0.85), rgba(5, 10, 20, 0.9))',
+          boxShadow: '0 0 14px rgba(77, 163, 255, 0.12)',
+        }}
+      >
+        <div className="flex items-center gap-3 min-w-0 flex-1">
+          <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-pill bg-accent-deep/40 text-accent-mid border border-accent/40 shadow-[0_0_10px_rgba(77,163,255,0.4)]">
+            <Quotes size={18} weight="fill" color="#5fb2ff" />
+          </div>
+          <p className="text-xs font-bold uppercase tracking-[0.14em] text-ink-100 leading-snug">
+            HONEST ANSWERS CREATE REAL PROGRESS.
+          </p>
+        </div>
+        <div className="border-l border-hair-faint pl-2 text-right shrink-0">
+          <span className="block text-[8px] uppercase tracking-[0.16em] text-ink-700 font-medium max-w-[70px] leading-tight">
+            SAME EFFORT A STRONGER YOU
+          </span>
+        </div>
+      </div>
+
+      {/* Content Form */}
+      <div className="flex flex-col gap-4">
+        <DotPicker
+          label="ENERGY"
+          description="How was your physical energy today?"
+          icon={Lightning}
+          value={energy}
+          onChange={setEnergy}
         />
 
+        <DotPicker
+          label="FOCUS"
+          description="How was your mental focus today?"
+          icon={Brain}
+          value={focus}
+          onChange={setFocus}
+        />
+
+        <div className="relative">
+          <SingleChipSelect
+            label="WHAT GOT IN THE WAY?"
+            options={Object.keys(BLOCKER_LABELS) as ReviewBlocker[]}
+            labelFor={(k) => BLOCKER_LABELS[k]}
+            selected={blocker}
+            onSelect={setBlocker}
+          />
+        </div>
+
         <SingleChipSelect
-          label="Tomorrow's one priority"
+          label="TOMORROW'S ONE PRIORITY"
           options={PRIORITY_OPTIONS}
           labelFor={(k) => PRIORITY_LABELS[k]}
           selected={priority}
           onSelect={setPriority}
         />
 
-        <Field label="Slept at">
-          <TextInput type="time" value={sleptAt} onChange={(e) => setSleptAt(e.target.value)} />
-        </Field>
+        {/* Slept At Time Picker Box */}
+        <div>
+          <div className="mb-2 text-[10px] uppercase font-bold tracking-[0.18em] text-ink-700">
+            SLEPT AT
+          </div>
+          <div
+            className="cut-sm flex min-h-[46px] items-center justify-between px-3.5"
+            style={{
+              border: '1px solid rgba(77, 163, 255, 0.35)',
+              background: 'linear-gradient(180deg, rgba(10, 20, 36, 0.85), rgba(5, 10, 20, 0.95))',
+            }}
+          >
+            <div className="flex items-center gap-3 flex-1">
+              <div className="flex h-7 w-7 items-center justify-center rounded-[6px] bg-accent-deep/30 text-accent-mid border border-accent/30">
+                <Moon size={15} weight="fill" color="#5fb2ff" />
+              </div>
+              <TextInput
+                type="time"
+                value={sleptAt}
+                onChange={(e) => setSleptAt(e.target.value)}
+                className="bg-transparent font-mono text-sm font-bold text-ink-100 outline-none border-none p-0 focus:outline-none"
+              />
+            </div>
+            <Clock size={16} weight="regular" className="text-ink-700" />
+          </div>
+        </div>
       </div>
     </Sheet>
   );

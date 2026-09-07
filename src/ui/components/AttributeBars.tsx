@@ -1,11 +1,12 @@
 import { useEffect, useState } from 'react';
+import { Barbell, Brain, Cpu, type Icon } from '@phosphor-icons/react';
 import { DEFAULT_CONFIG } from '../../engine/config';
 import { localDate } from '../../engine/time';
 import { realDeps } from '../../store/deps';
 import { getAttributes } from '../../store/attributes';
 import type { AttributeResult } from '../../engine/attributes';
 import type { Attribute } from '../../engine/types';
-import { MeterBar, SectionLabel } from '../kit';
+import { MeterBar } from '../kit';
 
 const ATTRIBUTE_LABELS: Record<Attribute, string> = {
   DISCIPLINE: 'DISCIPLINE',
@@ -16,39 +17,43 @@ const ATTRIBUTE_LABELS: Record<Attribute, string> = {
   VITALITY: 'VITALITY',
 };
 
-// final/06 §5.6's display order, grouped under Mind/Craft/Career/Body —
-// the six attributes are never averaged into a composite (final/01 §5).
-const GROUPS: { heading: string; attributes: Attribute[] }[] = [
-  { heading: 'MIND', attributes: ['DISCIPLINE', 'DEPTH', 'PROBLEM_SOLVING'] },
-  { heading: 'CRAFT', attributes: ['ENGINEERING'] },
-  { heading: 'CAREER', attributes: ['MOMENTUM'] },
-  { heading: 'BODY', attributes: ['VITALITY'] },
+const GROUPS: { heading: string; tagline: string; icon: Icon; attributes: Attribute[] }[] = [
+  {
+    heading: 'MIND',
+    tagline: 'A SHARPER YOU',
+    icon: Brain,
+    attributes: ['DISCIPLINE', 'DEPTH', 'PROBLEM_SOLVING'],
+  },
+  {
+    heading: 'CRAFT',
+    tagline: 'BUILD SKILLS. BUILD OPTIONS.',
+    icon: Cpu,
+    attributes: ['ENGINEERING', 'MOMENTUM'],
+  },
+  {
+    heading: 'BODY',
+    tagline: 'A STRONGER YOU',
+    icon: Barbell,
+    attributes: ['VITALITY'],
+  },
 ];
 
 function Bar({ result }: { result: AttributeResult }) {
   const value = Math.round(result.value);
   return (
     <div className="flex items-center gap-3 py-1.5">
-      {/* Fixed label column so the bars align into one edge down the
-          screen — six attributes read as a set only if they share a
-          baseline. Wraps rather than truncating: "PROBLEM SOLVING" does
-          not fit on one line here, and an attribute whose name is cut to
-          "PROBLEM SOL…" has lost the only thing identifying its row.
-          A slightly taller row is the cheaper cost, and it holds at
-          every text scale rather than only at the default. */}
-      <span className="w-[104px] shrink-0 text-xs leading-[1.25] text-ink-700">
+      <span className="w-[110px] shrink-0 text-xs font-semibold uppercase tracking-wider text-ink-700">
         {ATTRIBUTE_LABELS[result.attribute]}
       </span>
-      <MeterBar pct={value} height={6} label={ATTRIBUTE_LABELS[result.attribute]} className="min-w-0 flex-1" />
-      <span className="w-7 shrink-0 text-right font-mono text-xs tabular-nums text-ink-100">
+      <MeterBar pct={value} height={7} label={ATTRIBUTE_LABELS[result.attribute]} className="min-w-0 flex-1" />
+      <span className="w-6 shrink-0 text-right font-mono text-xs font-bold tabular-nums text-ink-100">
         {value}
       </span>
     </div>
   );
 }
 
-/** All 0-100, non-editable, 28-day rolling window — final/01 §5. Shared
- * by Profile and Progress's SYSTEM sub-tab. */
+/** All 0-100, non-editable, 28-day rolling window — final/01 §5. Cut-corner HUD cards matching the Progress design screenshot */
 export function AttributeBars() {
   const [results, setResults] = useState<AttributeResult[] | null>(null);
 
@@ -67,18 +72,45 @@ export function AttributeBars() {
   const byAttribute = new Map(results.map((r) => [r.attribute, r]));
 
   return (
-    <div className="mt-6" data-testid="attribute-bars">
-      {GROUPS.map((group) => (
-        <div key={group.heading} className="mb-4">
-          <SectionLabel rule className="mb-2">
-            {group.heading}
-          </SectionLabel>
-          {group.attributes.map((attribute) => {
-            const result = byAttribute.get(attribute);
-            return result ? <Bar key={attribute} result={result} /> : null;
-          })}
-        </div>
-      ))}
+    <div className="mt-4 flex flex-col gap-3" data-testid="attribute-bars">
+      {GROUPS.map((group) => {
+        const Glyph = group.icon;
+        return (
+          <div
+            key={group.heading}
+            className="cut-sm p-3.5 transition-all duration-200"
+            style={{
+              border: '1px solid rgba(77, 163, 255, 0.28)',
+              background: 'linear-gradient(180deg, rgba(10, 20, 36, 0.8), rgba(5, 10, 20, 0.9))',
+              boxShadow: '0 0 14px rgba(77, 163, 255, 0.08)',
+            }}
+          >
+            {/* Header of Attribute Card */}
+            <div className="flex items-center justify-between gap-3 mb-2.5 pb-2 border-b border-hair-faint">
+              <div className="flex items-center gap-3">
+                <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-[7px] border border-accent/40 bg-accent-deep/30 text-accent-mid shadow-[0_0_8px_rgba(77,163,255,0.3)]">
+                  <Glyph size={18} weight="fill" color="#5fb2ff" />
+                </div>
+                <h3 className="font-display text-lg font-bold tracking-[0.14em] text-ink-100">
+                  {group.heading}
+                </h3>
+              </div>
+              <span className="text-[9px] uppercase tracking-[0.18em] font-medium text-ink-700">
+                {group.tagline}
+              </span>
+            </div>
+
+            {/* Attribute Rows */}
+            <div className="flex flex-col gap-1">
+              {group.attributes.map((attribute) => {
+                const result = byAttribute.get(attribute);
+                return result ? <Bar key={attribute} result={result} /> : null;
+              })}
+            </div>
+          </div>
+        );
+      })}
     </div>
   );
 }
+

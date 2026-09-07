@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react';
+import { CaretRight, ChartBar, Flame, Shield } from '@phosphor-icons/react';
 import { DEFAULT_CONFIG } from '../../engine/config';
 import { arcDay, localDate } from '../../engine/time';
 import { levelFor } from '../../engine/level';
@@ -10,13 +11,10 @@ import { getRealitySummary, type RealitySummary } from '../../store/reality';
 import { AttributeBars } from '../components/AttributeBars';
 import { WeeklyReview } from '../review/WeeklyReview';
 import { getCurrentRank } from '../../store/checkpoint';
-import { ArtLayer, MeterBar, ScreenHeader, SectionLabel, SecondaryButton, Segmented } from '../kit';
+import { ArtLayer, MeterBar, ScreenHeader, SectionLabel } from '../kit';
 
 type SubTab = 'SYSTEM' | 'REALITY';
 
-// final/06 §5.5 — "REALITY is the default sub-tab from Day 30." Small
-// decision, large effect: the app's default answer to "how am I doing?"
-// becomes the real one.
 const REALITY_DEFAULT_FROM_DAY = 30;
 
 export function Progress() {
@@ -37,31 +35,73 @@ export function Progress() {
 
   return (
     <>
-      <ScreenHeader
-        title="PROGRESS"
-        right={
-          day != null ? (
-            <span className="font-mono text-xs tabular-nums text-faint">DAY {day}</span>
-          ) : undefined
-        }
-      />
-      <div className="px-gutter pb-6 pt-4">
-        {/* Full width below the header rather than squeezed beside it.
-            At 320px a fixed-width switch and the title arrive at the
-            same pixel, and neither can shrink: the title must not
-            truncate and the two labels must stay legible.
+      <ScreenHeader title="PROGRESS" visuallyHidden />
+      <div className="px-gutter pb-6 pt-2">
+        {/* Screen Header matching design screenshot */}
+        <div className="flex items-start justify-between mb-3">
+          <div>
+            <h1 className="font-display text-2xl leading-none tracking-[0.14em] text-ink-100">
+              PROGRESS
+            </h1>
+            <div className="text-[9px] font-bold uppercase tracking-[0.2em] text-ink-700 mt-1">
+              TRACK · IMPROVE · TRANSCEND
+            </div>
+          </div>
+          <div className="text-right">
+            <div className="flex items-baseline justify-end gap-1.5">
+              <span className="text-xs uppercase font-display text-ink-700">DAY</span>
+              <span className="font-mono text-sm font-bold text-accent-mid">
+                {day != null ? String(day).padStart(2, '0') : '07'}
+              </span>
+            </div>
+            <div className="text-[9px] uppercase tracking-[0.16em] text-ink-700">
+              WINTER ARC —
+            </div>
+            <div className="text-[8px] italic text-ink-500 max-w-[120px] mt-0.5">
+              &ldquo;PROGRESS TURNS EFFORT INTO FREEDOM.&rdquo;
+            </div>
+          </div>
+        </div>
 
-            Plain buttons with aria-pressed, not role="tab" —
-            attributes.spec selects these with
-            getByRole('button', { name: 'REALITY' }). */}
-        <Segmented
-          value={tab}
-          onChange={setTab}
-          options={[
-            { value: 'SYSTEM', label: 'SYSTEM' },
-            { value: 'REALITY', label: 'REALITY' },
-          ]}
-        />
+        {/* SubTab Switcher (SYSTEM / REALITY) */}
+        <div className="grid grid-cols-2 gap-2 mb-3">
+          <button
+            type="button"
+            onClick={() => setTab('SYSTEM')}
+            aria-pressed={tab === 'SYSTEM'}
+            className="cut-sm flex min-h-[44px] items-center justify-center gap-2 text-xs font-bold uppercase tracking-[0.18em] transition-all duration-200"
+            style={{
+              border: tab === 'SYSTEM' ? '1px solid rgba(77, 163, 255, 0.7)' : '1px solid rgba(77, 163, 255, 0.2)',
+              background: tab === 'SYSTEM'
+                ? 'linear-gradient(180deg, rgba(31, 95, 184, 0.65), rgba(12, 22, 38, 0.85))'
+                : 'rgba(7, 13, 24, 0.6)',
+              color: tab === 'SYSTEM' ? '#eaf3ff' : 'var(--ink-700)',
+              boxShadow: tab === 'SYSTEM' ? '0 0 16px rgba(77, 163, 255, 0.4)' : 'none',
+            }}
+          >
+            <span>◇</span>
+            <span>SYSTEM</span>
+          </button>
+
+          <button
+            type="button"
+            onClick={() => setTab('REALITY')}
+            aria-pressed={tab === 'REALITY'}
+            className="cut-sm flex min-h-[44px] items-center justify-center gap-2 text-xs font-bold uppercase tracking-[0.18em] transition-all duration-200"
+            style={{
+              border: tab === 'REALITY' ? '1px solid rgba(77, 163, 255, 0.7)' : '1px solid rgba(77, 163, 255, 0.2)',
+              background: tab === 'REALITY'
+                ? 'linear-gradient(180deg, rgba(31, 95, 184, 0.65), rgba(12, 22, 38, 0.85))'
+                : 'rgba(7, 13, 24, 0.6)',
+              color: tab === 'REALITY' ? '#eaf3ff' : 'var(--ink-700)',
+              boxShadow: tab === 'REALITY' ? '0 0 16px rgba(77, 163, 255, 0.4)' : 'none',
+            }}
+          >
+            <span>⬡</span>
+            <span>REALITY</span>
+          </button>
+        </div>
+
         {tab === 'SYSTEM' ? <SystemTab /> : <RealityTab />}
       </div>
     </>
@@ -90,88 +130,136 @@ function SystemTab() {
 
   if (totalXp === null || rank === null) return null;
   const level = levelFor(totalXp, DEFAULT_CONFIG);
-
-  const pct =
-    level.xpForNext > 0 ? Math.min(100, (level.xpIntoLevel / level.xpForNext) * 100) : 0;
+  const pct = level.xpForNext > 0 ? Math.min(100, (level.xpIntoLevel / level.xpForNext) * 100) : 0;
 
   return (
     <div>
-      {/* The level card. Level and rank sit together here because this is
-          the screen where the difference matters — final/01 §4: level
-          measures effort, rank measures evidence, and they are not
-          convertible. The plate behind them is Blue Arc: this tab is the
-          game's own accounting, not the real-world result. */}
-      <div className="relative mt-3 h-[210px] overflow-hidden" style={{ border: '1px solid var(--hair)' }}>
-        <ArtLayer slot="progress" scrim="hero" focal="50% 28%" />
+      {/* Sci-Fi Hero Level Card */}
+      <div
+        className="cut-md relative mb-3 overflow-hidden p-4 transition-all duration-200"
+        style={{
+          border: '1px solid rgba(77, 163, 255, 0.4)',
+          background: 'linear-gradient(180deg, rgba(10, 20, 36, 0.85), rgba(5, 10, 20, 0.95))',
+          boxShadow: '0 0 20px rgba(77, 163, 255, 0.15)',
+        }}
+      >
+        {/* Sung Jinwoo Art Background */}
+        <div
+          aria-hidden
+          className="pointer-events-none absolute inset-0 overflow-hidden"
+          style={{
+            mixBlendMode: 'lighten',
+            opacity: 0.55,
+            maskImage: 'radial-gradient(120% 100% at 50% 30%, #000 40%, transparent 80%)',
+            WebkitMaskImage: 'radial-gradient(120% 100% at 50% 30%, #000 40%, transparent 80%)',
+          }}
+        >
+          <ArtLayer slot="progress" scrim="none" focal="50% 28%" />
+        </div>
 
-        <div className="absolute inset-x-0 bottom-0 flex flex-col gap-3 p-5">
-          <div className="flex items-end justify-between">
-            <span className="flex items-baseline gap-2.5">
-              <span className="text-xxs uppercase text-ink-700">LV</span>
-              <span className="glow-text font-mono text-xl tabular-nums text-ink-100">
-                {level.level}
-              </span>
-            </span>
-            <span className="flex items-baseline gap-2.5">
-              <span className="text-xxs uppercase text-ink-700">Rank</span>
-              <span className="font-display text-title leading-none text-ink-100">{rank}</span>
-            </span>
+        {/* Level and Rank Top Row */}
+        <div className="relative flex items-center justify-between mb-4">
+          <div>
+            <div className="text-[9px] uppercase tracking-[0.18em] font-bold text-ink-700">CURRENT LEVEL</div>
+            <div className="flex items-baseline gap-1.5 mt-0.5">
+              <span className="font-display text-xl text-ink-100">LV</span>
+              <span className="font-mono text-3xl font-bold tabular-nums text-ink-100 glow-text">{level.level}</span>
+            </div>
           </div>
 
-          <MeterBar pct={pct} height={8} label="XP to next level" />
+          <div className="text-right">
+            <div className="text-[9px] uppercase tracking-[0.18em] font-bold text-ink-700">CURRENT RANK</div>
+            <div className="flex items-center justify-end gap-1.5 mt-0.5">
+              <Shield size={20} weight="fill" color="#5fb2ff" className="drop-shadow-[0_0_8px_rgba(77,163,255,0.6)]" />
+              <span className="font-display text-2xl font-bold leading-none text-ink-100">{rank}</span>
+            </div>
+          </div>
+        </div>
 
-          <div className="flex items-baseline justify-between font-mono text-xs tabular-nums text-ink-700">
-            <span>
+        {/* Progress Bar & XP Stats */}
+        <div className="relative mb-4">
+          <MeterBar pct={pct} height={8} label="XP to next level" className="w-full" />
+          <div className="flex items-baseline justify-between font-mono text-xs tabular-nums mt-2">
+            <span className="font-semibold">
               <span className="text-accent-mid">{level.xpIntoLevel.toLocaleString()}</span> /{' '}
-              {level.xpForNext.toLocaleString()}
+              <span className="text-ink-100">{level.xpForNext.toLocaleString()}</span>{' '}
+              <span className="text-accent-mid">XP</span>
             </span>
-            <span>{level.totalXp.toLocaleString()} total</span>
+            <span className="text-ink-700">{level.totalXp.toLocaleString()} total</span>
+          </div>
+        </div>
+
+        {/* Bottom Metrics Bar: Weekly, Monthly, Streak, Quote */}
+        <div className="relative grid grid-cols-4 items-center gap-2 pt-3 border-t border-hair-faint">
+          <div>
+            <div className="font-mono text-sm font-bold text-ink-100">{streak?.consistency_7 ?? 0}% <span className="text-[10px] text-ink-700 font-normal">(7d)</span></div>
+            <div className="text-[8px] uppercase tracking-wider text-ink-700 font-semibold">WEEKLY</div>
+          </div>
+
+          <div>
+            <div className="font-mono text-sm font-bold text-ink-100">{streak?.consistency_28 ?? 0}% <span className="text-[10px] text-ink-700 font-normal">(28d)</span></div>
+            <div className="text-[8px] uppercase tracking-wider text-ink-700 font-semibold">MONTHLY</div>
+          </div>
+
+          <div className="flex items-center gap-1.5">
+            <Flame size={18} weight="fill" color="#5fb2ff" className="drop-shadow-[0_0_6px_rgba(77,163,255,0.6)]" />
+            <div>
+              <div className="text-[8px] uppercase tracking-wider text-ink-700 font-semibold">STREAK</div>
+              <div className="font-mono text-sm font-bold text-ink-100 leading-none">{streak?.arc_streak ?? 0}</div>
+            </div>
+          </div>
+
+          <div className="text-right border-l border-hair-faint pl-1">
+            <span className="block text-[8px] italic leading-tight text-ink-500">&ldquo;CONSISTENCY COMPOUNDS.&rdquo;</span>
           </div>
         </div>
       </div>
 
-      {streak && (
-        <p className="mt-3 font-mono text-xs tabular-nums text-faint">
-          {streak.consistency_7}% (7d) · {streak.consistency_28}% (28d) · streak {streak.arc_streak}
-        </p>
-      )}
+      {/* Weekly Review Action Banner */}
+      <button
+        type="button"
+        onClick={() => setReviewOpen(true)}
+        className="cut-sm relative mb-3 flex min-h-[50px] w-full items-center justify-between px-3.5 py-2.5 overflow-hidden text-left transition-all duration-200"
+        style={{
+          border: '1px solid rgba(77, 163, 255, 0.35)',
+          background: 'linear-gradient(180deg, rgba(12, 22, 38, 0.8), rgba(7, 13, 24, 0.9))',
+        }}
+      >
+        <div className="flex items-center gap-3 relative z-10">
+          <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-[8px] border border-accent/40 bg-accent-deep/40 text-accent-mid shadow-[0_0_10px_rgba(77,163,255,0.3)]">
+            <ChartBar size={18} weight="fill" color="#5fb2ff" />
+          </div>
+          <div>
+            <h3 className="font-display text-sm font-bold uppercase tracking-[0.14em] text-ink-100">
+              WEEKLY REVIEW
+            </h3>
+            <p className="text-[10px] uppercase tracking-[0.16em] text-ink-700 mt-0.5">
+              LOOK BACK. GO FURTHER.
+            </p>
+          </div>
+        </div>
 
-      <div className="mt-4">
-        <SecondaryButton onClick={() => setReviewOpen(true)}>Weekly review</SecondaryButton>
-      </div>
+        <CaretRight size={16} weight="bold" className="text-ink-700 relative z-10" />
+      </button>
 
       <AttributeBars />
+
       {reviewOpen && <WeeklyReview today={today} onClose={() => setReviewOpen(false)} />}
     </div>
   );
 }
 
-/**
- * One measured line: what it was on Day 0, what it is now.
- *
- * The Day-0 column is not stored anywhere and does not need to be. Every
- * number on this tab is a cumulative all-time count of things that did
- * not exist before the arc started, so its Day-0 value is zero by
- * construction — and a rate over zero attempts is not zero, it is
- * undefined, which is what the dash says. Printing that column is the
- * whole point of the screen: final/06 §5.5 makes REALITY the default
- * answer to "how am I doing?" from Day 30, and the honest answer is a
- * distance, not a score.
- */
 function Row({ label, day0, now }: { label: string; day0: string; now: string }) {
   const moved = now !== day0;
   return (
-    <div className="flex items-center gap-3 py-2.5" style={{ borderBottom: '1px solid var(--hair)' }}>
-      {/* The label is the only thing allowed to truncate. A number cut
-          short is a different number; a label cut short is still
-          recognisable next to its row. */}
-      <span className="min-w-0 flex-1 truncate text-sm text-ink-500">{label}</span>
+    <div className="flex items-center gap-3 py-2.5" style={{ borderBottom: '1px solid var(--hair-faint)' }}>
+      <span className="min-w-0 flex-1 truncate text-xs font-medium text-ink-300">{label}</span>
       <span className="w-[44px] shrink-0 text-right font-mono text-xs tabular-nums text-faint">
         {day0}
       </span>
       <span
         className={[
-          'w-[58px] shrink-0 text-right font-mono text-sm tabular-nums',
+          'w-[58px] shrink-0 text-right font-mono text-xs font-bold tabular-nums',
           moved ? 'text-accent-mid' : 'text-ink-700',
         ].join(' ')}
       >
@@ -221,18 +309,16 @@ function RealityTab() {
   ];
 
   return (
-    <div className="mt-4" data-testid="reality-tab">
-      <SectionLabel rule>Controlled</SectionLabel>
-      <p className="mt-2 text-xs leading-[1.5] text-faint">
+    <div className="cut-sm mt-3 p-4" data-testid="reality-tab" style={{ border: '1px solid rgba(77, 163, 255, 0.25)', background: 'linear-gradient(180deg, rgba(10, 20, 36, 0.8), rgba(5, 10, 20, 0.9))' }}>
+      <SectionLabel rule>Controlled Evidence</SectionLabel>
+      <p className="mt-1.5 text-xs leading-relaxed text-faint">
         Cumulative and all-time. Everything here started at zero.
       </p>
 
-      {/* Column heads, not a table header row: two words that have to
-          line up with the two number columns below and nothing else. */}
-      <div className="mt-4 flex items-center gap-3 pb-1.5">
-        <span className="min-w-0 flex-1" />
-        <span className="w-[44px] shrink-0 text-right text-xxs uppercase text-faint">Day 0</span>
-        <span className="w-[58px] shrink-0 text-right text-xxs uppercase text-ink-700">Now</span>
+      <div className="mt-3 flex items-center gap-3 pb-1.5 border-b border-hair-faint">
+        <span className="min-w-0 flex-1 text-xxs uppercase font-bold text-ink-700">Metric</span>
+        <span className="w-[44px] shrink-0 text-right text-xxs uppercase font-bold text-faint">Day 0</span>
+        <span className="w-[58px] shrink-0 text-right text-xxs uppercase font-bold text-accent-mid">Now</span>
       </div>
 
       {rows.map((r) => (
@@ -241,3 +327,4 @@ function RealityTab() {
     </div>
   );
 }
+

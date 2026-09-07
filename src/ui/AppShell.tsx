@@ -133,12 +133,11 @@ export function AppShell() {
 
       <nav
         aria-label="Primary"
-        className="relative z-0 flex shrink-0"
+        className="relative z-0 flex shrink-0 border-t border-accent/30 shadow-[0_-4px_20px_rgba(77,163,255,0.12)]"
         style={{
-          borderTop: '1px solid var(--hair)',
-          background: 'color-mix(in srgb, var(--panel-bot) 92%, transparent)',
-          paddingTop: 10,
-          paddingBottom: 'max(env(safe-area-inset-bottom), 12px)',
+          background: 'linear-gradient(180deg, rgba(6, 12, 22, 0.95), rgba(4, 7, 13, 0.98))',
+          paddingTop: 8,
+          paddingBottom: 'max(env(safe-area-inset-bottom), 10px)',
         }}
       >
         {TABS.map((tab) => {
@@ -152,30 +151,32 @@ export function AppShell() {
               key={tab.to}
               to={tab.to}
               onClick={() => handleTabClick(tab.to)}
-              className="flex min-h-tap flex-1 flex-col items-center justify-center gap-1.5"
+              className="flex min-h-tap flex-1 flex-col items-center justify-center gap-1 relative"
               style={{ color: active ? 'var(--accent-mid)' : 'var(--ink-900)' }}
             >
               <motion.span
-                // Scales harder than a button (0.88 vs 0.97) because the
-                // target is an icon, not a slab — a subtle press would be
-                // invisible at this size.
                 whileTap={{ scale: 0.88 }}
                 transition={{ type: 'spring', stiffness: 500, damping: 28 }}
-                className="flex flex-col items-center gap-1.5"
+                className="flex flex-col items-center gap-1 relative z-10"
               >
-                <Glyph
-                  size={20}
-                  weight={active ? 'fill' : 'regular'}
-                  // Through a token, not a literal: the contrast and
-                  // daylight themes turn every glow off, and a hardcoded
-                  // drop-shadow here would have been the one that ignored
-                  // them — a blue halo floating on a white nav bar.
-                  style={active ? { filter: 'var(--glow-icon, none)' } : undefined}
-                  aria-hidden
-                />
+                <div
+                  className="flex h-8 w-12 items-center justify-center rounded-[10px] transition-all duration-200"
+                  style={{
+                    background: active ? 'rgba(77, 163, 255, 0.16)' : 'transparent',
+                    border: active ? '1px solid rgba(77, 163, 255, 0.4)' : '1px solid transparent',
+                    boxShadow: active ? '0 0 12px rgba(77, 163, 255, 0.35)' : 'none',
+                  }}
+                >
+                  <Glyph
+                    size={19}
+                    weight={active ? 'fill' : 'regular'}
+                    style={active ? { filter: 'var(--glow-icon, none)', color: '#5fb2ff' } : undefined}
+                    aria-hidden
+                  />
+                </div>
                 <span
-                  className="text-micro uppercase"
-                  style={{ fontWeight: active ? 600 : 500 }}
+                  className="text-micro uppercase tracking-wider"
+                  style={{ fontWeight: active ? 700 : 500, color: active ? '#eaf3ff' : 'var(--ink-900)' }}
                 >
                   {tab.label}
                 </span>

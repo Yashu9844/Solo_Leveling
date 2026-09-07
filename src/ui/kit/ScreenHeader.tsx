@@ -86,7 +86,12 @@ interface SectionLabelProps {
 export function SectionLabel({ children, rule = false, className = '' }: SectionLabelProps) {
   return (
     <div className={['flex items-center gap-3', className].join(' ')}>
-      <span className="shrink-0 text-xxs uppercase text-ink-700">{children}</span>
+      {/* min-w-0, not shrink-0. A label that cannot shrink also cannot
+          wrap, and "INTERVIEW-READINESS BENCHMARK" in tracked uppercase
+          is wider than a 320px screen at text scale XL — it pushed the
+          whole Skills column 16px past the viewport. It wraps now, and
+          the rule takes whatever is left beside the last line. */}
+      <span className="min-w-0 text-xxs uppercase text-ink-700">{children}</span>
       {rule && <span className="hairline min-w-0 flex-1" aria-hidden />}
     </div>
   );

@@ -111,7 +111,14 @@ body {
   /* Art layers honour [data-art] without every component reading the
    * setting itself. */
   .art-layer {
-    opacity: var(--art-opacity);
+    /* Two independent dials, multiplied rather than overriding each
+       other: --art-opacity is the user's art-intensity setting, and
+       --art-theme-scale is what a theme needs from the plates. Every
+       plate in this app is a dark illustration, so the light theme has
+       to hold them back to a wash — and if the theme simply reassigned
+       --art-opacity, choosing "dim" on that theme would make the art
+       brighter than "full" did. */
+    opacity: calc(var(--art-opacity) * var(--art-theme-scale, 1));
     pointer-events: none;
   }
 }

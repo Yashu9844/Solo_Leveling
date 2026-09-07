@@ -166,7 +166,11 @@ export function AppShell() {
                 <Glyph
                   size={20}
                   weight={active ? 'fill' : 'regular'}
-                  style={active ? { filter: 'drop-shadow(0 0 8px var(--accent))' } : undefined}
+                  // Through a token, not a literal: the contrast and
+                  // daylight themes turn every glow off, and a hardcoded
+                  // drop-shadow here would have been the one that ignored
+                  // them — a blue halo floating on a white nav bar.
+                  style={active ? { filter: 'var(--glow-icon, none)' } : undefined}
                   aria-hidden
                 />
                 <span

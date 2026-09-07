@@ -219,7 +219,7 @@ The new configurable layer. `design/03-SETTINGS-AND-THEMING.md` is the spec.
 
 ## Phase 12 — Responsiveness & polish
 
-- [ ] **12.1** `playwright.config.ts`: projects for `320×568`, `360×640`, `430×932`,
+- [x] **12.1** `playwright.config.ts`: projects for `320×568`, `360×640`, `430×932`,
       `768×1024`, `1280×800` alongside Pixel 7. New `tests/e2e/responsive.spec.ts`: every
       route × every viewport — no horizontal scroll, every interactive element ≥44×44, no
       clipped text, nav never overlaps content. Run the worst case too: 320px × text scale
@@ -333,6 +333,7 @@ system §10 are required; neither may be traded for the other.
 | 11.1 | level-up + rank | Both on the `Moment` frame. `Moment` is portalled and z-60 now — it can fire from a sheet or the checkpoint screen, both already portalled. Reduced motion reads the app's motion setting first, then the OS: Moments suppress haptics and a JS phase machine, which CSS cannot do for them. **Plate zoom moved into the manifest**, so a plate carrying its own lettering cannot be cropped mid-word by whichever screen uses it next. |
 | 11.2 | the other four | MASTERY and EVIDENCE ACCEPTED share a new `ToastMoment` so the quiet half of the vocabulary cannot drift; EVIDENCE goes Gold, since something now exists in the world. CHECKPOINT is Gold and self-paced, with the same tick/cross squares as the checkpoint screen's gate. BOSS CLEARED keeps boss red on the Gold `boss-cleared` plate — the one place the two moods meet, noted in the file. |
 | 11.3 | phase 11 gate | 85/85. |
+| 12.1 | responsive spec | Six viewports x nine routes x two text scales, auditing four rules in one pass. The extra five projects run **only** this spec — behaviour does not change with width, and running all 85 tests six times would cost ten minutes a gate to re-prove the same facts. Came back with exactly one real failure across the whole matrix. |
 | — | plan v2 | User added: configurable settings/theming, explicit nav flowchart, mood-based art assignment. Saw all 11 plates — split into Blue Arc (effort) / Gold Horizon (evidence) / Boss. Added docs 02 and 03; replanned to 13 phases, 60 tasks. |
 
 ---

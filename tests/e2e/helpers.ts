@@ -33,6 +33,22 @@ export async function reachStep6(page: Page, name = 'Ada') {
   await page.getByRole('button', { name: 'Next' }).click(); // -> step 6
 }
 
+/**
+ * PROFILE -> Settings -> Data.
+ *
+ * The backup, paper-import and integrity cards moved off Profile in
+ * design/01 task 10.5, which design/00 §10 sanctions as long as the
+ * specs move with them in the same commit. Every spec that used to tap
+ * PROFILE and expect those cards calls this instead, so the next move
+ * costs one edit rather than nine.
+ */
+export async function openDataSettings(page: Page) {
+  await page.getByRole('link', { name: 'PROFILE' }).click();
+  await page.getByRole('button', { name: 'Settings' }).click();
+  await page.getByTestId('settings-data-row').click();
+  await expect(page.getByTestId('data-screen')).toBeVisible();
+}
+
 /** Full fresh-boot onboarding flow, landing on /today. */
 export async function completeOnboarding(page: Page, name = 'Ada') {
   await reachStep6(page, name);

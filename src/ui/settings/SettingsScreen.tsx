@@ -1,4 +1,4 @@
-import { Info, PaintBrush } from '@phosphor-icons/react';
+import { Database, Info, PaintBrush, SlidersHorizontal } from '@phosphor-icons/react';
 import { useNavigate } from 'react-router-dom';
 import { useSettings } from '../../store/SettingsContext';
 import { ACCENTS } from '../../store/settings';
@@ -38,6 +38,20 @@ export function SettingsScreen() {
               value={summary}
               onClick={() => navigate('/profile/settings/appearance')}
               testId="settings-appearance-row"
+            />
+            <SettingsRow
+              icon={SlidersHorizontal}
+              label="System"
+              description="Reminders, the day's hours, this device"
+              onClick={() => navigate('/profile/settings/system')}
+              testId="settings-system-row"
+            />
+            <SettingsRow
+              icon={Database}
+              label="Data"
+              description="Backup, paper import, storage, integrity"
+              onClick={() => navigate('/profile/settings/data')}
+              testId="settings-data-row"
             />
             <SettingsRow
               icon={Info}

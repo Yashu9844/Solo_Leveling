@@ -1,5 +1,5 @@
 import { test, expect, type Page } from '@playwright/test';
-import { completeOnboarding, waitForQuestInstanceState } from './helpers';
+import { completeOnboarding, openDataSettings, waitForQuestInstanceState } from './helpers';
 import * as fs from 'fs';
 import * as os from 'os';
 import * as path from 'path';
@@ -23,7 +23,7 @@ test('importing a daily-log CSV completes real quests for a past day', async ({ 
   const csv = 'date,dsa,bld,trn,slp,fue,att,wake,sleep,scrn,energy,focus,blocker,note\n' + '2026-09-01,1,1,1,1,1,1,06:34,23:10,47,3,4,none,paper day';
   const csvFile = writeTmpCsv('daily-log', csv);
 
-  await page.getByRole('link', { name: 'PROFILE' }).click();
+  await openDataSettings(page);
   await page.getByRole('button', { name: 'Import daily log CSV' }).click();
   // The button click above just opens a native picker; drive the
   // (hidden) file input directly instead of the dialog.
@@ -48,7 +48,7 @@ test('importing a DSA-log CSV creates a real logged problem', async ({ page }) =
   const csv = 'date,problem,topic,diff,outcome,min,insight\n2026-09-01,Two Sum,arrays,E,first,8,';
   const csvFile = writeTmpCsv('dsa-log', csv);
 
-  await page.getByRole('link', { name: 'PROFILE' }).click();
+  await openDataSettings(page);
   await page.getByRole('button', { name: 'Import DSA log CSV' }).click();
   await page.getByTestId('paper-import-dsa-input').setInputFiles(csvFile);
 
@@ -67,7 +67,7 @@ test('a malformed CSV row is reported and not silently imported', async ({ page 
   const csv = 'date,dsa,bld,trn,slp,fue,att\nnot-a-date,1,1,1,1,1,1';
   const csvFile = writeTmpCsv('bad-daily-log', csv);
 
-  await page.getByRole('link', { name: 'PROFILE' }).click();
+  await openDataSettings(page);
   await page.getByRole('button', { name: 'Import daily log CSV' }).click();
   await page.getByTestId('paper-import-daily-input').setInputFiles(csvFile);
 

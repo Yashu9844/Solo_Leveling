@@ -88,6 +88,10 @@ interface SettingsRowProps {
    * that mode, including when it is false.
    */
   selected?: boolean;
+  /** Suppresses the chevron on a row that does something rather than
+   * going somewhere — "Verify integrity" runs a check and stays put, and
+   * a chevron there promises a screen that never arrives. */
+  chevron?: boolean;
   /** A control rendered on its own line below the label — Segmented for
    * three or fewer choices (§4). */
   control?: ReactNode;
@@ -110,6 +114,7 @@ export function SettingsRow({
   value,
   onClick,
   selected,
+  chevron = true,
   control,
   tone = 'default',
   disabled = false,
@@ -148,7 +153,8 @@ export function SettingsRow({
             {selected && <Check size={15} weight="bold" color="var(--accent-mid)" aria-hidden />}
           </span>
         ) : (
-          onClick && <CaretRight size={14} color="var(--ink-900)" aria-hidden className="shrink-0" />
+          onClick &&
+          chevron && <CaretRight size={14} color="var(--ink-900)" aria-hidden className="shrink-0" />
         )}
       </div>
       {control && <div className="mt-3 w-full">{control}</div>}

@@ -199,9 +199,10 @@ The new configurable layer. `design/03-SETTINGS-AND-THEMING.md` is the spec.
 - [x] **10.4** Implement the five themes in `tokens.css` to the §5 bar: measured contrast
       recorded per theme, states still shape-coded, theme-aware `ArtLayer` scrims.
       Gate: fast.
-- [ ] **10.5** System group (reminder times, review times, week start) and Data group
-      (move the existing backup / import / paper-import / integrity cards here, leaving
-      Profile focused on the arc). About group. Gate: fast.
+- [x] **10.5** System group (reminder times — real, via `PLAN_AMENDED` — plus the arc's
+      read-only hours) and Data group (backup / paper-import / storage / integrity moved
+      off Profile). **Review times and week start are absent, not stubbed:** the engine
+      has no such concepts. About shipped in 10.2. Gate: fast + the three moved specs.
 - [ ] **10.6** New `tests/e2e/settings.spec.ts`: each theme applies and persists across
       reload; text scale XL doesn't overflow at 320px; motion=reduced kills animation;
       art=off falls back to gradients; settings survive `resetArc`. ⛓ Gate: full.
@@ -326,6 +327,7 @@ system §10 are required; neither may be traded for the other.
 | 10.2 | settings shell | Child routes of the profile tab, so the nav stays lit — needed a prefix match on the tab, not equality. `SettingsRow` gained a `selected` mode: a chevron promises tapping goes somewhere, and a theme row goes nowhere, so those get a check and a radiogroup instead. Shipped only the two sections that exist; System and Data arrive in 10.5 with their screens. |
 | 10.3 | live preview | Sticky, not fixed — fixed escapes the scroll container and lands on the bottom nav. Shows the four things every setting touches: section label, quest row, meter, display serif. Its quote line drops under 640px of height, where pinned it was taking half a 320x568 screen at text scale XL and competing with the list it exists to serve. |
 | 10.4 | five themes | Swept all five themes x four screens x {390/M, 320/XL} with a scripted overflow check. **Two real bugs:** `SectionLabel` was `shrink-0`, so a long label could not wrap and pushed Skills 16px past a 320px screen at XL; and the plates are all dark illustrations, which on the light theme read as ink blots — added `--art-theme-scale`, multiplied with the user's art setting so "dim" cannot come out brighter than "full". Also found the nav's hardcoded icon glow, the one glow the no-glow themes could not turn off. |
+| 10.5 | system + data | Reminders edit the real implementation intentions through `PLAN_AMENDED`, the event that existed for exactly this and had no caller after onboarding. The arc's hours are shown read-only: every streak and checkpoint was computed against them. Review times and week start are omitted — the evening review has no time gate and the weekly review measures a rolling seven days, so those knobs would change nothing. Data cards moved off Profile; three specs moved with them under §10's sanctioned-exception rule, behind one `openDataSettings` helper. |
 | — | plan v2 | User added: configurable settings/theming, explicit nav flowchart, mood-based art assignment. Saw all 11 plates — split into Blue Arc (effort) / Gold Horizon (evidence) / Boss. Added docs 02 and 03; replanned to 13 phases, 60 tasks. |
 
 ---

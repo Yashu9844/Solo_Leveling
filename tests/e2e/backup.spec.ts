@@ -1,5 +1,5 @@
 import { test, expect, type Page } from '@playwright/test';
-import { completeOnboarding, waitForQuestInstanceState } from './helpers';
+import { completeOnboarding, openDataSettings, waitForQuestInstanceState } from './helpers';
 import * as fs from 'fs';
 import * as os from 'os';
 import * as path from 'path';
@@ -17,7 +17,7 @@ test('export downloads a real JSON backup, and importing it back restores state 
   await page.getByRole('button', { name: 'Complete CAREER' }).click();
   await waitForQuestInstanceState(page, 'CAREER', '2026-09-05', 'complete');
 
-  await page.getByRole('link', { name: 'PROFILE' }).click();
+  await openDataSettings(page);
   await expect(page.getByTestId('backup-card')).toBeVisible();
 
   const downloadPromise = page.waitForEvent('download');
@@ -41,21 +41,23 @@ test('export downloads a real JSON backup, and importing it back restores state 
   await page.reload();
   await expect(page).toHaveURL(/\/start$/);
 
-  // Now import the backup from the fresh (onboarding) state — the
-  // import button lives on Profile, which requires an arc to view, so
-  // this exercises importing directly from a state with the smallest
-  // possible existing data (Profile isn't reachable pre-onboarding in
-  // this app, so instead we drive the file input that already exists
-  // once an arc exists — re-onboard minimally first).
+  // Now import the backup from the fresh (onboarding) state. The
+  // import button lives behind Settings > Data, which requires an
+  // arc to reach, so this exercises importing from the smallest possible
+  // existing data: re-onboard minimally first, then drive the file input
+  // that exists once an arc does.
   await completeOnboarding(page, 'Temp');
-  await page.getByRole('link', { name: 'PROFILE' }).click();
+  await openDataSettings(page);
 
   await page.getByTestId('backup-import-input').setInputFiles(tmpFile);
   const confirmBox = page.getByTestId('import-confirm');
   await expect(confirmBox).toBeVisible();
   await confirmBox.getByRole('button', { name: 'Replace and import' }).click();
 
-  await page.waitForURL(/\/(profile|today)$/, { timeout: 10000 });
+  // Import reloads the page, so it comes back wherever it was — which
+  // is now /profile/settings/data, not /profile. Anchored at the start
+  // rather than the end so the assertion survives the depth.
+  await page.waitForURL(/\/(profile|today)/, { timeout: 10000 });
   await page.getByRole('link', { name: 'TODAY' }).click();
   await expect(page.getByRole('button', { name: 'Undo CAREER' })).toBeVisible();
 

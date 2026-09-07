@@ -14,14 +14,10 @@ import { getTotalXp } from '../../store/playerState';
 import { pauseArc, resumeArc } from '../../store/pause';
 import { db } from '../../db/db';
 import { getAllEvents } from '../../db/events';
-import { verifyIntegrity, type IntegrityReport } from '../../db/projections';
 import { AttributeBars } from '../components/AttributeBars';
 import { CheckpointScreen } from '../checkpoint/CheckpointScreen';
 import { BossList } from '../components/BossList';
 import { AchievementsList } from '../components/AchievementsList';
-import { InstallCard } from '../components/InstallCard';
-import { BackupCard } from '../components/BackupCard';
-import { PaperImportCard } from '../components/PaperImportCard';
 import { BodyMetricsCard } from '../components/BodyMetricsCard';
 import { CheckpointInstrumentsCard } from '../components/CheckpointInstrumentsCard';
 import { FramedPanel, MeterBar, Panel, ScreenHeader, SectionLabel, SecondaryButton } from '../kit';
@@ -72,15 +68,11 @@ export function Profile() {
         <DayZeroBaselineRow />
         <BodyMetricsCard />
         <ArcPauseControl />
-        <BackupCard />
-        <PaperImportCard />
-        <InstallCard />
-        {import.meta.env.DEV && (
-          <>
-            <DevResetArc />
-            <DevVerifyIntegrity />
-          </>
-        )}
+        {/* Backup, paper import, install and the integrity check moved to
+            Settings > Data (design/01 task 10.5). Profile answers "who am
+            I in this system"; those answer "is my data safe", and they
+            were competing for the same screen. */}
+        {import.meta.env.DEV && <DevResetArc />}
       </div>
     </>
   );
@@ -373,14 +365,14 @@ function DevResetArc() {
 }
 
 /**
- * Quarantine for the two dev-only blocks.
+ * Quarantine for the dev-only reset.
  *
- * They are fenced in --state-alert deliberately, and it is the one use
- * of that colour that is not itself an error: these buttons destroy
- * data, they never ship (import.meta.env.DEV is false in a build), and
- * while they are on screen they must not be mistakable for part of the
- * app. The dashed edge says the same thing a second way, for anyone who
- * cannot separate the two tones.
+ * It is fenced in --state-alert deliberately, and it is the one use of
+ * that colour that is not itself an error: the button destroys data, it
+ * never ships (import.meta.env.DEV is false in a build), and while it is
+ * on screen it must not be mistakable for part of the app. The dashed
+ * edge says the same thing a second way, for anyone who cannot separate
+ * the two tones.
  */
 function DevBlock({ children, className = '' }: { children: ReactNode; className?: string }) {
   return (
@@ -391,50 +383,5 @@ function DevBlock({ children, className = '' }: { children: ReactNode; className
       <div className="text-xxs uppercase tracking-wide text-state-alert">Dev only</div>
       {children}
     </div>
-  );
-}
-
-/**
- * DEV-only. Runs verifyIntegrity() (db/projections.ts) and prints the
- * report — rebuilds quest_template/quest_instance/xp_ledger from the
- * event log in memory and diffs against the live tables, without writing
- * anything.
- */
-function DevVerifyIntegrity() {
-  const [report, setReport] = useState<IntegrityReport | null>(null);
-  const [running, setRunning] = useState(false);
-
-  async function handleVerify() {
-    setRunning(true);
-    const result = await verifyIntegrity(DEFAULT_CONFIG, realDeps);
-    setReport(result);
-    setRunning(false);
-  }
-
-  return (
-    <DevBlock className="mt-4">
-      <button
-        type="button"
-        disabled={running}
-        onClick={() => void handleVerify()}
-        className="cut-sm mt-3 w-full px-4 text-xs font-medium uppercase tracking-button text-state-alert disabled:opacity-40"
-        style={{ minHeight: 46, border: '1px solid var(--state-alert)' }}
-      >
-        {running ? 'Verifying…' : 'Verify integrity'}
-      </button>
-      {report && (
-        <div className="mt-3 text-xs text-faint">
-          {report.clean ? (
-            <p>Clean — rebuild matches the live tables exactly.</p>
-          ) : (
-            <ul className="list-disc space-y-1 pl-4">
-              {report.discrepancies.map((line) => (
-                <li key={line}>{line}</li>
-              ))}
-            </ul>
-          )}
-        </div>
-      )}
-    </DevBlock>
   );
 }

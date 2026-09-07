@@ -32,6 +32,19 @@ A modern, fully configurable appearance and application settings layer.
 Reminder times (the three implementation-intention alarms from onboarding) · evening
 review time · weekly review day · week starts on · show day-boundary hint.
 
+> **As built, only the first of these exists**, and the omission is deliberate. Editing a
+> reminder is real: it appends `PLAN_AMENDED`, the event that has existed since Slice 1 for
+> exactly this and had no caller after onboarding, and the quest templates regenerate from
+> it. The rest are not concepts this engine has — the evening review is available all day
+> until it is done, and the weekly review measures a rolling seven days ending today rather
+> than a calendar week. A control that changes nothing is not configuration, so the System
+> screen shows the arc's hours read-only instead, with the reason on screen: every streak,
+> rollup and checkpoint in the record was computed against them.
+>
+> Reminders are also the one setting that is **not** in localStorage. §2's line is about
+> device preferences; an implementation intention is a commitment the arc is measured
+> against, and when you changed it is part of the record.
+
 ### Data
 
 Export backup · import backup · paper import · storage used · verify integrity.

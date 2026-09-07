@@ -93,8 +93,18 @@ flowchart TD
 ```
 
 Settings is a **child route of the profile tab**, so the bottom nav stays visible and the
-frozen four-tab contract is untouched. Appearance sub-pickers are pushed routes on mobile,
-not modals — they are content, not interruptions.
+frozen four-tab contract is untouched. Sub-screens are pushed routes on mobile, not modals
+— they are content, not interruptions.
+
+**As built**, the sections are `appearance`, `system` (with `system/:questKey` for editing
+one implementation intention), `data` and `about`. Appearance turned out not to need
+pushed pickers: every one of its controls fits inline under a pinned live preview, and a
+push per setting would have put a navigation between you and seeing what you changed.
+
+One thing this required: `AppShell` matched the active tab by string equality, so PROFILE
+went dark the moment you opened settings. It is a **prefix** match — `pathname === tab.to ||
+pathname.startsWith(tab.to + '/')` — or the nav contradicts the route hierarchy it is
+supposed to express.
 
 ---
 

@@ -237,7 +237,7 @@ The new configurable layer. `design/03-SETTINGS-AND-THEMING.md` is the spec.
 
 ## Phase 13 — Close out
 
-- [ ] **13.1** Docs: superseded-by pointers in `final/06` §4 and §6, refresh the design
+- [x] **13.1** Docs: superseded-by pointers in `final/06` §4 and §6, refresh the design
       docs with anything learned, document `npm run art` for future uploads. Gate: fast.
 - [ ] **13.2** Final ⛓ full gate on a clean tree. Write `## Handover`: what changed,
       screenshots of every screen at 360×640 in the default theme, slots still on gradient
@@ -339,6 +339,7 @@ system §10 are required; neither may be traded for the other.
 | 12.3 | a11y | **The focus ring was invisible on most of the app** — `clip-path` clips an outline, and nearly every control wears a bevel; drawn as an inset pseudo-element it survives, and inherits the bevel for free. XP figure is now a polite live region. The per-theme contrast audit became a test that recomputes the ratios instead of trusting the comments: it found daylight's floor at 4.37:1 against a comment claiming 4.6, and eighteen other comments that understated the truth. |
 | 12.4 | budgets | Art was 2,220 KB against a 1,600 KB budget. The 960w variant was 23% wider than the largest thing the app can draw — it is a 430px column at every breakpoint — and width costs area, so 880w gave back a third of the weight for pixels no screen was using; quality did the rest. `MAX_TOTAL_BYTES` is now the real budget rather than a 4 MB sanity ceiling, so the build fails if a future plate breaks it. |
 | 12.5 | stragglers | The five leftover components moved onto v2 tokens; `ChipToggle` and `SingleChipSelect` now share one chip treatment, since they are one control with different arity and matched before only by coincidence. `DotPicker` keeps filled-vs-hollow glyphs so the choice survives the colour being removed. v1 aliases deleted from both files after grepping every `var()` and every class name for references. |
+| 13.1 | docs | Superseded-by pointers on `final/06` §4 (tokens + the dark-only line), §6 (430px column, no left rail) and §3's settings cut. Design system §2.6 rewritten to the real numbers and given the add-art recipe; §8's matrix now names the projects that exist; §9.5 is new — six traps that each cost a real bug, written down so the next change does not re-find them. |
 | — | plan v2 | User added: configurable settings/theming, explicit nav flowchart, mood-based art assignment. Saw all 11 plates — split into Blue Arc (effort) / Gold Horizon (evidence) / Boss. Added docs 02 and 03; replanned to 13 phases, 60 tasks. |
 
 ---

@@ -109,28 +109,45 @@ screen may look unfinished because art hasn't arrived.
 ### 2.6 Pipeline (the source PNGs are 1.8–2.5 MB each)
 
 `scripts/import-art.mjs` (sharp, devDependency) reads `design/art.manifest.json`
-(slot → `{ source, mood, focal }`) and emits per slot into `src/assets/art/`:
+(slot → `{ source, mood, focal, text, zoom, note }`) and emits per slot into
+`src/assets/art/`:
 
-- `<slot>-480.webp` (q66) and `<slot>-960.webp` (q55)
+- `<slot>-440.webp` (q58) and `<slot>-880.webp` (q37)
 - a 20px blurred LQIP as an inline base64 data URI
 
 then regenerates a typed `src/assets/art/index.ts` exporting
-`{ src, srcSet, lqip, width, height, mood, focal, hasText }`.
+`{ src, srcSet, lqip, width, height, mood, focal, hasText, zoom }`.
 
-Widths are 480/960 rather than 640/1280 because the app is a 430px column at every
-breakpoint — 960 already covers 2x on the widest phone, and 1280 would ship pixels nothing
-can display. Quality is tuned low on purpose: every plate sits under a 45–85% scrim, and
-often at `--art-opacity: 0.45`, so anything above ~q60 is bytes the user cannot perceive.
+Widths are 440/880 rather than 640/1280 because the app is a 430px column at every
+breakpoint — 880 covers 2x on the widest frame it can ever draw, and 1280 would ship
+pixels nothing can display. Quality is tuned low on purpose: every plate sits under a
+45–85% scrim, and often at `--art-opacity: 0.45`, so anything above ~q60 is bytes the user
+cannot perceive.
 
-**Budget: ≤ 170 KB per file.** That per-file number is the one that matters — a screen
-loads exactly one plate, so it *is* the per-screen art weight a phone pays. The total is
-only a sanity ceiling (4 MB), because art is deliberately **not precached**: it is
-runtime-cached on first view, so the sum on disk is never downloaded in one go. Capping the
-total tightly would just force a quality cut on existing plates every time a new one
-arrives. The script fails loudly on any breach. Idempotent and re-runnable: new art is a
-manifest line plus `npm run art`, never a component change.
+`zoom` is the plate's own default crop scale. Several plates carry their own lettering
+down a margin, and a phone viewport is narrower than the source aspect, so `cover` slices
+that text mid-word — half a word reads as a rendering fault. The scale that clears it
+belongs to the plate rather than to whichever screen uses it first, so `ArtLayer` inherits
+it and only overrides deliberately.
 
-Current: **16/16 slots filled, 2.2 MB on disk, largest single file 154 KB.**
+**Two budgets, both enforced — the script fails loudly on either.**
+
+- **≤ 170 KB per file.** The one a user feels: a screen loads exactly one plate, so this
+  *is* the per-screen art weight a phone pays.
+- **≤ 1.6 MB for the library** (design/01 task 12.4). Art is deliberately **not
+  precached** — `vite.config.ts` keeps webp out of `globPatterns` and runtime-caches it
+  instead — so this is what a device accumulates over a few days of use, never a download
+  on install.
+
+Idempotent and re-runnable: new art is a manifest line plus `npm run art`, never a
+component change.
+
+**Adding art later.** Drop the PNG in the manifest's `sourceDir`, add a slot entry naming
+it (with `mood`, a `focal` hint, `text: true` if it carries its own lettering, and a `zoom`
+if that lettering needs cropping out), then `npm run art`. Nothing else changes; a slot
+with no source renders the procedural gradient and the screen still looks finished.
+
+Current: **16/16 slots filled, 1,619 KB on disk (cap 1,638), largest single file 112 KB.**
 
 ---
 
@@ -340,7 +357,12 @@ glyph, or make a state colour-only.
 9. 44px minimum touch target everywhere, at every text scale and density. Tested.
 10. Text scale to 200% without breakage.
 
-Playwright matrix: `320×568`, `360×640`, `393×852`, `430×932`, `768×1024`, `1280×800`.
+Playwright matrix, as built: `320×568`, `360×640`, `412×915` (Pixel 7, the project the
+whole suite runs on), `430×932`, `768×1024`, `1280×800` — `tests/e2e/responsive.spec.ts`,
+which audits rules 3, 6, 9 and 10 plus nav-over-content on every route, at the default text
+scale, at XL, and across all five themes. The five extra projects run that spec and nothing
+else: behaviour does not change with width, and running the whole suite six times would
+cost ten minutes a gate to re-prove the same facts.
 
 ---
 
@@ -350,6 +372,36 @@ Contrast ≥ 4.5:1 for body text in **every theme** (measured per theme, not ass
 targets · motion setting fully honoured · every state has a shape · semantic landmarks ·
 `aria-live` on XP · art layers `aria-hidden` + `pointer-events-none` · a visible 2px
 `--accent-bright` focus ring, never `outline:none` without a replacement.
+
+**Two of these were wrong in the build until a test measured them.**
+
+*The focus ring was invisible almost everywhere.* `clip-path` clips an element's outline
+along with everything else, and nearly every control here wears a bevel — so the perfectly
+correct `:focus-visible { outline: … }` rule drew a ring nobody could see. The fix is an
+inset pseudo-element (`inset: 2px; border: 2px solid`), which sits inside the clipped
+region and, because the parent's `clip-path` also clips it, picks up the bevel for free.
+**Anything with a `cut-*` class needs the inset ring, not an outline.**
+
+*The measured contrast ratios were comments, so nothing checked them.* One theme's floor
+had drifted to 4.37:1 under a comment claiming 4.6, and eighteen other comments understated
+their real ratio. `tests/engine/theme-contrast.test.ts` now recomputes every ink ratio from
+the hex against that theme's own `--void` and asserts both the floor and that the comment
+still tells the truth. **A number in a comment is a wish; a number in a test is a fact.**
+
+---
+
+## 9.5 Traps found the hard way
+
+Each of these cost a real bug. They are here so the next change does not re-find them.
+
+| Trap | What happens | The rule |
+|---|---|---|
+| `Panel`'s border is a second element wrapping the content | A margin passed to the inner element opens a gap *inside* the card and closes the gap *between* cards; a `max-width` there leaves the border colour showing as a band | `className` positions the card (outer), `bodyClassName` styles its contents (inner) |
+| `shrink-0` on a flex text item | An item that cannot shrink also cannot wrap, so a long label pushes the whole column past the viewport — `SectionLabel` did this to Skills at 320px/XL | `min-w-0` for anything holding text; `shrink-0` only for fixed-size things |
+| A plate's own lettering | Cover-cropping a wide plate into a phone column slices its baked-in tagline mid-word, which reads as a rendering fault | `zoom` lives in `art.manifest.json`, per plate — never at the call site |
+| Full-screen overlays left in place | Route content sits under a CSS animation, which makes a stacking context `position: fixed` cannot escape; the bottom nav then swallows every tap | Portal to `<body>`. Sheets, Moments and the checkpoint screen all do |
+| A screenshot script waiting on a timeout | A cold load re-runs the splash hold, so a fixed wait photographs the splash — a whole theme sweep was measured against the wrong screen | Wait for `nav`, never for milliseconds |
+| A tap target that has to stay small | Growing the maintenance chips to 44px pushed the sixth quest row below the fold and broke §5.2's budget | 44px box, negative margin: the margin box keeps the old height, the thumb gets the full one |
 
 ---
 

@@ -1,4 +1,6 @@
 import { useEffect, useState } from 'react';
+import { Moment } from '../kit';
+import { momentMotionReduced } from './motion';
 
 interface BossClearedMomentProps {
   bossId: string;
@@ -6,22 +8,23 @@ interface BossClearedMomentProps {
   onDismiss: () => void;
 }
 
-function prefersReducedMotion(): boolean {
-  return typeof window !== 'undefined' && window.matchMedia?.('(prefers-reduced-motion: reduce)').matches;
-}
-
 type Phase = 'start' | 'rule' | 'label' | 'title';
 
 /**
- * Full screen, 1100ms — final/05 §2.1: "the heaviest" of the six
- * Moments. Same visual language as LevelUpMoment (monospace, one
- * accent, near-black ground, no gradients/particles/glow/sound) at a
- * longer, weightier timing: rule sweeps L->R (400ms), boss number
- * cross-fades (400ms), title fades in (300ms). Dismissible on any tap;
- * prefers-reduced-motion shows the final state immediately.
+ * Full screen, 1100ms — final/05 §2.1 calls this "the heaviest" of the
+ * six Moments: the rule sweeps (400ms), the boss number cross-fades
+ * (400ms), the title fades in (300ms). Timings, haptics and the
+ * reduced-motion path are unchanged.
+ *
+ * Boss red on the `boss-cleared` plate, which the slot map assigns the
+ * Gold mood. That pairing is deliberate and it is the only place in the
+ * app the two moods meet: the plate is what is on the other side of the
+ * fight, and the red frame is the boss's own colour, showing up once
+ * more on the way out. Everywhere else --boss stays confined to the
+ * BossList, which is what lets it keep meaning "a live threat".
  */
 export function BossClearedMoment({ bossId, bossTitle, onDismiss }: BossClearedMomentProps) {
-  const reduced = prefersReducedMotion();
+  const reduced = momentMotionReduced();
   const [phase, setPhase] = useState<Phase>(reduced ? 'title' : 'start');
 
   useEffect(() => {
@@ -43,41 +46,47 @@ export function BossClearedMoment({ bossId, bossTitle, onDismiss }: BossClearedM
   const titleVisible = reduced || phase === 'title';
 
   return (
-    <div
-      className="fixed inset-0 z-50 flex flex-col items-center justify-center gap-4 bg-bg"
-      onClick={onDismiss}
-      role="button"
-      tabIndex={0}
-      aria-label={`Boss ${bossId} cleared. Dismiss.`}
+    <Moment
+      label={`Boss ${bossId} cleared. Dismiss.`}
+      onDismiss={onDismiss}
+      tone="boss"
+      slot="boss-cleared"
     >
-      <div className="text-xxs uppercase tracking-wide text-text-dim">BOSS CLEARED</div>
+      <div className="flex flex-col items-center text-center">
+        <p className="text-xxs uppercase tracking-wide text-ink-700">Boss cleared</p>
 
-      <div
-        className={[
-          'font-mono text-2xl tabular-nums text-text transition-all',
-          reduced ? '' : 'duration-[400ms] ease-out',
-          labelVisible ? 'translate-y-0 opacity-100' : 'translate-y-[8px] opacity-0',
-        ].join(' ')}
-      >
-        BOSS {bossId}
+        <p
+          className={[
+            'glow-text mt-4 font-mono text-3xl tabular-nums text-ink-100 transition-all',
+            reduced ? '' : 'duration-[400ms] ease-out',
+            labelVisible ? 'translate-y-0 opacity-100' : 'translate-y-[8px] opacity-0',
+          ].join(' ')}
+        >
+          BOSS {bossId}
+        </p>
+
+        <span
+          className={['mt-5 h-px transition-all', reduced ? '' : 'duration-[400ms] ease-out'].join(
+            ' '
+          )}
+          style={{
+            width: ruleVisible ? '14rem' : '0',
+            background: 'var(--boss)',
+            boxShadow: '0 0 20px rgba(255, 77, 109, 0.35)',
+          }}
+          aria-hidden
+        />
+
+        <p
+          className={[
+            'mt-5 font-display text-lg leading-tight text-ink-100 transition-opacity',
+            reduced ? '' : 'duration-[300ms]',
+            titleVisible ? 'opacity-100' : 'opacity-0',
+          ].join(' ')}
+        >
+          {bossTitle}
+        </p>
       </div>
-
-      <div
-        className={['h-px bg-accent transition-all', reduced ? '' : 'duration-[400ms] ease-out'].join(' ')}
-        style={{ width: ruleVisible ? '16rem' : '0' }}
-      />
-
-      <div
-        className={[
-          'text-sm text-text-dim transition-opacity',
-          reduced ? '' : 'duration-[300ms]',
-          titleVisible ? 'opacity-100' : 'opacity-0',
-        ].join(' ')}
-      >
-        {bossTitle}
-      </div>
-
-      <div className="mt-8 text-xxs uppercase tracking-wide text-text-faint">tap anywhere</div>
-    </div>
+    </Moment>
   );
 }

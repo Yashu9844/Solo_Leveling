@@ -21,6 +21,16 @@ interface MomentProps {
   slot?: ArtSlot;
   /** Shown at the foot. Omitted when a Moment has its own instruction. */
   hint?: string;
+  testId?: string;
+  /**
+   * Exposed as `data-step`, for the one Moment that has steps.
+   *
+   * CHECKPOINT is self-paced rather than timed (final/05 §2.1), and
+   * checkpoint-moment.spec drives it by asserting which step it is on.
+   * A general escape hatch for arbitrary DOM props would be a worse
+   * trade than one named prop with a reason attached.
+   */
+  dataStep?: number;
 }
 
 /**
@@ -43,6 +53,8 @@ export function Moment({
   tone = 'accent',
   slot,
   hint = 'tap anywhere',
+  testId,
+  dataStep,
 }: MomentProps) {
   // Back dismisses the Moment rather than leaving the screen behind it.
   useBackDismiss(true, onDismiss);
@@ -62,6 +74,8 @@ export function Moment({
         onKeyDown={(e) => {
           if (e.key === 'Enter' || e.key === ' ' || e.key === 'Escape') onDismiss();
         }}
+        data-testid={testId}
+        data-step={dataStep}
         className="fixed inset-0 z-[60] flex flex-col items-center justify-center overflow-hidden px-gutter"
         style={{ background: 'var(--void)' }}
       >

@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react';
-import { Portal } from '../kit';
+import { momentMotionReduced } from './motion';
+import { ToastMoment } from './ToastMoment';
 
 interface MasteryMomentProps {
   topic: string;
@@ -14,19 +15,18 @@ const STATE_LABELS: Record<MasteryMomentProps['state'], string> = {
   retained: 'Retained',
 };
 
-function prefersReducedMotion(): boolean {
-  return typeof window !== 'undefined' && window.matchMedia?.('(prefers-reduced-motion: reduce)').matches;
-}
-
 /**
  * Card overlay, 600ms — final/05 §2.1. Quieter than a full-screen
  * Moment by design: a mastery transition happens mid-session, often
- * right after logging a problem or a block, and shouldn't stop what
- * you were doing the way LEVEL UP or BOSS CLEARED do. Auto-dismisses
- * after its 600ms unless tapped sooner; never blocks input underneath.
+ * right after logging a problem or a block, and shouldn't stop what you
+ * were doing the way LEVEL UP or BOSS CLEARED do. Auto-dismisses after
+ * its 600ms unless tapped sooner; never blocks input underneath.
+ *
+ * The accessible name is frozen — learning-block.spec finds this with
+ * getByRole('button', { name: /Operating Systems advanced to Introduced/ }).
  */
 export function MasteryMoment({ topic, state, onDismiss }: MasteryMomentProps) {
-  const reduced = prefersReducedMotion();
+  const reduced = momentMotionReduced();
   const [visible, setVisible] = useState(reduced);
 
   useEffect(() => {
@@ -46,31 +46,14 @@ export function MasteryMoment({ topic, state, onDismiss }: MasteryMomentProps) {
   }, []);
 
   return (
-    // Portalled: this fires from inside a log sheet, and that sheet is
-    // itself portalled to <body>. Left in place it would render inside
-    // the screen's stacking context and lose to the sheet above it —
-    // the celebration would be covered by the form that triggered it.
-    <Portal>
-      <div
-        className="fixed inset-x-0 bottom-20 z-[60] flex justify-center px-4"
-      onClick={onDismiss}
-      role="button"
-      tabIndex={0}
-      aria-label={`${topic} advanced to ${STATE_LABELS[state]}. Dismiss.`}
+    <ToastMoment
+      label={`${topic} advanced to ${STATE_LABELS[state]}. Dismiss.`}
+      onDismiss={onDismiss}
+      visible={visible}
+      still={reduced}
+      kicker="Mastery"
     >
-      <div
-        className={[
-          'flex items-center gap-3 rounded-md border border-accent bg-surface px-4 py-3 shadow-lg transition-all',
-          reduced ? '' : 'duration-300 ease-out',
-          visible ? 'translate-y-0 opacity-100' : 'translate-y-2 opacity-0',
-        ].join(' ')}
-      >
-        <span className="text-xxs uppercase tracking-wide text-text-faint">MASTERY</span>
-        <span className="font-mono text-sm text-text">
-          {topic} → {STATE_LABELS[state]}
-        </span>
-        </div>
-      </div>
-    </Portal>
+      {topic} <span className="text-accent-mid">→</span> {STATE_LABELS[state]}
+    </ToastMoment>
   );
 }

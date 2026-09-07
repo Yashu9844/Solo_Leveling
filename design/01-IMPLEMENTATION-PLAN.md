@@ -213,9 +213,9 @@ The new configurable layer. `design/03-SETTINGS-AND-THEMING.md` is the spec.
 - [x] **11.1** `LevelUpMoment` (Blue) and `RankAdvancedMoment` (**Gold** — evidence) on the
       `Moment` base. Keep existing phase timings, haptics and reduced-motion path exactly.
       Gate: fast.
-- [ ] **11.2** `BossClearedMoment` (Boss), `MasteryMoment`, `EvidenceAcceptedMoment`,
+- [x] **11.2** `BossClearedMoment` (Boss), `MasteryMoment`, `EvidenceAcceptedMoment`,
       `CheckpointMoment` (Gold). Gate: fast.
-- [ ] **11.3** ⛓ Gate: full — `checkpoint-moment`.
+- [x] **11.3** ⛓ Gate: full — **85/85.** Phase 11 complete.
 
 ## Phase 12 — Responsiveness & polish
 
@@ -331,6 +331,8 @@ system §10 are required; neither may be traded for the other.
 | 10.5 | system + data | Reminders edit the real implementation intentions through `PLAN_AMENDED`, the event that existed for exactly this and had no caller after onboarding. The arc's hours are shown read-only: every streak and checkpoint was computed against them. Review times and week start are omitted — the evening review has no time gate and the weekly review measures a rolling seven days, so those knobs would change nothing. Data cards moved off Profile; three specs moved with them under §10's sanctioned-exception rule, behind one `openDataSettings` helper. |
 | 10.6 | settings spec | Five tests, 85/85 overall. The overflow test drives the real 320px viewport rather than trusting a screenshot, and waits on the nav — a cold load re-runs the splash hold, and a fixed timeout measures the splash. Motion asserts a parsed number, not Chromium's `1e-05s` string. |
 | 11.1 | level-up + rank | Both on the `Moment` frame. `Moment` is portalled and z-60 now — it can fire from a sheet or the checkpoint screen, both already portalled. Reduced motion reads the app's motion setting first, then the OS: Moments suppress haptics and a JS phase machine, which CSS cannot do for them. **Plate zoom moved into the manifest**, so a plate carrying its own lettering cannot be cropped mid-word by whichever screen uses it next. |
+| 11.2 | the other four | MASTERY and EVIDENCE ACCEPTED share a new `ToastMoment` so the quiet half of the vocabulary cannot drift; EVIDENCE goes Gold, since something now exists in the world. CHECKPOINT is Gold and self-paced, with the same tick/cross squares as the checkpoint screen's gate. BOSS CLEARED keeps boss red on the Gold `boss-cleared` plate — the one place the two moods meet, noted in the file. |
+| 11.3 | phase 11 gate | 85/85. |
 | — | plan v2 | User added: configurable settings/theming, explicit nav flowchart, mood-based art assignment. Saw all 11 plates — split into Blue Arc (effort) / Gold Horizon (evidence) / Boss. Added docs 02 and 03; replanned to 13 phases, 60 tasks. |
 
 ---

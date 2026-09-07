@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import type { ComparisonRow, GateCondition } from '../../engine/rank';
+import { Moment } from '../kit';
 
 interface CheckpointMomentProps {
   day: number;
@@ -14,14 +15,26 @@ interface CheckpointMomentProps {
 /**
  * final/05 §2.1's CHECKPOINT Moment: "Sequence, self-paced" — the one
  * Moment with no timer anywhere. Every other Moment auto-resolves
- * (700ms-1100ms full-screen, 600ms card); this is deliberately the
+ * (700ms–1100ms full-screen, 600ms card); this is deliberately the
  * opposite, since final/06 §5.8 calls the checkpoint report "the most
- * important screen in the product" and that isn't something to read on
- * a clock. Three steps, advanced by tap: the rank line, the vs-previous-
- * checkpoint comparison, then the gate checklist + verdict — tapping
- * the last step dismisses.
+ * important screen in the product" and that is not something to read on
+ * a clock. Three steps, advanced by tap: the rank line, the comparison
+ * against the previous checkpoint, then the gate checklist and verdict —
+ * tapping the last step dismisses.
+ *
+ * Gold Horizon, on the `checkpoint` plate, matching the screen it comes
+ * out of: a sealed checkpoint is the app's one statement that something
+ * in the real world changed.
  */
-export function CheckpointMoment({ day, rankBefore, rankAfter, rows, conditions, verdictText, onDismiss }: CheckpointMomentProps) {
+export function CheckpointMoment({
+  day,
+  rankBefore,
+  rankAfter,
+  rows,
+  conditions,
+  verdictText,
+  onDismiss,
+}: CheckpointMomentProps) {
   const [step, setStep] = useState(0);
   const rankAdvanced = rankAfter !== rankBefore;
   const lastStep = 2;
@@ -35,37 +48,54 @@ export function CheckpointMoment({ day, rankBefore, rankAfter, rows, conditions,
   }
 
   return (
-    <div
-      className="fixed inset-0 z-50 flex flex-col items-center justify-center bg-bg px-6"
-      onClick={advance}
-      role="button"
-      tabIndex={0}
-      aria-label="Checkpoint report. Tap to continue."
-      data-testid="checkpoint-moment"
-      data-step={step}
+    <Moment
+      label="Checkpoint report. Tap to continue."
+      onDismiss={advance}
+      tone="dawn"
+      slot="checkpoint"
+      hint="tap to continue"
+      testId="checkpoint-moment"
+      dataStep={step}
     >
       {step === 0 && (
-        <div className="flex flex-col items-center gap-3 text-center">
-          <span className="text-xxs uppercase tracking-wide text-text-faint">CHECKPOINT · DAY {day}</span>
+        <div className="flex flex-col items-center gap-4 text-center">
+          <span className="text-xxs uppercase tracking-wide text-ink-700">
+            CHECKPOINT · DAY {day}
+          </span>
           {rankAdvanced ? (
-            <span className="font-mono text-4xl text-text">
+            <span className="glow-text font-display text-display leading-none text-dawn-core">
               {rankBefore} → {rankAfter}
             </span>
           ) : (
-            <span className="font-mono text-3xl text-text">SEALED</span>
+            <span className="glow-text font-mono text-3xl tabular-nums text-ink-100">SEALED</span>
           )}
-          <div className="mt-2 h-px w-16 bg-accent" />
+          <span
+            className="mt-1 h-px w-16"
+            style={{ background: 'var(--dawn)', boxShadow: '0 0 20px rgba(232,161,60,0.35)' }}
+            aria-hidden
+          />
         </div>
       )}
 
       {step === 1 && (
-        <div className="w-full max-w-sm">
-          <div className="mb-4 text-center text-xxs uppercase tracking-wide text-text-faint">vs previous checkpoint</div>
-          <div className="space-y-2">
+        <div className="w-full">
+          <p className="mb-4 text-center text-xxs uppercase tracking-wide text-ink-700">
+            vs previous checkpoint
+          </p>
+          <div className="flex flex-col">
             {rows.map((row) => (
-              <div key={row.label} className="flex items-center justify-between border-b border-border pb-2">
-                <span className="text-sm text-text-dim">{row.label}</span>
-                <span className={`font-mono text-sm ${row.improved ? 'text-accent' : 'text-text'}`}>
+              <div
+                key={row.label}
+                className="flex items-baseline gap-3 py-2.5"
+                style={{ borderBottom: '1px solid var(--hair-faint)' }}
+              >
+                <span className="min-w-0 flex-1 truncate text-sm text-ink-500">{row.label}</span>
+                <span
+                  className={[
+                    'shrink-0 font-mono text-sm tabular-nums',
+                    row.improved ? 'text-dawn-bright' : 'text-ink-700',
+                  ].join(' ')}
+                >
                   {row.before} → {row.after}
                 </span>
               </div>
@@ -75,18 +105,33 @@ export function CheckpointMoment({ day, rankBefore, rankAfter, rows, conditions,
       )}
 
       {step === 2 && (
-        <div className="w-full max-w-sm">
-          <p className="mb-4 text-center text-sm text-text">{verdictText}</p>
-          <div className="space-y-1">
+        <div className="w-full">
+          <p className="mb-5 text-center font-display text-[calc(16px*var(--type-scale))] leading-[1.45] text-ink-100">
+            {verdictText}
+          </p>
+          <ul className="flex flex-col gap-2">
             {conditions.map((c, i) => (
-              <p key={i} className={`text-xs ${c.met ? 'text-text-dim' : 'text-text-faint'}`}>
-                {c.met ? '✓' : '✗'} {c.label}
-              </p>
+              <li key={i} className="flex items-start gap-2.5 text-xs leading-[1.45]">
+                {/* Same shape language as the checkpoint screen's gate —
+                    filled square with a tick, hollow with a cross, so
+                    the list reads without relying on colour. */}
+                <span
+                  aria-hidden
+                  className="mt-[1px] flex h-[16px] w-[16px] shrink-0 items-center justify-center text-[10px] leading-none"
+                  style={{
+                    background: c.met ? 'var(--dawn)' : 'transparent',
+                    border: `1px solid ${c.met ? 'var(--dawn)' : 'var(--hair)'}`,
+                    color: c.met ? 'var(--void)' : 'var(--ink-500)',
+                  }}
+                >
+                  {c.met ? '✓' : '✗'}
+                </span>
+                <span className={c.met ? 'text-ink-300' : 'text-ink-700'}>{c.label}</span>
+              </li>
             ))}
-          </div>
-          <p className="mt-6 text-center text-xxs uppercase tracking-wide text-text-faint">tap to continue</p>
+          </ul>
         </div>
       )}
-    </div>
+    </Moment>
   );
 }

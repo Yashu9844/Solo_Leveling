@@ -1,14 +1,11 @@
 import { useEffect, useState } from 'react';
-import { Portal } from '../kit';
+import { momentMotionReduced } from './motion';
+import { ToastMoment } from './ToastMoment';
 
 interface EvidenceAcceptedMomentProps {
   kind: string;
   title: string;
   onDismiss: () => void;
-}
-
-function prefersReducedMotion(): boolean {
-  return typeof window !== 'undefined' && window.matchMedia?.('(prefers-reduced-motion: reduce)').matches;
 }
 
 /**
@@ -17,9 +14,16 @@ function prefersReducedMotion(): boolean {
  * the same event that grants the SHIP bonus). Same quiet, non-blocking
  * treatment as MasteryMoment: this happens inline with logging a BUILD
  * session, not as a standalone celebration.
+ *
+ * Gold, unlike MASTERY. This one is evidence — something now exists in
+ * the world that did not before — and design/00 §2.2 keeps that
+ * distinction in colour everywhere it appears.
+ *
+ * "EVIDENCE ACCEPTED" is frozen: weekly-review.spec finds and clicks
+ * that exact text to dismiss this.
  */
 export function EvidenceAcceptedMoment({ kind, title, onDismiss }: EvidenceAcceptedMomentProps) {
-  const reduced = prefersReducedMotion();
+  const reduced = momentMotionReduced();
   const [visible, setVisible] = useState(reduced);
 
   useEffect(() => {
@@ -39,31 +43,15 @@ export function EvidenceAcceptedMoment({ kind, title, onDismiss }: EvidenceAccep
   }, []);
 
   return (
-    // Portalled: this fires from inside a log sheet, and that sheet is
-    // itself portalled to <body>. Left in place it would render inside
-    // the screen's stacking context and lose to the sheet above it —
-    // the celebration would be covered by the form that triggered it.
-    <Portal>
-      <div
-        className="fixed inset-x-0 bottom-20 z-[60] flex justify-center px-4"
-      onClick={onDismiss}
-      role="button"
-      tabIndex={0}
-      aria-label={`Evidence accepted: ${title}. Dismiss.`}
+    <ToastMoment
+      label={`Evidence accepted: ${title}. Dismiss.`}
+      onDismiss={onDismiss}
+      visible={visible}
+      still={reduced}
+      kicker="EVIDENCE ACCEPTED"
+      tone="dawn"
     >
-      <div
-        className={[
-          'flex items-center gap-3 rounded-md border border-accent bg-surface px-4 py-3 shadow-lg transition-all',
-          reduced ? '' : 'duration-300 ease-out',
-          visible ? 'translate-y-0 opacity-100' : 'translate-y-2 opacity-0',
-        ].join(' ')}
-      >
-        <span className="text-xxs uppercase tracking-wide text-text-faint">EVIDENCE ACCEPTED</span>
-        <span className="font-mono text-sm text-text">
-          {kind} · {title}
-        </span>
-        </div>
-      </div>
-    </Portal>
+      {kind} · {title}
+    </ToastMoment>
   );
 }

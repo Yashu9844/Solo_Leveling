@@ -392,17 +392,3 @@
     --gutter: 18px;
   }
 }
-
-/* ══════════════════════════════════════════════════════════════════════
- * 4. v1 ALIASES — removed in task 12.5.
- * Every one points at a v2 value, so the palette moves everywhere at
- * once rather than screen by screen and no surface is ever half-migrated.
- * ══════════════════════════════════════════════════════════════════════ */
-:root {
-  --bg: var(--void);
-  --border: var(--hair);
-  --text: var(--ink-300);
-  --text-dim: var(--ink-700);
-  --text-faint: var(--faint);
-  --accent-dim: var(--accent-deep);
-}

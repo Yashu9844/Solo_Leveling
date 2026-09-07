@@ -56,15 +56,27 @@ export function DeepWorkTimer({ onStop }: DeepWorkTimerProps) {
   }
 
   return (
-    <div className="flex items-center justify-between rounded-md border border-border p-2">
-      <span className="font-mono text-sm tabular-nums text-text-dim" data-testid="deep-work-elapsed">
+    <div
+      className="cut-sm flex items-center justify-between gap-3 px-3 py-2"
+      style={{ border: '1px solid var(--hair)', background: 'var(--surface)' }}
+    >
+      <span
+        className={[
+          'shrink-0 font-mono text-sm tabular-nums',
+          // Lit while it is counting, so a glance says whether the clock
+          // is running without reading the button on the other side.
+          running ? 'glow-text text-accent-mid' : 'text-ink-700',
+        ].join(' ')}
+        data-testid="deep-work-elapsed"
+      >
         {formatElapsed(elapsedMs)}
       </span>
       {!running ? (
         <button
           type="button"
           onClick={handleStart}
-          className="min-h-[36px] rounded-md border border-accent px-3 text-xs text-accent"
+          className="cut-sm min-h-tap px-3 text-xs text-accent"
+          style={{ border: '1px solid var(--accent)' }}
         >
           Start deep work
         </button>
@@ -72,7 +84,8 @@ export function DeepWorkTimer({ onStop }: DeepWorkTimerProps) {
         <button
           type="button"
           onClick={handleStop}
-          className="min-h-[36px] rounded-md border border-border px-3 text-xs text-text-dim"
+          className="cut-sm min-h-tap px-3 text-xs text-ink-500"
+          style={{ border: '1px solid var(--hair)' }}
         >
           Stop · use {Math.max(1, Math.round(elapsedMs / 60000))} min
         </button>

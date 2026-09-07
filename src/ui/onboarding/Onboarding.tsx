@@ -225,7 +225,7 @@ export function Onboarding({ onComplete }: OnboardingProps) {
 
   return (
     <ScreenShell>
-      <div className="relative flex flex-1 flex-col overflow-hidden text-text">
+      <div className="relative flex flex-1 flex-col overflow-hidden text-ink-100">
         {showArt && <ArtLayer slot="onboarding" scrim="moment" priority={step === 1} />}
 
         <div className="relative flex min-h-0 flex-1 flex-col">
@@ -650,7 +650,7 @@ function Step6Baseline({
           />
         </Field>
       </div>
-      <p className="text-xs text-text-faint">
+      <p className="text-xs text-faint">
         Body fat — skip for now. Yours is unknown; it stays unknown and optional until you have a
         method you trust.
       </p>

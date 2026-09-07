@@ -9,7 +9,7 @@ interface DotPickerProps {
 export function DotPicker({ label, value, onChange }: DotPickerProps) {
   return (
     <div className="flex items-center justify-between">
-      <span className="text-sm text-text-dim">{label}</span>
+      <span className="text-sm text-ink-500">{label}</span>
       <div className="flex gap-2">
         {[1, 2, 3, 4, 5].map((n) => (
           <button
@@ -18,11 +18,17 @@ export function DotPicker({ label, value, onChange }: DotPickerProps) {
             onClick={() => onChange(n)}
             aria-label={`${label} ${n} of 5`}
             aria-pressed={value === n}
-            className={[
-              'flex h-[44px] w-[44px] items-center justify-center rounded-pill border text-lg',
-              value === n ? 'border-accent bg-accent text-bg' : 'border-state-pending text-state-pending',
-            ].join(' ')}
+            className="flex h-[44px] w-[44px] items-center justify-center rounded-pill text-lg transition-colors duration-150"
+            style={{
+              border: `1px solid ${value === n ? 'var(--accent)' : 'var(--hair)'}`,
+              background: value === n ? 'var(--accent)' : 'transparent',
+              color: value === n ? 'var(--on-accent)' : 'var(--ink-900)',
+              boxShadow: value === n ? 'var(--glow-sm)' : 'none',
+            }}
           >
+            {/* Filled versus hollow, not colour alone — final/06 §7. The
+                glyph is what makes the chosen dot readable with the
+                colour removed. */}
             {value === n ? '●' : '○'}
           </button>
         ))}

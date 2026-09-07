@@ -17,7 +17,7 @@ export function ChipToggle({ options, selected, onChange, label }: ChipTogglePro
 
   return (
     <div>
-      {label && <div className="mb-1 text-xxs uppercase tracking-wide text-text-dim">{label}</div>}
+      {label && <div className="mb-2 text-xxs uppercase tracking-wide text-ink-700">{label}</div>}
       <div className="flex flex-wrap gap-2">
         {options.map((option) => {
           const active = selected.includes(option);
@@ -27,12 +27,12 @@ export function ChipToggle({ options, selected, onChange, label }: ChipTogglePro
               type="button"
               onClick={() => toggle(option)}
               aria-pressed={active}
-              className={[
-                'min-h-[44px] rounded-pill border px-3 text-sm',
-                active
-                  ? 'border-accent bg-accent-dim text-text'
-                  : 'border-border bg-surface-2 text-text-dim',
-              ].join(' ')}
+              className="min-h-tap rounded-pill px-4 text-sm transition-colors duration-150"
+              style={{
+                border: `1px solid ${active ? 'var(--accent)' : 'var(--hair)'}`,
+                background: active ? 'var(--fill-faint)' : 'var(--surface-2)',
+                color: active ? 'var(--accent-mid)' : 'var(--ink-500)',
+              }}
             >
               {option}
             </button>

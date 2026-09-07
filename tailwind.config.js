@@ -61,14 +61,6 @@ export default {
         'state-recover': 'var(--state-recover)',
         'state-alert': 'var(--state-alert)',
         boss: 'var(--boss)',
-
-        // ── v1 aliases, removed in task 12.5 ──
-        bg: 'var(--bg)',
-        border: 'var(--border)',
-        text: 'var(--text)',
-        'text-dim': 'var(--text-dim)',
-        'text-faint': 'var(--text-faint)',
-        'accent-dim': 'var(--accent-dim)',
       },
       fontFamily: {
         sans: ['Inter', 'system-ui', '-apple-system', 'Segoe UI', 'Roboto', 'sans-serif'],

@@ -51,6 +51,34 @@ body {
   border-radius: 2px;
 }
 
+/*
+ * The same ring, for anything wearing a bevel.
+ *
+ * clip-path clips an element's outline along with everything else, so
+ * the rule above renders a completely invisible focus ring on every
+ * button, panel and card in this app — which is most of them. Drawing
+ * it as an inset pseudo-element instead puts it inside the clipped
+ * region, where it survives; and because the parent's clip-path also
+ * clips the pseudo-element, the ring picks up the bevel for free
+ * instead of sitting square inside a cut corner.
+ */
+.cut-sm:focus-visible,
+.cut-md:focus-visible,
+.cut-lg:focus-visible {
+  outline: none;
+  position: relative;
+}
+
+.cut-sm:focus-visible::after,
+.cut-md:focus-visible::after,
+.cut-lg:focus-visible::after {
+  content: '';
+  position: absolute;
+  inset: 2px;
+  border: 2px solid var(--accent-bright);
+  pointer-events: none;
+}
+
 @layer utilities {
   /* The reference's signature panel shape — a bevel off two opposite
    * corners. clip-path rather than border-radius because the cut has to

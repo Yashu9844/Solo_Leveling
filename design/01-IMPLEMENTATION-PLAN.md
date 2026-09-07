@@ -226,7 +226,7 @@ The new configurable layer. `design/03-SETTINGS-AND-THEMING.md` is the spec.
       XL. Gate: fast (this spec is expected to fail here; 12.2 fixes it).
 - [x] **12.2** Green at all six viewports **and** all five themes. ⛓ Gate: full —
       **103/103.**
-- [ ] **12.3** A11y: motion setting honoured everywhere; focus ring on every control;
+- [x] **12.3** A11y: motion setting honoured everywhere; focus ring on every control;
       per-theme contrast audit; `aria-live` on XP; art layers `aria-hidden`. Gate: fast.
 - [ ] **12.4** Performance: initial JS ≤ 320 KB gz, art ≤ 1.6 MB, precache ≤ 3 MB,
       **tap→XP < 300 ms re-asserted**. Trim icon/font imports if over. Gate: fast.
@@ -335,6 +335,7 @@ system §10 are required; neither may be traded for the other.
 | 11.3 | phase 11 gate | 85/85. |
 | 12.1 | responsive spec | Six viewports x nine routes x two text scales, auditing four rules in one pass. The extra five projects run **only** this spec — behaviour does not change with width, and running all 85 tests six times would cost ten minutes a gate to re-prove the same facts. Came back with exactly one real failure across the whole matrix. |
 | 12.2 | responsive fixes | One real defect in the whole matrix: the maintenance chips were 24px. Making them 44px pushed the sixth quest row below the fold and broke §5.2's budget, so they are 44px with 10px of negative margin — the margin box still occupies 24px of the strip while the thumb lands on the full height. Added a themes-lay-out-identically test; it stamps the attribute and navigates by tapping, because twenty cold loads spent most of a minute re-watching the splash. |
+| 12.3 | a11y | **The focus ring was invisible on most of the app** — `clip-path` clips an outline, and nearly every control wears a bevel; drawn as an inset pseudo-element it survives, and inherits the bevel for free. XP figure is now a polite live region. The per-theme contrast audit became a test that recomputes the ratios instead of trusting the comments: it found daylight's floor at 4.37:1 against a comment claiming 4.6, and eighteen other comments that understated the truth. |
 | — | plan v2 | User added: configurable settings/theming, explicit nav flowchart, mood-based art assignment. Saw all 11 plates — split into Blue Arc (effort) / Gold Horizon (evidence) / Boss. Added docs 02 and 03; replanned to 13 phases, 60 tasks. |
 
 ---

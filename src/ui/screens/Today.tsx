@@ -333,7 +333,17 @@ export function Today() {
               LV <span className="font-mono text-sm tabular-nums text-ink-100">{levelState.level}</span>
             </span>
             <MeterBar pct={barPct} testId="xp-bar-fill" label="XP to next level" className="min-w-0 flex-1" />
-            <span className="shrink-0 font-mono text-xs tabular-nums text-ink-700">
+            {/* Announced, because completing a quest changes this number
+                and nothing else says so out loud. The meter beside it is
+                a progressbar, which a screen reader reports only when
+                focused; this is the running total, and it is the thing
+                the whole loop is feedback about. */}
+            <span
+              className="shrink-0 font-mono text-xs tabular-nums text-ink-700"
+              role="status"
+              aria-live="polite"
+              aria-atomic="true"
+            >
               <span className="text-accent-mid">{levelState.xpIntoLevel}</span>/{levelState.xpForNext}
             </span>
           </div>

@@ -65,7 +65,20 @@ export function MaintenanceCard({ today, arcId, arcStartDate, onChanged }: Maint
             onClick={() => void toggle(field)}
             disabled={saving}
             aria-pressed={active}
-            className="rounded-pill px-2.5 py-0.5 text-xs transition-colors duration-150 disabled:opacity-60"
+            // A full 44px target inside a 24px pill.
+            //
+            // These were 24px tall — too small to hit with a thumb, which
+            // final/06 §7 does not treat as negotiable. But simply making
+            // them 44px cost 20px of vertical space and pushed the sixth
+            // quest row below the fold, breaking §5.2's hard budget that
+            // core-loop.spec enforces at 412x915.
+            //
+            // So the button is 44px and gives back 10px of margin at top
+            // and bottom: its margin box still occupies the original
+            // 24px of the strip, while the thing a thumb actually lands
+            // on is the full height. The tap area is invisible, not
+            // absent — the same trick QuietButton uses.
+            className="-my-[10px] flex min-h-tap items-center rounded-pill px-3 text-xs transition-colors duration-150 disabled:opacity-60"
             style={{
               border: `1px solid ${active ? 'var(--accent)' : 'var(--hair)'}`,
               background: active ? 'var(--fill-faint)' : 'var(--surface-2)',

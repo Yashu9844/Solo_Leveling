@@ -152,3 +152,43 @@ test('the worst case: text scale XL, comfortable density', async ({ page }) => {
   }
   expect(found, found.join('\n')).toEqual([]);
 });
+
+/**
+ * Layout is theme-independent by construction — no theme changes a font
+ * size, a padding or a rule width, only colour. This is what makes that
+ * a checked property rather than an assumption.
+ *
+ * It audits the four tabs rather than all nine routes: the settings
+ * screens are built from one list primitive, so running them through
+ * five themes would re-prove the same fact five times for a third of the
+ * suite's runtime.
+ */
+const THEMES = ['arc', 'dawn', 'abyss', 'contrast', 'daylight'] as const;
+const TABS = ['TODAY', 'PROGRESS', 'SKILLS', 'PROFILE'] as const;
+
+test('all five themes lay out identically', async ({ page }) => {
+  await boot(page);
+  await goto(page, '/today');
+
+  const found: string[] = [];
+  for (const theme of THEMES) {
+    // Stamped directly, and navigated by tapping the nav rather than by
+    // page.goto. Twenty cold loads would spend most of a minute
+    // re-watching the splash hold, and this test is not about the
+    // localStorage bootstrap — settings.spec already covers that path.
+    // The attribute is the mechanism every rule in tokens.css keys off,
+    // so setting it is setting the theme.
+    await page.evaluate((t) => {
+      document.documentElement.dataset.theme = t;
+    }, theme);
+
+    for (const tab of TABS) {
+      await page.getByRole('link', { name: tab }).click();
+      await page.waitForTimeout(300);
+      for (const p of await auditPage(page)) {
+        found.push(`${tab} @${theme}: ${p.what} — ${p.detail}`);
+      }
+    }
+  }
+  expect(found, found.join('\n')).toEqual([]);
+});

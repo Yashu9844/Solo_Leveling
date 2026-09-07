@@ -224,8 +224,8 @@ The new configurable layer. `design/03-SETTINGS-AND-THEMING.md` is the spec.
       route × every viewport — no horizontal scroll, every interactive element ≥44×44, no
       clipped text, nav never overlaps content. Run the worst case too: 320px × text scale
       XL. Gate: fast (this spec is expected to fail here; 12.2 fixes it).
-- [ ] **12.2** Fix every failure until green at all six viewports **and** all five themes.
-      ⛓ Gate: full.
+- [x] **12.2** Green at all six viewports **and** all five themes. ⛓ Gate: full —
+      **103/103.**
 - [ ] **12.3** A11y: motion setting honoured everywhere; focus ring on every control;
       per-theme contrast audit; `aria-live` on XP; art layers `aria-hidden`. Gate: fast.
 - [ ] **12.4** Performance: initial JS ≤ 320 KB gz, art ≤ 1.6 MB, precache ≤ 3 MB,
@@ -334,6 +334,7 @@ system §10 are required; neither may be traded for the other.
 | 11.2 | the other four | MASTERY and EVIDENCE ACCEPTED share a new `ToastMoment` so the quiet half of the vocabulary cannot drift; EVIDENCE goes Gold, since something now exists in the world. CHECKPOINT is Gold and self-paced, with the same tick/cross squares as the checkpoint screen's gate. BOSS CLEARED keeps boss red on the Gold `boss-cleared` plate — the one place the two moods meet, noted in the file. |
 | 11.3 | phase 11 gate | 85/85. |
 | 12.1 | responsive spec | Six viewports x nine routes x two text scales, auditing four rules in one pass. The extra five projects run **only** this spec — behaviour does not change with width, and running all 85 tests six times would cost ten minutes a gate to re-prove the same facts. Came back with exactly one real failure across the whole matrix. |
+| 12.2 | responsive fixes | One real defect in the whole matrix: the maintenance chips were 24px. Making them 44px pushed the sixth quest row below the fold and broke §5.2's budget, so they are 44px with 10px of negative margin — the margin box still occupies 24px of the strip while the thumb lands on the full height. Added a themes-lay-out-identically test; it stamps the attribute and navigates by tapping, because twenty cold loads spent most of a minute re-watching the splash. |
 | — | plan v2 | User added: configurable settings/theming, explicit nav flowchart, mood-based art assignment. Saw all 11 plates — split into Blue Arc (effort) / Gold Horizon (evidence) / Boss. Added docs 02 and 03; replanned to 13 phases, 60 tasks. |
 
 ---

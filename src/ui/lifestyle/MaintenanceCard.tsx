@@ -17,11 +17,8 @@ const ITEMS: { field: 'bath' | 'fuel' | 'laundry'; label: string }[] = [
 ];
 
 /** final/04 §6 — one zero-pressure row, excluded from core-completion %,
- * every attribute, and every rank gate. Ticking is auto-saved (no submit
- * button). Deliberately one compact row of pills rather than a stacked
- * checklist — final/06's "six rows reachable without scrolling" budget on
- * Today leaves no room for a taller card here (a Slice 9 layout fix after
- * the first version overflowed the Pixel 7 viewport in e2e). */
+ * every attribute, and every rank gate. Ticking is auto-saved.
+ * Redesigned into cut-corner HUD pills inside a dark glass panel without vertical overflow. */
 export function MaintenanceCard({ today, arcId, arcStartDate, onChanged }: MaintenanceCardProps) {
   const [state, setState] = useState({ bath: false, fuel: false, laundry: false });
   const [laundryDue, setLaundryDue] = useState(false);
@@ -51,44 +48,48 @@ export function MaintenanceCard({ today, arcId, arcStartDate, onChanged }: Maint
 
   return (
     <div
-      className="cut-sm mt-2 flex flex-wrap items-center gap-1.5 px-3 py-1.5"
+      className="cut-sm mt-3 p-3 flex flex-wrap items-center justify-between gap-2 transition-all duration-200"
       data-testid="maintenance-card"
-      style={{ border: '1px solid var(--hair)', background: 'var(--surface)' }}
+      style={{
+        border: '1px solid rgba(77, 163, 255, 0.32)',
+        background: 'linear-gradient(180deg, rgba(10, 20, 36, 0.85), rgba(5, 10, 20, 0.95))',
+        boxShadow: '0 0 14px rgba(77, 163, 255, 0.1)',
+      }}
     >
-      <span className="text-xxs uppercase text-ink-700">Maint</span>
-      {visibleItems.map(({ field, label }) => {
-        const active = state[field];
-        return (
-          <button
-            key={field}
-            type="button"
-            onClick={() => void toggle(field)}
-            disabled={saving}
-            aria-pressed={active}
-            // A full 44px target inside a 24px pill.
-            //
-            // These were 24px tall — too small to hit with a thumb, which
-            // final/06 §7 does not treat as negotiable. But simply making
-            // them 44px cost 20px of vertical space and pushed the sixth
-            // quest row below the fold, breaking §5.2's hard budget that
-            // core-loop.spec enforces at 412x915.
-            //
-            // So the button is 44px and gives back 10px of margin at top
-            // and bottom: its margin box still occupies the original
-            // 24px of the strip, while the thing a thumb actually lands
-            // on is the full height. The tap area is invisible, not
-            // absent — the same trick QuietButton uses.
-            className="-my-[10px] flex min-h-tap items-center rounded-pill px-3 text-xs transition-colors duration-150 disabled:opacity-60"
-            style={{
-              border: `1px solid ${active ? 'var(--accent)' : 'var(--hair)'}`,
-              background: active ? 'var(--fill-faint)' : 'var(--surface-2)',
-              color: active ? 'var(--accent-mid)' : 'var(--ink-900)',
-            }}
-          >
-            {label}
-          </button>
-        );
-      })}
+      <div className="flex items-center gap-2">
+        <span className="inline-block h-1.5 w-1.5 rounded-full bg-accent-mid shadow-[0_0_6px_#5fb2ff]" />
+        <span className="text-[9px] font-mono font-bold uppercase tracking-[0.22em] text-accent-mid">
+          MAINT
+        </span>
+      </div>
+
+      <div className="flex flex-wrap items-center gap-2">
+        {visibleItems.map(({ field, label }) => {
+          const active = state[field];
+          return (
+            <button
+              key={field}
+              type="button"
+              onClick={() => void toggle(field)}
+              disabled={saving}
+              aria-pressed={active}
+              className={[
+                'cut-sm flex min-h-[36px] items-center gap-1.5 px-3 py-1 text-xs font-semibold tracking-wide transition-all duration-150 disabled:opacity-60',
+                active
+                  ? 'text-accent-mid bg-accent-deep/45 border-accent/60 shadow-[0_0_10px_rgba(77,163,255,0.3)]'
+                  : 'text-ink-300 bg-black/40 border-hair-faint hover:border-accent/40',
+              ].join(' ')}
+              style={{
+                borderStyle: 'solid',
+                borderWidth: '1px',
+              }}
+            >
+              {active && <span className="text-[10px] text-accent-mid font-bold" aria-hidden>✓</span>}
+              <span>{label}</span>
+            </button>
+          );
+        })}
+      </div>
     </div>
   );
 }

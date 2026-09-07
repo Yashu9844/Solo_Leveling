@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useState, type ReactNode } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { GearSix } from '@phosphor-icons/react';
+import { GearSix, Shield, Sparkle, Trophy, User } from '@phosphor-icons/react';
 import { DEFAULT_CONFIG } from '../../engine/config';
 import { levelFor } from '../../engine/level';
 import { arcDay, localDate } from '../../engine/time';
@@ -20,7 +20,7 @@ import { BossList } from '../components/BossList';
 import { AchievementsList } from '../components/AchievementsList';
 import { BodyMetricsCard } from '../components/BodyMetricsCard';
 import { CheckpointInstrumentsCard } from '../components/CheckpointInstrumentsCard';
-import { FramedPanel, MeterBar, Panel, ScreenHeader, SectionLabel, SecondaryButton } from '../kit';
+import { ArtLayer, FramedPanel, MeterBar, Panel, ScreenHeader, SectionLabel, SecondaryButton } from '../kit';
 
 const CHECKPOINT_DAYS: Checkpoint['day'][] = [14, 30, 60, 90, 120];
 const ARC_LENGTH_DAYS = 120;
@@ -39,27 +39,51 @@ export function Profile() {
 
   return (
     <>
-      <ScreenHeader
-        title="PROFILE"
-        right={
-          <span className="flex items-center gap-3">
-            {day != null && (
-              <span className="font-mono text-xs tabular-nums text-faint">
-                DAY {day} / {ARC_LENGTH_DAYS}
+      <ScreenHeader title="PROFILE" visuallyHidden />
+      <div className="px-gutter pb-8 pt-2">
+        {/* Header Bar matching Solo Leveling style */}
+        <div className="flex items-start justify-between mb-4">
+          <div>
+            <div className="flex items-center gap-2 mb-0.5">
+              <span className="inline-block h-1.5 w-1.5 rounded-full bg-accent-mid shadow-[0_0_8px_#5fb2ff]" />
+              <span className="text-[9px] uppercase font-mono tracking-[0.22em] text-accent-mid font-bold">
+                SYSTEM HUD // HUNTER RECORD
               </span>
+            </div>
+            <h1 className="font-display text-2xl leading-none tracking-[0.14em] text-ink-100 glow-text">
+              PROFILE
+            </h1>
+            <div className="text-[9px] font-bold uppercase tracking-[0.2em] text-ink-700 mt-1">
+              HUNTER IDENTITY & SYSTEM RECORD
+            </div>
+          </div>
+
+          <div className="flex items-center gap-3">
+            {day != null && (
+              <div className="text-right">
+                <div className="flex items-baseline justify-end gap-1">
+                  <span className="text-xs uppercase font-display text-ink-700">DAY</span>
+                  <span className="font-mono text-sm font-bold text-accent-mid glow-text">
+                    {day}
+                  </span>
+                  <span className="text-xs text-ink-700">/ {ARC_LENGTH_DAYS}</span>
+                </div>
+                <div className="text-[8px] uppercase tracking-[0.16em] text-ink-700">
+                  SYSTEM ARC —
+                </div>
+              </div>
             )}
             <button
               type="button"
               onClick={() => navigate('/profile/settings')}
               aria-label="Settings"
-              className="-mr-2 flex min-h-tap min-w-[44px] items-center justify-center text-ink-500"
+              className="-mr-1 flex min-h-tap min-w-[44px] items-center justify-center rounded-lg border border-accent/30 bg-accent-deep/30 text-accent-mid shadow-[0_0_8px_rgba(77,163,255,0.25)] transition-all hover:bg-accent-deep/50 hover:border-accent/60"
             >
               <GearSix size={20} aria-hidden />
             </button>
-          </span>
-        }
-      />
-      <div className="px-gutter pb-6 pt-4">
+          </div>
+        </div>
+
         <LevelSummary />
         <CheckpointRow />
         <BossList />
@@ -68,10 +92,6 @@ export function Profile() {
         <DayZeroBaselineRow />
         <BodyMetricsCard />
         <ArcPauseControl />
-        {/* Backup, paper import, install and the integrity check moved to
-            Settings > Data (design/01 task 10.5). Profile answers "who am
-            I in this system"; those answer "is my data safe", and they
-            were competing for the same screen. */}
         {import.meta.env.DEV && <DevResetArc />}
       </div>
     </>
@@ -107,49 +127,80 @@ function LevelSummary() {
   const pct = level.xpForNext > 0 ? (level.xpIntoLevel / level.xpForNext) * 100 : 0;
 
   return (
-    <Panel cut="md" bodyClassName="px-5 py-5">
-      {/* The main quest opens the identity screen because it is the one
-          sentence the whole arc is measured against — onboarding calls
-          it "the only thing the app judges you against", and this is the
-          screen where you come to ask who you are in this system. */}
-      {mainQuest && (
-        <>
-          <SectionLabel className="mb-2">Main quest</SectionLabel>
-          <p className="font-display text-[calc(17px*var(--type-scale))] leading-[1.45] text-ink-100">
-            {mainQuest}
-          </p>
-          <div className="hairline my-5" aria-hidden />
-        </>
-      )}
-
-      <div className="flex items-end justify-between">
-        <span className="flex items-baseline gap-2.5">
-          <span className="text-xxs uppercase text-ink-700">LV</span>
-          <span className="glow-text font-mono text-xl tabular-nums text-ink-100">
-            {level.level}
-          </span>
-        </span>
-        {/* checkpoint.spec asserts getByText(/RANK E/), so the word and
-            the letter have to share one element's text content. Nesting
-            the letter keeps that true while letting it be set larger. */}
-        <span className="text-xxs uppercase text-ink-700">
-          RANK{' '}
-          <span className="font-display text-title normal-case leading-none text-ink-100">
-            {rank}
-          </span>
-        </span>
+    <div
+      className="cut-md relative mb-4 overflow-hidden p-5 transition-all duration-200"
+      style={{
+        border: '1px solid rgba(77, 163, 255, 0.45)',
+        background: 'linear-gradient(180deg, rgba(10, 20, 36, 0.9), rgba(5, 10, 20, 0.96))',
+        boxShadow: '0 0 24px rgba(77, 163, 255, 0.2)',
+      }}
+    >
+      <div
+        aria-hidden
+        className="pointer-events-none absolute inset-0 overflow-hidden"
+        style={{
+          mixBlendMode: 'lighten',
+          opacity: 0.55,
+          maskImage: 'radial-gradient(120% 100% at 50% 30%, #000 45%, transparent 88%)',
+          WebkitMaskImage: 'radial-gradient(120% 100% at 50% 30%, #000 45%, transparent 88%)',
+        }}
+      >
+        <ArtLayer slot="rank" scrim="none" focal="50% 35%" priority />
       </div>
 
-      <MeterBar pct={pct} height={8} label="XP to next level" className="mt-3" />
+      <div className="relative">
+        <div className="flex items-center justify-between mb-3">
+          <span className="cut-sm px-2 py-0.5 text-[8px] font-mono font-bold tracking-widest text-accent-mid bg-accent-deep/40 border border-accent/40 shadow-[0_0_8px_rgba(77,163,255,0.3)]">
+            HUNTER IDENTITY RECORD
+          </span>
+          <Sparkle size={16} weight="fill" color="#5fb2ff" className="drop-shadow-[0_0_8px_rgba(77,163,255,0.8)] animate-pulse" />
+        </div>
 
-      <div className="mt-3 flex items-baseline justify-between font-mono text-xs tabular-nums text-ink-700">
-        <span>
-          <span className="text-accent-mid">{level.xpIntoLevel.toLocaleString()}</span> /{' '}
-          {level.xpForNext.toLocaleString()} to L{level.level + 1}
-        </span>
-        <span>{level.totalXp.toLocaleString()} total</span>
+        {/* Main Quest Banner */}
+        {mainQuest && (
+          <div className="mb-4 pb-4 border-b border-hair-faint">
+            <div className="text-[9px] uppercase font-mono tracking-widest text-accent-mid font-bold mb-1">
+              MAIN QUEST MANDATE
+            </div>
+            <p className="font-display text-[calc(17px*var(--type-scale))] leading-[1.45] text-ink-100 font-medium">
+              &ldquo;{mainQuest}&rdquo;
+            </p>
+          </div>
+        )}
+
+        {/* Level & Rank Metrics */}
+        <div className="flex items-end justify-between mb-3">
+          <div className="flex items-baseline gap-2">
+            <span className="text-[10px] uppercase font-mono font-bold tracking-wider text-ink-700">LV</span>
+            <span className="glow-text font-mono text-2xl font-bold tabular-nums text-accent-mid">
+              {level.level}
+            </span>
+          </div>
+
+          {/* checkpoint.spec asserts getByText(/RANK E/), so the word and
+              the letter have to share one element's text content. Nesting
+              the letter keeps that true while letting it be set larger. */}
+          <div className="text-right">
+            <span className="text-[10px] uppercase font-mono font-bold tracking-wider text-ink-700">
+              RANK{' '}
+              <span className="font-display text-2xl font-bold leading-none text-ink-100 glow-text">
+                {rank}
+              </span>
+            </span>
+          </div>
+        </div>
+
+        <MeterBar pct={pct} height={8} label="XP to next level" className="mt-1" />
+
+        <div className="mt-3 flex items-baseline justify-between font-mono text-xs tabular-nums text-ink-700">
+          <span>
+            <span className="text-accent-mid font-bold glow-text">{level.xpIntoLevel.toLocaleString()}</span> /{' '}
+            {level.xpForNext.toLocaleString()} to L{level.level + 1}
+          </span>
+          <span className="font-semibold text-ink-300">{level.totalXp.toLocaleString()} total XP</span>
+        </div>
       </div>
-    </Panel>
+    </div>
   );
 }
 
@@ -179,29 +230,29 @@ function CheckpointRow() {
 
   if (nextCheckpointDay === null) return null;
   const daysUntil = day !== null ? nextCheckpointDay - day : null;
-
   const due = daysUntil !== null && daysUntil <= 0;
 
-  // The strongest treatment on the screen that is not a Moment.
-  // final/01 §4.1 calls the next gate "the app's most important
-  // sentence", and a row that looked like every other row was arguing
-  // the opposite. The frame is the same one Moments use, at rest.
   return (
-    <FramedPanel tone={due ? 'dawn' : 'accent'} className="mt-4">
+    <FramedPanel tone={due ? 'dawn' : 'accent'} className="mt-4 shadow-[0_0_16px_rgba(77,163,255,0.15)]">
       <button
         type="button"
         onClick={() => setOpen(true)}
-        className="w-full px-4 py-4 text-left"
+        className="w-full px-4 py-4 text-left group transition-all duration-150"
         style={{ minHeight: 56 }}
       >
-        <span className="text-xxs uppercase text-ink-700">The next gate</span>
-        <span className="mt-2 block font-display text-lg leading-tight text-ink-100">
+        <div className="flex items-center justify-between mb-1">
+          <span className="text-[9px] uppercase font-mono font-bold tracking-widest text-accent-mid">
+            THE NEXT GATE // SYSTEM RANK EVALUATION
+          </span>
+          <span className="h-1.5 w-1.5 rounded-full bg-accent-mid shadow-[0_0_6px_#5fb2ff] animate-pulse" />
+        </div>
+        <span className="mt-1 block font-display text-lg leading-tight text-ink-100 group-hover:text-accent-mid transition-colors">
           Next checkpoint: Day {nextCheckpointDay}
         </span>
         <span
           className={[
-            'mt-1.5 block font-mono text-xs tabular-nums',
-            due ? 'text-dawn-bright' : 'text-accent-mid',
+            'mt-1.5 block font-mono text-xs tabular-nums font-semibold',
+            due ? 'text-dawn-bright glow-text' : 'text-accent-mid glow-text',
           ].join(' ')}
         >
           {daysUntil === null
@@ -225,15 +276,7 @@ function CheckpointRow() {
   );
 }
 
-/**
- * Not a new onboarding step — onboarding is already at its 90-second
- * budget. This is a one-time catch-up for an arc that already exists,
- * shown only while checkpoint(day: 0)'s instruments are empty
- * (final/11-SLICE-2-PROMPT.md Step 1 for self-efficacy; automaticity and
- * enjoyment's exact wording lives in docs/13-day0-baseline.md, which is
- * why final/11 originally deferred them — the wording existed, just in
- * the wrong directory for that slice's brief).
- */
+/** Day-0 Baseline Row */
 function DayZeroBaselineRow() {
   return (
     <CheckpointInstrumentsCard
@@ -288,18 +331,22 @@ function ArcPauseControl() {
   if (arcId === null) return null;
 
   return (
-    <Panel
-      cut="md"
-      className="mt-4"
-      bodyClassName="px-4 py-4"
-      // A paused arc is a state, not a warning, so its edge takes the
-      // recovery amber the app already uses for reduced mode — never red.
-      style={pausedToday ? { background: 'var(--state-recover)' } : undefined}
+    <div
+      className="cut-md mb-4 mt-5 p-4 transition-all duration-200"
+      style={{
+        border: pausedToday ? '1px solid var(--state-recover)' : '1px solid rgba(77, 163, 255, 0.32)',
+        background: pausedToday ? 'var(--state-recover)' : 'linear-gradient(180deg, rgba(10, 20, 36, 0.85), rgba(5, 10, 20, 0.95))',
+        boxShadow: '0 0 16px rgba(77, 163, 255, 0.12)',
+      }}
     >
-      <SectionLabel className="mb-2">Arc pause</SectionLabel>
+      <div className="flex items-center justify-between mb-2">
+        <SectionLabel className="mb-0 text-accent-mid font-mono tracking-widest text-[9px]">ARC PAUSE PROTOCOL</SectionLabel>
+        <span className="text-[9px] font-mono uppercase text-ink-700">SYSTEM RECOVERY</span>
+      </div>
+
       {pausedToday ? (
         <>
-          <p className="text-sm leading-[1.5] text-ink-300">
+          <p className="text-sm leading-[1.5] text-ink-100 font-medium">
             Paused. No quests generate. Zero penalty.
           </p>
           <div className="mt-4">
@@ -310,7 +357,7 @@ function ArcPauseControl() {
         </>
       ) : (
         <>
-          <p className="text-sm leading-[1.5] text-ink-500">
+          <p className="text-xs leading-[1.5] text-ink-300">
             Illness, travel, a work crisis. One tap, up to 7 days.
           </p>
           <div className="mt-4 flex gap-2">
@@ -327,16 +374,11 @@ function ArcPauseControl() {
           </div>
         </>
       )}
-    </Panel>
+    </div>
   );
 }
 
-/**
- * DEV-only. Deletes all events and projections, clears the arc, and
- * returns to /onboarding — for re-running onboarding while stopwatching
- * it, without uninstalling the PWA each time. Never renders in production:
- * `import.meta.env.DEV` is false in a built app.
- */
+/** DEV-only Reset Arc */
 function DevResetArc() {
   const navigate = useNavigate();
   const { markArcReset } = useArcStatus();
@@ -364,16 +406,6 @@ function DevResetArc() {
   );
 }
 
-/**
- * Quarantine for the dev-only reset.
- *
- * It is fenced in --state-alert deliberately, and it is the one use of
- * that colour that is not itself an error: the button destroys data, it
- * never ships (import.meta.env.DEV is false in a build), and while it is
- * on screen it must not be mistakable for part of the app. The dashed
- * edge says the same thing a second way, for anyone who cannot separate
- * the two tones.
- */
 function DevBlock({ children, className = '' }: { children: ReactNode; className?: string }) {
   return (
     <div

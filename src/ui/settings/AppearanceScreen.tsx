@@ -10,6 +10,7 @@ import {
   type AccentKey,
 } from '../../store/settings';
 import { ScreenHeader, Segmented, SettingsGroup, SettingsList, SettingsRow } from '../kit';
+import { AppearancePreview } from './AppearancePreview';
 import {
   ART_LABELS,
   DENSITY_LABELS,
@@ -33,6 +34,8 @@ export function AppearanceScreen() {
     <>
       <ScreenHeader title="APPEARANCE" onBack={() => navigate('/profile/settings')} />
       <div className="px-gutter pb-8" data-testid="appearance-screen">
+        <AppearancePreview />
+
         <SettingsGroup title="Theme" choice>
           <SettingsList>
             {THEMES.map((t) => (

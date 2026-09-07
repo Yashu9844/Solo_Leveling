@@ -239,9 +239,9 @@ The new configurable layer. `design/03-SETTINGS-AND-THEMING.md` is the spec.
 
 - [x] **13.1** Docs: superseded-by pointers in `final/06` §4 and §6, refresh the design
       docs with anything learned, document `npm run art` for future uploads. Gate: fast.
-- [ ] **13.2** Final ⛓ full gate on a clean tree. Write `## Handover`: what changed,
-      screenshots of every screen at 360×640 in the default theme, slots still on gradient
-      fallback, and how to re-run the art import.
+- [x] **13.2** Final ⛓ full gate on a clean tree — **typecheck · lint · 49 files /
+      437 unit · 103/103 e2e.** Handover written below, with 20 screenshots at 360×640 in
+      `design/handover/`. **All 60 tasks complete.**
 
 ---
 
@@ -346,4 +346,108 @@ system §10 are required; neither may be traded for the other.
 
 ## Handover
 
-_(written by task 13.2)_
+The frontend redesign is complete. Every box above is ticked, and the final gate on a
+clean tree is green: **typecheck · lint · 49 files / 437 unit tests · 103/103 e2e across
+six viewport projects**, in 90 commits on `slice-13-ship`.
+
+### What changed
+
+The app did the same things before this work and does the same things after it. Nothing in
+the engine, the event log, the projections or the XP maths was touched. What changed is
+every surface it draws.
+
+- **A visual language, not a coat of paint.** `design/00-DESIGN-SYSTEM.md` is the source:
+  two art moods (Blue Arc for effort, Gold Horizon for evidence, Boss red for one
+  component), a three-layer token system, a bevelled panel shape, one type scale, and a
+  copy voice. `src/ui/kit/` is that language as components — nineteen of them, and every
+  screen is now assembled from them rather than from ad-hoc class strings.
+- **A front door.** Splash → Start → onboarding, with a real hero plate and a stated
+  navigation grammar (`design/02-NAVIGATION-FLOW.md`): lateral moves cross-fade,
+  hierarchical moves push, and back never leaves the app by surprise.
+- **Sixteen art plates**, classified by mood and assigned to slots, with a pipeline
+  (`npm run art`) that encodes, budgets and regenerates a typed index. Every slot has a
+  procedural gradient fallback, so the app looks finished with the art switched off — and
+  it can be, from Settings.
+- **A settings and theming layer that did not exist.** `/profile/settings` with five
+  themes, six accents, five text scales, density, motion, art intensity and glow, all
+  applying instantly, plus a live preview pinned while you choose. Reminders edit the real
+  implementation intentions. Data and integrity moved off Profile.
+- **The Moments got their frame.** All six now share one portalled, themed base, with
+  their original timings, haptics and reduced-motion paths intact.
+
+### The five screens, at 360×640, default theme
+
+| | | |
+|---|---|---|
+| ![Splash](handover/01-splash.webp) | ![Start](handover/02-start.webp) | ![Onboarding](handover/03-onboarding.webp) |
+| Splash | Start | Onboarding |
+| ![Today](handover/04-today.webp) | ![Quest detail](handover/05-quest-detail.webp) | ![Log sheet](handover/06-log-sheet.webp) |
+| Today | Quest detail | A log sheet |
+| ![Progress SYSTEM](handover/07-progress-system.webp) | ![Progress REALITY](handover/08-progress-reality.webp) | ![Skills](handover/09-skills.webp) |
+| Progress · SYSTEM | Progress · REALITY | Skills |
+| ![Profile](handover/10-profile.webp) | ![Checkpoint](handover/11-checkpoint.webp) | ![Settings](handover/12-settings.webp) |
+| Profile | Checkpoint | Settings |
+| ![Appearance](handover/13-appearance.webp) | ![System](handover/14-system.webp) | ![Data](handover/15-data.webp) |
+| Appearance | System | Data |
+| ![About](handover/16-about.webp) | ![Weekly review](handover/17-weekly-review.webp) | ![Evening review](handover/18-evening-review.webp) |
+| About | Weekly review | Evening review |
+| ![Daily report](handover/19-daily-report.webp) | ![Level up](handover/20-level-up.webp) | |
+| Daily report | LEVEL UP Moment | |
+
+360×640 is the design target, not the largest phone: Today's sixth quest row sits just
+below the fold there. The above-the-fold budget `final/06` §5.2 sets — and
+`core-loop.spec` enforces — is 412×915, where all six are reachable without scrolling.
+
+### Art: what is filled, and how to add more
+
+**All 16 slots are filled.** Nothing is on the gradient fallback. The library is 1,619 KB
+against a 1,638 KB cap, largest single file 112 KB.
+
+Ten further plates are classified and parked in `design/art.manifest.json`'s `overflow`
+block — mostly boss and blue variants — so a later screen can claim one without
+re-reviewing the folder.
+
+To add art:
+
+1. Drop the source PNG in the folder `sourceDir` names
+   (`C:/Users/yashwanth/Desktop/system-app/project/assests_high_res`).
+2. Add or edit a slot in `design/art.manifest.json`:
+   `{ "source": "<filename>.png", "mood": "blue|gold|boss", "focal": "50% 40%",
+   "text": true, "zoom": 1.3, "note": "…" }` — `text` if the plate carries its own
+   lettering, `zoom` if that lettering needs cropping out of a phone column.
+3. `npm run art`.
+
+That regenerates `src/assets/art/index.ts` and fails loudly if any file exceeds 170 KB or
+the library exceeds 1.6 MB. **No component changes** — `ArtLayer` reads the slot, and the
+crop scale belongs to the plate rather than the screen using it.
+
+### What was deliberately not built
+
+- **Review times, weekly-review day, week-start.** `design/03` §1 listed them; the engine
+  has no such concepts. The evening review has no time gate, and the weekly review measures
+  a rolling seven days ending today. A control that changes nothing is not configuration.
+- **The arc's day-boundary hours are read-only.** Every streak, rollup and checkpoint in
+  the record was computed against them, so moving them would rewrite what past days meant.
+  The System screen shows them with that reason on screen.
+- **A left rail at ≥1024px** (`final/06` §6). The app is a 430px column at every width;
+  one nav, one muscle memory.
+
+### Where to look
+
+| | |
+|---|---|
+| `design/00-DESIGN-SYSTEM.md` | The visual language. §5.1 and §9.5 are the two sections worth reading before changing anything. |
+| `design/02-NAVIGATION-FLOW.md` | Route graph, transition grammar, back-button contract. |
+| `design/03-SETTINGS-AND-THEMING.md` | What is configurable, where it is stored, and why settings are not events. |
+| `src/ui/kit/` | The component vocabulary. Start here, not in a screen. |
+| `src/ui/tokens.css` | Three layers: structural, five themes, user modifiers. Every ink value carries its measured contrast ratio, and `tests/engine/theme-contrast.test.ts` checks that the ratio is true. |
+| `tests/e2e/responsive.spec.ts` | The layout rules as assertions, across six viewports and five themes. |
+
+### The two things most likely to bite next
+
+1. **`clip-path` clips outlines.** Anything with a `cut-*` class needs the inset
+   pseudo-element focus ring, not `outline`. This silently removed the focus ring from
+   most of the app until 12.3.
+2. **Anything whose final state matters animates in CSS, never in JavaScript**
+   (§5.1). This cost three separate bugs — an invisible screen, an off-screen sheet, and
+   an untappable button — before it was written down.

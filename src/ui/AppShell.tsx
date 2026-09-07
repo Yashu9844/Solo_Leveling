@@ -142,7 +142,10 @@ export function AppShell() {
         }}
       >
         {TABS.map((tab) => {
-          const active = pathname === tab.to;
+          // Prefix match, not equality: /profile/settings is a child
+          // route of the profile tab (design/02 §3.2), and the tab it
+          // lives under has to stay lit while you are down there.
+          const active = pathname === tab.to || pathname.startsWith(`${tab.to}/`);
           const Glyph = tab.icon;
           return (
             <NavLink

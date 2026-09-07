@@ -1,4 +1,4 @@
-import { CaretRight } from '@phosphor-icons/react';
+import { CaretRight, Check } from '@phosphor-icons/react';
 import type { Icon } from '@phosphor-icons/react';
 import type { ReactNode } from 'react';
 
@@ -26,6 +26,10 @@ interface SettingsGroupProps {
   children: ReactNode;
   /** Destructive groups (reset arc) take --state-alert. */
   tone?: 'default' | 'alert';
+  /** The card holds a set of mutually exclusive choices. Makes it a
+   * radiogroup, which is what the `selected` rows inside it need as a
+   * parent to mean anything to a screen reader. */
+  choice?: boolean;
   className?: string;
 }
 
@@ -34,6 +38,7 @@ export function SettingsGroup({
   footnote,
   children,
   tone = 'default',
+  choice = false,
   className = '',
 }: SettingsGroupProps) {
   const alert = tone === 'alert';
@@ -50,6 +55,8 @@ export function SettingsGroup({
         </div>
       )}
       <div
+        role={choice ? 'radiogroup' : undefined}
+        aria-label={choice ? title : undefined}
         className="cut-sm overflow-hidden"
         style={{
           border: `1px solid ${alert ? 'var(--state-alert)' : 'var(--hair)'}`,
@@ -70,8 +77,17 @@ interface SettingsRowProps {
   description?: string;
   /** Current value, shown trailing. */
   value?: ReactNode;
-  /** Makes the row a button and shows a chevron. */
+  /** Makes the row a button. Shows a chevron unless `selected` is set. */
   onClick?: () => void;
+  /**
+   * Marks the row as one option in a list you choose from.
+   *
+   * A chevron is a promise that tapping goes somewhere else. On a theme
+   * or accent row it goes nowhere — it picks — so those get a check and
+   * `aria-checked` instead. Passing this at all switches the row into
+   * that mode, including when it is false.
+   */
+  selected?: boolean;
   /** A control rendered on its own line below the label — Segmented for
    * three or fewer choices (§4). */
   control?: ReactNode;
@@ -93,6 +109,7 @@ export function SettingsRow({
   description,
   value,
   onClick,
+  selected,
   control,
   tone = 'default',
   disabled = false,
@@ -126,8 +143,12 @@ export function SettingsRow({
         {value !== undefined && (
           <span className="shrink-0 text-right text-xs text-ink-700">{value}</span>
         )}
-        {onClick && (
-          <CaretRight size={14} color="var(--ink-900)" aria-hidden className="shrink-0" />
+        {selected !== undefined ? (
+          <span className="flex h-4 w-4 shrink-0 items-center justify-center">
+            {selected && <Check size={15} weight="bold" color="var(--accent-mid)" aria-hidden />}
+          </span>
+        ) : (
+          onClick && <CaretRight size={14} color="var(--ink-900)" aria-hidden className="shrink-0" />
         )}
       </div>
       {control && <div className="mt-3 w-full">{control}</div>}
@@ -157,6 +178,8 @@ export function SettingsRow({
       type="button"
       onClick={onClick}
       disabled={disabled}
+      role={selected !== undefined ? 'radio' : undefined}
+      aria-checked={selected !== undefined ? selected : undefined}
       className={[shared, 'justify-center', disabled ? 'opacity-40' : ''].join(' ')}
       style={style}
       data-testid={testId}

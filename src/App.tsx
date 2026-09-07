@@ -9,6 +9,9 @@ import { Profile } from './ui/screens/Profile';
 import { SHORTCUT_ROUTES, OPEN_PARAM, type OpenTarget } from './ui/routing/shortcuts';
 import { Splash, SPLASH_MIN_MS, useMinimumElapsed } from './ui/boot/Splash';
 import { Start } from './ui/boot/Start';
+import { SettingsScreen } from './ui/settings/SettingsScreen';
+import { AppearanceScreen } from './ui/settings/AppearanceScreen';
+import { AboutScreen } from './ui/settings/AboutScreen';
 
 function RequireArc({ arcExists }: { arcExists: boolean }) {
   if (!arcExists) {
@@ -71,6 +74,12 @@ export function App() {
           <Route path="progress" element={<Progress />} />
           <Route path="skills" element={<Skills />} />
           <Route path="profile" element={<Profile />} />
+          {/* Child routes of the profile tab, not modals — design/02
+              §3.2. The bottom nav stays visible the whole way down, so
+              the four-tab contract is never broken by going deeper. */}
+          <Route path="profile/settings" element={<SettingsScreen />} />
+          <Route path="profile/settings/appearance" element={<AppearanceScreen />} />
+          <Route path="profile/settings/about" element={<AboutScreen />} />
         </Route>
       </Route>
 

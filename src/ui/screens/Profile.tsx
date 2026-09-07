@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useState, type ReactNode } from 'react';
 import { useNavigate } from 'react-router-dom';
+import { GearSix } from '@phosphor-icons/react';
 import { DEFAULT_CONFIG } from '../../engine/config';
 import { levelFor } from '../../engine/level';
 import { arcDay, localDate } from '../../engine/time';
@@ -29,6 +30,7 @@ const CHECKPOINT_DAYS: Checkpoint['day'][] = [14, 30, 60, 90, 120];
 const ARC_LENGTH_DAYS = 120;
 
 export function Profile() {
+  const navigate = useNavigate();
   const [day, setDay] = useState<number | null>(null);
 
   useEffect(() => {
@@ -44,11 +46,21 @@ export function Profile() {
       <ScreenHeader
         title="PROFILE"
         right={
-          day != null ? (
-            <span className="font-mono text-xs tabular-nums text-faint">
-              DAY {day} / {ARC_LENGTH_DAYS}
-            </span>
-          ) : undefined
+          <span className="flex items-center gap-3">
+            {day != null && (
+              <span className="font-mono text-xs tabular-nums text-faint">
+                DAY {day} / {ARC_LENGTH_DAYS}
+              </span>
+            )}
+            <button
+              type="button"
+              onClick={() => navigate('/profile/settings')}
+              aria-label="Settings"
+              className="-mr-2 flex min-h-tap min-w-[44px] items-center justify-center text-ink-500"
+            >
+              <GearSix size={20} aria-hidden />
+            </button>
+          </span>
         }
       />
       <div className="px-gutter pb-6 pt-4">

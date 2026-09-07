@@ -191,8 +191,9 @@ The new configurable layer. `design/03-SETTINGS-AND-THEMING.md` is the spec.
 - [x] **10.1** `SettingsList` / `SettingsGroup` / `SettingsRow` kit primitives —
       56px rows, leading icon, trailing value, chevron, inline `Segmented` variant.
       No art, no glow. Gate: fast.
-- [ ] **10.2** `/profile/settings` shell + the four groups (Appearance, System, Data,
-      About) with routing to sub-pickers. Gate: fast.
+- [x] **10.2** `/profile/settings` shell + routing. Appearance and About ship complete;
+      **System and Data rows are added in 10.5 with their screens** — a row that pushes
+      to an empty screen is worse than no row. Gate: fast.
 - [ ] **10.3** Appearance: theme picker with the **live preview panel**, accent picker,
       text size, density, motion, art intensity, glow. All apply instantly. Gate: fast.
 - [ ] **10.4** Implement the five themes in `tokens.css` to the §5 bar: measured contrast
@@ -322,6 +323,7 @@ system §10 are required; neither may be traded for the other.
 | 9.4 | reviews | Evening review on `Sheet`; its daily report is the app's one sanctioned QuoteCard. Weekly review carries a single Gold block — the week-over-week deltas, the only evidence on an effort screen. **Found a real Panel bug here:** `className` landed on the inner element, so every card's margin opened *inside* its border and a max-width left the border colour showing as a band. Split into `className` (outer) / `bodyClassName` (inner) and fixed all 13 call sites. |
 | 9.5 | phase 9 gate | 80/80 e2e after the Panel split — the change touched every card in the app. |
 | 10.1 | settings kit | Grouped-list primitives. 56px is a floor, not a height — at text-scale XL a two-line row is taller and a fixed height would clip it. A row carrying a control is not itself tappable: nesting a button inside a button breaks both the tap target and the accessibility tree. No glow anywhere in the file. |
+| 10.2 | settings shell | Child routes of the profile tab, so the nav stays lit — needed a prefix match on the tab, not equality. `SettingsRow` gained a `selected` mode: a chevron promises tapping goes somewhere, and a theme row goes nowhere, so those get a check and a radiogroup instead. Shipped only the two sections that exist; System and Data arrive in 10.5 with their screens. |
 | — | plan v2 | User added: configurable settings/theming, explicit nav flowchart, mood-based art assignment. Saw all 11 plates — split into Blue Arc (effort) / Gold Horizon (evidence) / Boss. Added docs 02 and 03; replanned to 13 phases, 60 tasks. |
 
 ---

@@ -1,3 +1,4 @@
+import { CaretLeft } from '@phosphor-icons/react';
 import type { ReactNode } from 'react';
 
 interface ScreenHeaderProps {
@@ -11,6 +12,11 @@ interface ScreenHeaderProps {
   title: string;
   /** Optional trailing control — an icon button, a segmented switch. */
   right?: ReactNode;
+  /** Renders a leading back button. Child routes (Settings and its
+   * pickers) need a visible way up that is not the system gesture —
+   * design/02 §5 keeps back working, but a route the user pushed by
+   * tapping should also be leavable by tapping. */
+  onBack?: () => void;
   /** Hide the title visually but keep it for assistive tech and tests.
    * For screens where art carries the name (Splash, Start, Moments). */
   visuallyHidden?: boolean;
@@ -28,6 +34,7 @@ interface ScreenHeaderProps {
 export function ScreenHeader({
   title,
   right,
+  onBack,
   visuallyHidden = false,
   className = '',
 }: ScreenHeaderProps) {
@@ -37,14 +44,26 @@ export function ScreenHeader({
   // final/06 §5.2 requires all six core quests above the fold on a 6"
   // Android screen, and that is the constraint capping the core set at
   // six. Its identity line (DAY n · LEVEL n · RANK X) is the header.
-  if (visuallyHidden && !right) {
+  if (visuallyHidden && !right && !onBack) {
     return <h1 className="sr-only">{title}</h1>;
   }
 
   return (
     <div className={['relative shrink-0', className].join(' ')}>
-      <div className="flex items-center justify-between px-gutter pt-3">
-        <h1 className={visuallyHidden ? 'sr-only' : 'text-h1 text-accent-mid'}>{title}</h1>
+      <div className="flex items-center gap-2 px-gutter pt-3">
+        {onBack && (
+          <button
+            type="button"
+            onClick={onBack}
+            aria-label="Back"
+            className="-ml-2 flex min-h-tap min-w-[44px] items-center justify-center text-ink-500"
+          >
+            <CaretLeft size={18} aria-hidden />
+          </button>
+        )}
+        <h1 className={visuallyHidden ? 'sr-only' : 'min-w-0 flex-1 truncate text-h1 text-accent-mid'}>
+          {title}
+        </h1>
         {right}
       </div>
       <div className="hairline mx-gutter mt-3" aria-hidden />

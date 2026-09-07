@@ -35,13 +35,12 @@ interface ArtLayerProps {
   /** Load eagerly — for the plate the current screen opens on. */
   priority?: boolean;
   /**
-   * Scale the plate up before cropping.
+   * Override the plate's own crop scale.
    *
-   * Several plates carry small text down their margins. A phone viewport
-   * is narrower than the source aspect, so `cover` crops the sides and
-   * slices that text in half — and half a word reads as a rendering bug,
-   * which is worse than not showing it at all. A little zoom pushes the
-   * marginalia cleanly out of frame.
+   * Every plate carries a default `zoom` from the manifest, set to push
+   * its own marginal lettering out of frame (see ArtAsset.zoom). This is
+   * only for a screen that needs a tighter or looser crop than the plate
+   * asks for — most callers should leave it alone and inherit.
    */
   zoom?: number;
   className?: string;
@@ -64,11 +63,12 @@ export function ArtLayer({
   scrim = 'hero',
   focal,
   priority = false,
-  zoom = 1,
+  zoom,
   className = '',
 }: ArtLayerProps) {
   const art = ART[slot];
   const [loaded, setLoaded] = useState(false);
+  const scale = zoom ?? art?.zoom ?? 1;
 
   return (
     <div aria-hidden className={['art-layer absolute inset-0 overflow-hidden', className].join(' ')}>
@@ -79,7 +79,7 @@ export function ArtLayer({
           <div
             className="absolute inset-0"
             style={{
-              transform: `scale(${1.1 * zoom})`,
+              transform: `scale(${1.1 * scale})`,
               backgroundImage: `url(${art.lqip})`,
               backgroundSize: 'cover',
               backgroundPosition: focal ?? art.focal,
@@ -100,7 +100,7 @@ export function ArtLayer({
             style={{
               objectPosition: focal ?? art.focal,
               opacity: loaded ? 1 : 0,
-              ...(zoom !== 1 ? { transform: `scale(${zoom})` } : {}),
+              ...(scale !== 1 ? { transform: `scale(${scale})` } : {}),
             }}
           />
         </>

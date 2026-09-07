@@ -1,4 +1,6 @@
 import { useEffect, useState } from 'react';
+import { Moment } from '../kit';
+import { momentMotionReduced } from './motion';
 
 interface LevelUpMomentProps {
   fromLevel: number;
@@ -7,22 +9,25 @@ interface LevelUpMomentProps {
   onDismiss: () => void;
 }
 
-function prefersReducedMotion(): boolean {
-  return typeof window !== 'undefined' && window.matchMedia?.('(prefers-reduced-motion: reduce)').matches;
-}
-
 type Phase = 'start' | 'rule' | 'number' | 'unlock';
 
 /**
- * Full screen, 700ms total: rule sweeps L->R (260ms), number cross-fades
- * with a 6px rise (240ms), unlock line fades in (200ms). final/05 §2.2,
- * §2.3. Monospace numerals, one accent, near-black ground — no gradient,
- * no particles, no glow, no sound. Dismissible on any tap, never blocks
- * input. prefers-reduced-motion disables motion and haptics but keeps
- * the content, shown immediately at its final state.
+ * Full screen, 700ms total: the rule sweeps L→R (260ms), the number
+ * cross-fades with a 6px rise (240ms), the unlock line fades in (200ms).
+ * final/05 §2.2, §2.3. Dismissible on any tap, never blocks input, no
+ * sound. Reduced motion drops the phases and the haptic and shows the
+ * content immediately at its final state.
+ *
+ * Blue Arc, deliberately. A level is effort — XP crossing a threshold —
+ * and final/01 §4 keeps effort and evidence in different colours the
+ * whole way down. The Gold treatment belongs to RankAdvancedMoment.
+ *
+ * The phase timings, the haptic pattern and the reduced-motion path are
+ * unchanged from the original: this is a re-skin onto the shared Moment
+ * frame, not a re-tune. Only the surface it draws on is new.
  */
 export function LevelUpMoment({ fromLevel, toLevel, unlockText, onDismiss }: LevelUpMomentProps) {
-  const reduced = prefersReducedMotion();
+  const reduced = momentMotionReduced();
   const [phase, setPhase] = useState<Phase>(reduced ? 'unlock' : 'start');
 
   useEffect(() => {
@@ -48,43 +53,46 @@ export function LevelUpMoment({ fromLevel, toLevel, unlockText, onDismiss }: Lev
   const unlockVisible = reduced || phase === 'unlock';
 
   return (
-    <div
-      className="fixed inset-0 z-50 flex flex-col items-center justify-center gap-4 bg-bg"
-      onClick={onDismiss}
-      role="button"
-      tabIndex={0}
-      aria-label="Level up. Dismiss."
-    >
-      <div className="text-xxs uppercase tracking-wide text-text-dim">LEVEL</div>
+    // "Level up. Dismiss." is frozen: xp.spec selects this Moment with
+    // getByRole('button', { name: /Level up/ }).
+    <Moment label="Level up. Dismiss." onDismiss={onDismiss} tone="accent" slot="level-up">
+      <div className="flex flex-col items-center text-center">
+        <p className="text-xxs uppercase tracking-wide text-ink-700">Level</p>
 
-      <div
-        className={[
-          'font-mono text-xl tabular-nums text-text transition-all',
-          reduced ? '' : 'duration-[240ms] ease-out',
-          numberVisible ? 'translate-y-0 opacity-100' : 'translate-y-[6px] opacity-0',
-        ].join(' ')}
-      >
-        {String(fromLevel).padStart(2, '0')} → {String(toLevel).padStart(2, '0')}
-      </div>
-
-      <div
-        className={['h-px bg-accent transition-all', reduced ? '' : 'duration-[260ms] ease-out'].join(' ')}
-        style={{ width: ruleVisible ? '12rem' : '0' }}
-      />
-
-      {unlockText && (
-        <div
+        <p
           className={[
-            'text-xs text-text-dim transition-opacity',
-            reduced ? '' : 'duration-[200ms]',
-            unlockVisible ? 'opacity-100' : 'opacity-0',
+            'glow-text mt-4 font-mono text-3xl tabular-nums text-ink-100 transition-all',
+            reduced ? '' : 'duration-[240ms] ease-out',
+            numberVisible ? 'translate-y-0 opacity-100' : 'translate-y-[6px] opacity-0',
           ].join(' ')}
         >
-          UNLOCKED · {unlockText}
-        </div>
-      )}
+          {String(fromLevel).padStart(2, '0')} → {String(toLevel).padStart(2, '0')}
+        </p>
 
-      <div className="mt-8 text-xxs uppercase tracking-wide text-text-faint">tap anywhere</div>
-    </div>
+        <span
+          className={['mt-5 h-px transition-all', reduced ? '' : 'duration-[260ms] ease-out'].join(
+            ' '
+          )}
+          style={{
+            width: ruleVisible ? '11rem' : '0',
+            background: 'var(--accent)',
+            boxShadow: 'var(--glow-sm)',
+          }}
+          aria-hidden
+        />
+
+        {unlockText && (
+          <p
+            className={[
+              'mt-5 text-xs text-ink-500 transition-opacity',
+              reduced ? '' : 'duration-[200ms]',
+              unlockVisible ? 'opacity-100' : 'opacity-0',
+            ].join(' ')}
+          >
+            <span className="text-accent-mid">UNLOCKED</span> · {unlockText}
+          </p>
+        )}
+      </div>
+    </Moment>
   );
 }

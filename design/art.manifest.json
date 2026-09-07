@@ -23,7 +23,8 @@
       "mood": "gold",
       "focal": "50% 42%",
       "text": true,
-      "note": "Carries DISCIPLINE CREATES FREEDOM / A BETTER YOU AWAITS. The promise."
+      "note": "Carries DISCIPLINE CREATES FREEDOM / A BETTER YOU AWAITS. The promise.",
+      "zoom": 1.22
     },
     "onboarding": {
       "source": "ChatGPT Image Sep 6, 2026, 10_48_22 PM.png",
@@ -43,14 +44,17 @@
       "mood": "blue",
       "focal": "50% 45%",
       "text": true,
-      "note": "Ascending a staircase toward a colossus. DISCIPLINE TODAY / A GREATER YOU TOMORROW."
+      "note": "Ascending a staircase toward a colossus. DISCIPLINE TODAY / A GREATER YOU TOMORROW.",
+      "zoom": 1.6,
+      "$zoomNote": "zoom is the default crop scale for this plate. Several plates carry their own lettering down a margin; a phone viewport is narrower than the source aspect, so cover-cropping slices that text mid-word. Zooming pushes it cleanly out of frame. Set here rather than at each call site so a plate cannot be used wrongly by a new screen."
     },
     "rank": {
       "source": "ChatGPT Image Sep 6, 2026, 11_21_19 PM.png",
       "mood": "gold",
       "focal": "50% 40%",
       "text": true,
-      "note": "Reaching for the eclipse. HIGHER THAN YESTERDAY. Rank is evidence, so gold."
+      "note": "Reaching for the eclipse. HIGHER THAN YESTERDAY. Rank is evidence, so gold.",
+      "zoom": 1.5
     },
     "checkpoint": {
       "source": "ChatGPT Image Sep 6, 2026, 11_02_52 PM.png",
@@ -77,7 +81,8 @@
       "mood": "blue",
       "focal": "50% 45%",
       "text": true,
-      "note": "Full physique under banners that map body parts to attributes — CHEST BUILDS CONFIDENCE, BACK BUILDS STRENGTH, ABS BUILDS SELF CONTROL, LEGS BUILDS RESILIENCE. The app's own attribute model in a picture."
+      "note": "Full physique under banners that map body parts to attributes — CHEST BUILDS CONFIDENCE, BACK BUILDS STRENGTH, ABS BUILDS SELF CONTROL, LEGS BUILDS RESILIENCE. The app's own attribute model in a picture.",
+      "zoom": 1.2
     },
     "review": {
       "source": "ChatGPT Image Sep 6, 2026, 10_59_54 PM.png",
@@ -91,7 +96,8 @@
       "mood": "gold",
       "focal": "50% 50%",
       "text": true,
-      "note": "A BRIGHTER YOU SOMEDAY. The weekly distance-travelled block."
+      "note": "A BRIGHTER YOU SOMEDAY. The weekly distance-travelled block.",
+      "zoom": 1.5
     },
     "boss": {
       "source": "ChatGPT Image Sep 6, 2026, 11_24_03 PM.png",
@@ -112,7 +118,8 @@
       "mood": "gold",
       "focal": "50% 45%",
       "text": true,
-      "note": "Enthroned. Gold, not red — clearing a boss is evidence, and the plate agrees."
+      "note": "Enthroned. Gold, not red — clearing a boss is evidence, and the plate agrees.",
+      "zoom": 1.45
     },
     "quote": {
       "source": "ChatGPT Image Sep 6, 2026, 11_33_22 PM.png",

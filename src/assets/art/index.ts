@@ -66,6 +66,17 @@ export interface ArtAsset {
   focal: string;
   /** The plate carries its own tagline; do not overlay another. */
   hasText: boolean;
+  /**
+   * Default crop scale.
+   *
+   * Several plates carry their own lettering down a margin. A phone
+   * viewport is narrower than the source aspect, so `cover` crops the
+   * sides and slices that text mid-word — and half a word reads as a
+   * rendering fault, which is worse than not showing it. The scale that
+   * pushes it cleanly out of frame belongs to the plate, not to
+   * whichever screen happens to use it first.
+   */
+  zoom: number;
 }
 
 /** null means the slot has no art yet — ArtLayer renders its procedural
@@ -80,6 +91,7 @@ export const ART: Record<ArtSlot, ArtAsset | null> = {
     mood: 'blue',
     focal: '50% 28%',
     hasText: false,
+    zoom: 1,
   },
   'start-hero': {
     src: startHero480,
@@ -90,6 +102,7 @@ export const ART: Record<ArtSlot, ArtAsset | null> = {
     mood: 'gold',
     focal: '50% 42%',
     hasText: true,
+    zoom: 1.22,
   },
   'onboarding': {
     src: onboarding480,
@@ -100,6 +113,7 @@ export const ART: Record<ArtSlot, ArtAsset | null> = {
     mood: 'blue',
     focal: '50% 30%',
     hasText: false,
+    zoom: 1,
   },
   'today': {
     src: today480,
@@ -110,6 +124,7 @@ export const ART: Record<ArtSlot, ArtAsset | null> = {
     mood: 'blue',
     focal: '70% 25%',
     hasText: false,
+    zoom: 1,
   },
   'level-up': {
     src: levelUp480,
@@ -120,6 +135,7 @@ export const ART: Record<ArtSlot, ArtAsset | null> = {
     mood: 'blue',
     focal: '50% 45%',
     hasText: true,
+    zoom: 1.6,
   },
   'rank': {
     src: rank480,
@@ -130,6 +146,7 @@ export const ART: Record<ArtSlot, ArtAsset | null> = {
     mood: 'gold',
     focal: '50% 40%',
     hasText: true,
+    zoom: 1.5,
   },
   'checkpoint': {
     src: checkpoint480,
@@ -140,6 +157,7 @@ export const ART: Record<ArtSlot, ArtAsset | null> = {
     mood: 'gold',
     focal: '50% 55%',
     hasText: false,
+    zoom: 1,
   },
   'progress': {
     src: progress480,
@@ -150,6 +168,7 @@ export const ART: Record<ArtSlot, ArtAsset | null> = {
     mood: 'blue',
     focal: '50% 35%',
     hasText: false,
+    zoom: 1,
   },
   'skills': {
     src: skills480,
@@ -160,6 +179,7 @@ export const ART: Record<ArtSlot, ArtAsset | null> = {
     mood: 'blue',
     focal: '50% 30%',
     hasText: false,
+    zoom: 1,
   },
   'training': {
     src: training480,
@@ -170,6 +190,7 @@ export const ART: Record<ArtSlot, ArtAsset | null> = {
     mood: 'blue',
     focal: '50% 45%',
     hasText: true,
+    zoom: 1.2,
   },
   'review': {
     src: review480,
@@ -180,6 +201,7 @@ export const ART: Record<ArtSlot, ArtAsset | null> = {
     mood: 'blue',
     focal: '50% 35%',
     hasText: false,
+    zoom: 1,
   },
   'review-weekly': {
     src: reviewWeekly480,
@@ -190,6 +212,7 @@ export const ART: Record<ArtSlot, ArtAsset | null> = {
     mood: 'gold',
     focal: '50% 50%',
     hasText: true,
+    zoom: 1.5,
   },
   'boss': {
     src: boss480,
@@ -200,6 +223,7 @@ export const ART: Record<ArtSlot, ArtAsset | null> = {
     mood: 'boss',
     focal: '50% 45%',
     hasText: true,
+    zoom: 1,
   },
   'boss-throne': {
     src: bossThrone480,
@@ -210,6 +234,7 @@ export const ART: Record<ArtSlot, ArtAsset | null> = {
     mood: 'boss',
     focal: '50% 40%',
     hasText: false,
+    zoom: 1,
   },
   'boss-cleared': {
     src: bossCleared480,
@@ -220,6 +245,7 @@ export const ART: Record<ArtSlot, ArtAsset | null> = {
     mood: 'gold',
     focal: '50% 45%',
     hasText: true,
+    zoom: 1.45,
   },
   'quote': {
     src: quote480,
@@ -230,5 +256,6 @@ export const ART: Record<ArtSlot, ArtAsset | null> = {
     mood: 'blue',
     focal: '50% 45%',
     hasText: true,
+    zoom: 1,
   },
 };

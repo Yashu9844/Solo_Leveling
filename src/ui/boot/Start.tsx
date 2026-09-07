@@ -27,7 +27,7 @@ export function Start() {
             ratio `cover` slices those lines in half, and half a word
             reads as a rendering bug — so they are pushed out of frame
             entirely and the composition carries the screen instead. */}
-        <ArtLayer slot="start-hero" scrim="hero" priority zoom={1.22} />
+        <ArtLayer slot="start-hero" scrim="hero" priority />
 
         <SafeTop />
         <div className="flex-1" />

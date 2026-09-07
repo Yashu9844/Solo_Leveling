@@ -3,6 +3,7 @@ import type { ArtSlot } from '../../assets/art';
 import { useBackDismiss } from '../routing/OverlayStack';
 import { ArtLayer } from './ArtLayer';
 import { FramedPanel } from './Panel';
+import { Portal } from './Portal';
 
 interface MomentProps {
   /**
@@ -47,27 +48,35 @@ export function Moment({
   useBackDismiss(true, onDismiss);
 
   return (
-    <div
-      role="button"
-      tabIndex={0}
-      aria-label={label}
-      onClick={onDismiss}
-      onKeyDown={(e) => {
-        if (e.key === 'Enter' || e.key === ' ' || e.key === 'Escape') onDismiss();
-      }}
-      className="fixed inset-0 z-50 flex flex-col items-center justify-center overflow-hidden bg-void px-gutter"
-    >
-      {slot && <ArtLayer slot={slot} scrim="moment" priority />}
+    // Portalled, and above every other overlay in the app. A Moment can
+    // fire from inside a log sheet or from the checkpoint screen, both of
+    // which are themselves portalled — left in place it would render
+    // inside the screen's stacking context and lose to the very surface
+    // that triggered it.
+    <Portal>
+      <div
+        role="button"
+        tabIndex={0}
+        aria-label={label}
+        onClick={onDismiss}
+        onKeyDown={(e) => {
+          if (e.key === 'Enter' || e.key === ' ' || e.key === 'Escape') onDismiss();
+        }}
+        className="fixed inset-0 z-[60] flex flex-col items-center justify-center overflow-hidden px-gutter"
+        style={{ background: 'var(--void)' }}
+      >
+        {slot && <ArtLayer slot={slot} scrim="moment" priority />}
 
-      <FramedPanel tone={tone} className="relative w-full max-w-shell px-5 py-8">
-        {children}
-      </FramedPanel>
+        <FramedPanel tone={tone} className="relative w-full max-w-shell px-5 py-8">
+          {children}
+        </FramedPanel>
 
-      {hint && (
-        <p className="relative mt-8 text-xxs uppercase text-faint" aria-hidden>
-          {hint}
-        </p>
-      )}
-    </div>
+        {hint && (
+          <p className="relative mt-8 text-xxs uppercase text-faint" aria-hidden>
+            {hint}
+          </p>
+        )}
+      </div>
+    </Portal>
   );
 }

@@ -151,10 +151,7 @@ export function WeeklyReview({ today, onClose }: WeeklyReviewProps) {
                 numbers are the comparison against last week, which is
                 the closest a weekly review comes to evidence. */}
             <div className="relative mt-1 h-[150px] overflow-hidden">
-              {/* Zoomed: this plate carries small text down its left margin,
-                  and a phone crop slices it mid-word — half a word reads
-                  as a rendering fault. */}
-              <ArtLayer slot="review-weekly" scrim="band" focal="50% 38%" zoom={1.5} />
+              <ArtLayer slot="review-weekly" scrim="band" focal="50% 38%" />
               <div className="absolute inset-x-0 bottom-0 flex items-end gap-8 px-gutter pb-4">
                 <div className="flex flex-col gap-1">
                   <span className="font-mono text-lg leading-none tabular-nums text-ink-100">

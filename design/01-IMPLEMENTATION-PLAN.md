@@ -210,7 +210,7 @@ The new configurable layer. `design/03-SETTINGS-AND-THEMING.md` is the spec.
 
 ## Phase 11 — Moments
 
-- [ ] **11.1** `LevelUpMoment` (Blue) and `RankAdvancedMoment` (**Gold** — evidence) on the
+- [x] **11.1** `LevelUpMoment` (Blue) and `RankAdvancedMoment` (**Gold** — evidence) on the
       `Moment` base. Keep existing phase timings, haptics and reduced-motion path exactly.
       Gate: fast.
 - [ ] **11.2** `BossClearedMoment` (Boss), `MasteryMoment`, `EvidenceAcceptedMoment`,
@@ -330,6 +330,7 @@ system §10 are required; neither may be traded for the other.
 | 10.4 | five themes | Swept all five themes x four screens x {390/M, 320/XL} with a scripted overflow check. **Two real bugs:** `SectionLabel` was `shrink-0`, so a long label could not wrap and pushed Skills 16px past a 320px screen at XL; and the plates are all dark illustrations, which on the light theme read as ink blots — added `--art-theme-scale`, multiplied with the user's art setting so "dim" cannot come out brighter than "full". Also found the nav's hardcoded icon glow, the one glow the no-glow themes could not turn off. |
 | 10.5 | system + data | Reminders edit the real implementation intentions through `PLAN_AMENDED`, the event that existed for exactly this and had no caller after onboarding. The arc's hours are shown read-only: every streak and checkpoint was computed against them. Review times and week start are omitted — the evening review has no time gate and the weekly review measures a rolling seven days, so those knobs would change nothing. Data cards moved off Profile; three specs moved with them under §10's sanctioned-exception rule, behind one `openDataSettings` helper. |
 | 10.6 | settings spec | Five tests, 85/85 overall. The overflow test drives the real 320px viewport rather than trusting a screenshot, and waits on the nav — a cold load re-runs the splash hold, and a fixed timeout measures the splash. Motion asserts a parsed number, not Chromium's `1e-05s` string. |
+| 11.1 | level-up + rank | Both on the `Moment` frame. `Moment` is portalled and z-60 now — it can fire from a sheet or the checkpoint screen, both already portalled. Reduced motion reads the app's motion setting first, then the OS: Moments suppress haptics and a JS phase machine, which CSS cannot do for them. **Plate zoom moved into the manifest**, so a plate carrying its own lettering cannot be cropped mid-word by whichever screen uses it next. |
 | — | plan v2 | User added: configurable settings/theming, explicit nav flowchart, mood-based art assignment. Saw all 11 plates — split into Blue Arc (effort) / Gold Horizon (evidence) / Boss. Added docs 02 and 03; replanned to 13 phases, 60 tasks. |
 
 ---

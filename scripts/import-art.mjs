@@ -115,6 +115,7 @@ async function main() {
         `    mood: '${spec.mood}',\n` +
         `    focal: '${spec.focal ?? '50% 50%'}',\n` +
         `    hasText: ${spec.text === true},\n` +
+        `    zoom: ${spec.zoom ?? 1},\n` +
         `  },`
     );
     filled += 1;
@@ -143,6 +144,17 @@ export interface ArtAsset {
   focal: string;
   /** The plate carries its own tagline; do not overlay another. */
   hasText: boolean;
+  /**
+   * Default crop scale.
+   *
+   * Several plates carry their own lettering down a margin. A phone
+   * viewport is narrower than the source aspect, so \`cover\` crops the
+   * sides and slices that text mid-word — and half a word reads as a
+   * rendering fault, which is worse than not showing it. The scale that
+   * pushes it cleanly out of frame belongs to the plate, not to
+   * whichever screen happens to use it first.
+   */
+  zoom: number;
 }
 
 /** null means the slot has no art yet — ArtLayer renders its procedural

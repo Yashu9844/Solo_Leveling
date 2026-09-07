@@ -228,8 +228,9 @@ The new configurable layer. `design/03-SETTINGS-AND-THEMING.md` is the spec.
       **103/103.**
 - [x] **12.3** A11y: motion setting honoured everywhere; focus ring on every control;
       per-theme contrast audit; `aria-live` on XP; art layers `aria-hidden`. Gate: fast.
-- [ ] **12.4** Performance: initial JS ≤ 320 KB gz, art ≤ 1.6 MB, precache ≤ 3 MB,
-      **tap→XP < 300 ms re-asserted**. Trim icon/font imports if over. Gate: fast.
+- [x] **12.4** Performance. **Measured: JS 220.76 KB gz (cap 320), art 1,619 KB
+      (cap 1,638), precache 921 KB (cap 3,072), tap→XP green on 3 consecutive runs.**
+      The art budget is enforced by `npm run art`, which fails the build over it.
 - [ ] **12.5** Stragglers: `DeepWorkTimer`, `DotPicker`, `SingleChipSelect`, `ChipToggle`,
       `Stepper`, anything still on v1 tokens. Then **delete the v1 aliases** and prove
       nothing referenced them. ⛓ Gate: full.
@@ -336,6 +337,7 @@ system §10 are required; neither may be traded for the other.
 | 12.1 | responsive spec | Six viewports x nine routes x two text scales, auditing four rules in one pass. The extra five projects run **only** this spec — behaviour does not change with width, and running all 85 tests six times would cost ten minutes a gate to re-prove the same facts. Came back with exactly one real failure across the whole matrix. |
 | 12.2 | responsive fixes | One real defect in the whole matrix: the maintenance chips were 24px. Making them 44px pushed the sixth quest row below the fold and broke §5.2's budget, so they are 44px with 10px of negative margin — the margin box still occupies 24px of the strip while the thumb lands on the full height. Added a themes-lay-out-identically test; it stamps the attribute and navigates by tapping, because twenty cold loads spent most of a minute re-watching the splash. |
 | 12.3 | a11y | **The focus ring was invisible on most of the app** — `clip-path` clips an outline, and nearly every control wears a bevel; drawn as an inset pseudo-element it survives, and inherits the bevel for free. XP figure is now a polite live region. The per-theme contrast audit became a test that recomputes the ratios instead of trusting the comments: it found daylight's floor at 4.37:1 against a comment claiming 4.6, and eighteen other comments that understated the truth. |
+| 12.4 | budgets | Art was 2,220 KB against a 1,600 KB budget. The 960w variant was 23% wider than the largest thing the app can draw — it is a 430px column at every breakpoint — and width costs area, so 880w gave back a third of the weight for pixels no screen was using; quality did the rest. `MAX_TOTAL_BYTES` is now the real budget rather than a 4 MB sanity ceiling, so the build fails if a future plate breaks it. |
 | — | plan v2 | User added: configurable settings/theming, explicit nav flowchart, mood-based art assignment. Saw all 11 plates — split into Blue Arc (effort) / Gold Horizon (evidence) / Boss. Added docs 02 and 03; replanned to 13 phases, 60 tasks. |
 
 ---

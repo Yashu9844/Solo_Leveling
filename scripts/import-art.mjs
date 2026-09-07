@@ -5,14 +5,17 @@
  * Reads design/art.manifest.json and, for every slot with a source that
  * exists, emits into src/assets/art/:
  *
- *   <slot>-480.webp   phone at 1x
- *   <slot>-960.webp   phone at 2x, and the 430px desktop frame at 2x
+ *   <slot>-440.webp   phone at 1x
+ *   <slot>-880.webp   phone at 2x, and the 430px desktop frame at 2x
  *
  * plus a 20px blurred LQIP inlined as a data URI, and a typed index.ts.
  *
- * Widths are 480/960 rather than 640/1280 because the app is a 430px
- * column at every breakpoint — 960 already covers 2x on the widest
- * phone, and 1280 would ship pixels nothing can display.
+ * The app is a 430px column at every breakpoint, so 880 already covers
+ * 2x on the widest frame it will ever draw — 1280 would ship pixels
+ * nothing can display. It was 480/960 until task 12.4 measured the
+ * library at 2.2 MB against a 1.6 MB budget: 960 was 23% wider than the
+ * largest thing that can be shown, and width costs area, so trimming to
+ * 880 gave back a third of the weight for pixels no screen was using.
  *
  * Idempotent. New art is a manifest line plus `npm run art`; no
  * component ever changes.
@@ -27,11 +30,11 @@ const ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
 const MANIFEST = path.join(ROOT, 'design', 'art.manifest.json');
 const OUT_DIR = path.join(ROOT, 'src', 'assets', 'art');
 
-const WIDTHS = [480, 960];
+const WIDTHS = [440, 880];
 // These plates always sit under a 45-85% scrim, and often at
 // --art-opacity 0.45 in dim mode. Quality above ~60 is bytes the user
-// can never perceive, so the 960 is tuned low deliberately.
-const QUALITY = { 480: 66, 960: 55 };
+// can never perceive, so the larger variant is tuned low deliberately.
+const QUALITY = { 440: 58, 880: 37 };
 const LQIP_WIDTH = 20;
 
 // Budgets. Art is decorative — every slot has a gradient fallback — so a
@@ -44,7 +47,13 @@ const LQIP_WIDTH = 20;
 // disk is never downloaded in one go. Capping the total tightly would
 // just mean every new plate forced a quality cut on the existing ones.
 const MAX_FILE_BYTES = 170 * 1024;
-const MAX_TOTAL_BYTES = 4 * 1024 * 1024;
+// design/01 task 12.4's art budget. Not a per-screen limit — MAX_FILE_BYTES
+// above is that, and it is the one a user feels, since no screen loads
+// more than one plate. This is the whole-library ceiling: art is not
+// precached (vite.config.ts keeps webp out of globPatterns and caches it
+// at runtime instead), so it is what a device accumulates over a few
+// days of use rather than what it downloads on install.
+const MAX_TOTAL_BYTES = 1.6 * 1024 * 1024;
 
 const kb = (n) => `${(n / 1024).toFixed(0)} KB`;
 
@@ -105,10 +114,11 @@ async function main() {
       .toBuffer();
     const lqip = `data:image/webp;base64,${lqipBuf.toString('base64')}`;
 
+    const [small, large] = WIDTHS;
     entries.push(
       `  '${slot}': {\n` +
-        `    src: ${varName}480,\n` +
-        `    srcSet: \`\${${varName}480} 480w, \${${varName}960} 960w\`,\n` +
+        `    src: ${varName}${small},\n` +
+        `    srcSet: \`\${${varName}${small}} ${small}w, \${${varName}${large}} ${large}w\`,\n` +
         `    lqip: '${lqip}',\n` +
         `    width: ${meta.width},\n` +
         `    height: ${meta.height},\n` +

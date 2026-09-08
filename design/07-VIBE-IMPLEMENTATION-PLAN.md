@@ -80,10 +80,10 @@ specific to this plan:
 
 ## Phase 3 — Ceremony
 
-- [ ] **3.1** `DayCompleteMoment` — fires when all six core quests are complete. Gold Horizon,
+- [x] **3.1** `DayCompleteMoment` — fires when all six core quests are complete. Gold Horizon,
       the day's numbers, the streak, one System line. This is the ceremony the user earns 60+
       times and currently gets nothing for. Gate: fast.
-- [ ] **3.2** Rebalance the ceremony budget. `FULL_SCREEN_LEVEL_UP_LIMIT = 3` is spent by day
+- [x] **3.2** Rebalance the ceremony budget. `FULL_SCREEN_LEVEL_UP_LIMIT = 3` is spent by day
       2.2 at 500 XP/day. Change to rarity-based: every level ≤5, then every 5th level, stays
       full-screen. **`xp.spec` asserts the 4th level-up is an inline banner** — that spec is
       updated in this commit, which task 3.2 explicitly sanctions. Gate: ⛓.
@@ -137,4 +137,6 @@ specific to this plan:
 | 1.2 | the System speaks | Today's message card is a `SystemWindow` labelled `⟨ DAILY QUEST ⟩`, arriving once per local date rather than on every render. The heading carries `6 REMAIN` / `ALL CLEAR` — second person, and a number that means something. The label's 20px came back out of padding and row rhythm, never out of the six rows. Also made the 300ms budget a median of three: one sample under 4-way contention measures the scheduler, not the app. |
 | 2.1 | `useCountdown` | Counts to the arc's own `dayCloseHour` in the arc's own timezone, so it survives midnight, the 04:00 rollover and a user in another zone. Ticks only while the tab is visible and recomputes from the clock rather than accumulating, so it cannot drift. Pure `countdownTo` with 6 unit tests. |
 | 2.2 | ⟨ TIME REMAINING ⟩ | Placed where the XP figure was: the meter already told the XP story, and the day running out was told nowhere. Amber inside three hours. The crest picked up an `aria-label` since the visible "RANK" word gave way to it. |
+| 3.1 | `DayCompleteMoment` | Fires on the tap that finishes all six. Gold, because a complete day is evidence rather than an XP threshold. Checked against the optimistic list so the ceremony does not wait on the confirmed write, and queued behind LEVEL UP so one tap earning both plays them in sequence. Streak is hidden when 0 — the projection counts a day at rollover, so mid-day it reads the run *before* today. |
+| 3.2 | rarity, not a count | `FULL_SCREEN_LEVEL_UP_LIMIT = 3` spent the whole allowance by day 2.2 and left 118 days of text banners. Now levels 1-3 and every fifth; L5, L10, L15 stay events for the length of the arc. `xp.spec` moved with it — the case is now "a level-up between milestones", asserted at L4. |
 | — | plan | — |

@@ -125,7 +125,7 @@ test('the Moment dismisses on any tap', async ({ page }) => {
   await expect(MOMENT(page)).toHaveCount(0);
 });
 
-test('the 4th level-up renders as an inline banner, not full screen', async ({ page }) => {
+test('a level-up between milestones renders as an inline banner, not full screen', async ({ page }) => {
   // Four simulated days of completing all six quests, with a reload and
   // a clock advance between each — 24 completions and 4 cold boots in
   // one test. It is slow by construction, not by regression.
@@ -134,10 +134,15 @@ test('the 4th level-up renders as an inline banner, not full screen', async ({ p
   await completeOnboarding(page);
 
   const CORE_TITLES = ['CAREER', 'DSA', 'BUILD', 'TRAINING', 'SLEEP', 'ATTENTION'];
-  // ~500 XP/day; cumulative req to L5 is 1,630 (280+370+450+530), so 4
-  // full days of all-six completions (2,000 XP) crosses 4 boundaries
-  // (L2, L3, L4, L5) — the 4th (L5) must degrade to a banner.
-  for (let day = 0; day < 4; day++) {
+  // ~500 XP/day; cumulative req to L4 is 1,100 (280+370+450), so 3 full
+  // days of all-six completions (1,500 XP) crosses L2, L3 and L4.
+  //
+  // L4 is the assertion. design/07 task 3.2 changed the rule from "the
+  // first three occurrences" to a rarity rule — levels 1-3 and every
+  // fifth stay full-screen — because the old count was spent by day 2.2
+  // and left the next 118 days with none. L4 sits between milestones, so
+  // it is exactly the case that must degrade to a banner.
+  for (let day = 0; day < 3; day++) {
     if (day > 0) {
       const next = new Date(SAFE_TIME);
       next.setUTCDate(next.getUTCDate() + day);
@@ -149,7 +154,7 @@ test('the 4th level-up renders as an inline banner, not full screen', async ({ p
     }
   }
 
-  // The 4th crossing must NOT be a full-screen Moment...
+  // The L4 crossing must NOT be a full-screen Moment...
   await expect(MOMENT(page)).toHaveCount(0);
   // ...but the inline banner text must be present on TODAY.
   await expect(page.getByText(/LEVEL \d{2} → \d{2}/)).toBeVisible();

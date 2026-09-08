@@ -14,6 +14,7 @@ import { QuestRow } from '../today/QuestRow';
 import { QuestDetailSheet } from '../today/QuestDetailSheet';
 import { priorityLine } from '../today/priorityLine';
 import { LevelUpMoment } from '../moments/LevelUpMoment';
+import { DayCompleteMoment } from '../moments/DayCompleteMoment';
 import { unlockTextForRange } from '../moments/levelUnlocks';
 import { EveningReview } from '../review/EveningReview';
 import { LogApplicationSheet } from '../career/LogApplicationSheet';
@@ -69,11 +70,25 @@ interface LevelUpEvent {
   toLevel: number;
 }
 
-// LEVEL UP is full-screen for its first 3 occurrences in the arc; from
-// the 4th on it degrades to an inline banner (final/05 §2.3). Reaching
-// level L means exactly L-1 level-up transitions have happened, so this
-// needs no separate counter — the level number IS the occurrence count.
-const FULL_SCREEN_LEVEL_UP_LIMIT = 3;
+/**
+ * Which level-ups earn the full screen.
+ *
+ * final/05 §2.3 asks that LEVEL UP stop being full-screen once it stops
+ * being rare, and the original rule — the first three, full stop — read
+ * that as a count. On this level curve that is a mistake: at a full 500
+ * XP/day the player reaches L2 on day 0.6, L3 on day 1.3 and L4 on day
+ * 2.2, so the entire allowance is spent inside 48 hours and every
+ * level-up for the remaining 118 days is a six-second text banner.
+ *
+ * Rarity is the property §2.3 actually cares about, so this encodes
+ * rarity: the early levels, which are genuinely new, and then every
+ * fifth. L5, L10, L15 … stay events for the length of the arc, and the
+ * levels between them pass quietly, which is what makes the milestones
+ * read as milestones.
+ */
+function levelUpDeservesFullScreen(level: number): boolean {
+  return level <= 3 || level % 5 === 0;
+}
 
 export function Today() {
   const [arc, setArc] = useState<Arc | null>(null);
@@ -86,6 +101,9 @@ export function Today() {
   const [openInstanceId, setOpenInstanceId] = useState<string | null>(null);
   const [notice, setNotice] = useState<string | null>(null);
   const [moment, setMoment] = useState<LevelUpEvent | null>(null);
+  const [dayComplete, setDayComplete] = useState<{ xp: number; streak: number; total: number } | null>(
+    null
+  );
   const [banner, setBanner] = useState<LevelUpEvent | null>(null);
   const [streak, setStreak] = useState<LiveStreakState | null>(null);
   const [recoverable, setRecoverable] = useState<RecoverableDay | null>(null);
@@ -211,11 +229,28 @@ export function Today() {
       await refreshXp(today);
 
       if (!wasComplete) {
+        // The day just became complete on this tap. Checked against the
+        // optimistic list, which already holds the toggle — the confirmed
+        // write lands later and the ceremony must not wait for it.
+        const nowComplete = instances.every((i) =>
+          i.id === instance.id ? true : i.state === 'complete'
+        );
+        if (nowComplete && instances.length > 0) {
+          const xpByInstance = await getDayXpByInstance(today);
+          const xpToday = Object.values(xpByInstance).reduce((sum, x) => sum + x.amount, 0);
+          const streakState = await getStreakState(today, CONFIG);
+          setDayComplete({
+            xp: xpToday,
+            streak: streakState.arc_streak,
+            total: instances.length,
+          });
+        }
+
         const afterXp = await getTotalXp();
         const afterLevel = levelFor(afterXp, CONFIG).level;
         if (afterLevel > beforeLevel) {
           const event: LevelUpEvent = { fromLevel: beforeLevel, toLevel: afterLevel };
-          if (afterLevel - 1 <= FULL_SCREEN_LEVEL_UP_LIMIT) {
+          if (levelUpDeservesFullScreen(afterLevel)) {
             setMoment(event);
           } else {
             setBanner(event);
@@ -788,6 +823,19 @@ export function Today() {
           toLevel={moment.toLevel}
           unlockText={unlockTextForRange(moment.fromLevel, moment.toLevel)}
           onDismiss={() => setMoment(null)}
+        />
+      )}
+
+      {/* Queued behind LEVEL UP: when one tap earns both, the level
+          plays first and this follows on its dismiss, rather than two
+          full-screen overlays stacking. */}
+      {dayComplete && !moment && (
+        <DayCompleteMoment
+          day={day}
+          xpToday={dayComplete.xp}
+          streakDays={dayComplete.streak}
+          coreTotal={dayComplete.total}
+          onDismiss={() => setDayComplete(null)}
         />
       )}
 

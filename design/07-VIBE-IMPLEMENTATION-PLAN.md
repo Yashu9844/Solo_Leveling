@@ -116,10 +116,23 @@ specific to this plan:
 
 ## Phase 6 — Review and loop
 
-- [ ] **6.1** ⛓ Full gate, all six projects.
-- [ ] **6.2** Screenshot every screen and every moment at 390 and 320. Answer, in writing:
-      *is this motivating? is it mind-blowing?* If no, list what is still missing and open a
-      new phase. Repeat until yes.
+- [x] **6.1** ⛓ Full gate, all six projects — **103/103.**
+- [x] **6.2** Reviewed by screenshot across Start, Onboarding, Today (fresh / urgent /
+      all-clear), quest detail, a log sheet, Progress, Skills, Profile, LEVEL UP and DAY
+      COMPLETE.
+
+      **Is it motivating? Materially more than it was.** The System now addresses you by
+      name, announces itself in a window that arrives, tells you how many requirements
+      remain, shows the day running out, and holds a ceremony every time you clear it.
+      Those were the five things whose absence the analysis identified as the cause.
+
+      **Is it mind-blowing? Not yet.** Three of the analysis's root causes are fixed
+      (voice, no clock, ceremony blackout). Two are not: *the first two weeks are still a
+      wall of zeros*, and *the future is still hidden* — no Arc Map, no locked achievement
+      grid, no rank ladder, only the next boss. And the app still contains **zero charts**,
+      so it can prove you improved and never shows you the shape of it.
+
+      → Phase 7 opens below. Not yet done; the loop continues.
 
 ---
 
@@ -141,3 +154,25 @@ specific to this plan:
 | 3.2 | rarity, not a count | `FULL_SCREEN_LEVEL_UP_LIMIT = 3` spent the whole allowance by day 2.2 and left 118 days of text banners. Now levels 1-3 and every fifth; L5, L10, L15 stay events for the length of the arc. `xp.spec` moved with it — the case is now "a level-up between milestones", asserted at L4. |
 | 4.1 | the player is named | `⟨ PLAYER · ADA ⟩` on the Profile hero and on the daily report. The name has been collected on onboarding step 1 and persisted to `profile.name` since Slice 1 and was displayed in exactly zero places. Falls back to the old label when it is blank, so a skipped name never leaves an empty badge. |
 | — | plan | — |
+
+---
+
+## Phase 7 — What the review found still missing
+
+Ordered by the analysis's own ranking of impact.
+
+- [ ] **7.1** **The Arc Map.** A vertical 120-day path: day markers, the five checkpoints as
+      gates, the four boss windows as marked encounters, current position lit, everything
+      ahead dim but *visible*. This is the single highest-value remaining item — it turns
+      "day 5 of 120" from a number into a journey. Gate: ⛓.
+- [ ] **7.2** **Show the ladder.** Locked achievement grid (all 8 + 5 identities, dimmed with
+      their requirement stated), the full E→S rank ladder with each gate, and all four bosses
+      rather than only the next. Never hide the collection. Gate: ⛓.
+- [ ] **7.3** **Charts.** The app has none. A 28-day XP sparkline on Progress, an attribute
+      trend, and a "you vs Day 0" block on the checkpoint report. Gate: fast.
+- [ ] **7.4** **Stat-gain floats.** `+2 DISCIPLINE` off a completed row. The most RPG-shaped
+      element in the product is also its most inert. Gate: fast.
+- [ ] **7.5** Polish defects found in the review: a stray glyph behind the Profile hero badge;
+      the Profile header wraps awkwardly at 390; the reduced-mode line still shows above
+      "Six of six. Day closed." on a day that was in fact completed. Gate: fast.
+- [ ] **7.6** ⛓ Full gate, then review again.

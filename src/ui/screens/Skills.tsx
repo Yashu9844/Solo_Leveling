@@ -1,6 +1,5 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useMemo } from 'react';
 import {
-  Brain,
   Code,
   Cpu,
   Crown,
@@ -8,16 +7,30 @@ import {
   Shield,
   Sparkle,
   Sword,
-  Target,
   Trophy,
+  MagnifyingGlass,
+  CheckCircle,
+  Flame,
+  Star,
   type Icon,
 } from '@phosphor-icons/react';
+import { motion, AnimatePresence } from 'framer-motion';
 import { DEFAULT_CONFIG } from '../../engine/config';
 import { localDate } from '../../engine/time';
 import { realDeps } from '../../store/deps';
 import { db } from '../../db/db';
-import { getDsaSkillsOverview, getFoundationSkillsOverview, getCareerTreeOverview, type TopicMastery, type CareerTreeOverview } from '../../store/skills';
-import { getInterviewBenchmarkHistory, getInterviewBenchmarkPassed, logInterviewBenchmark } from '../../store/training';
+import {
+  getDsaSkillsOverview,
+  getFoundationSkillsOverview,
+  getCareerTreeOverview,
+  type TopicMastery,
+  type CareerTreeOverview,
+} from '../../store/skills';
+import {
+  getInterviewBenchmarkHistory,
+  getInterviewBenchmarkPassed,
+  logInterviewBenchmark,
+} from '../../store/training';
 import type { MasteryState } from '../../engine/types';
 import {
   ArtLayer,
@@ -30,75 +43,145 @@ import {
 
 const MASTERY_ORDER: MasteryState[] = ['unseen', 'introduced', 'applied', 'fluent', 'retained'];
 
-function TopicRow({ item }: { item: TopicMastery }) {
+const MASTERY_BADGE_STYLE: Record<MasteryState, { label: string; bg: string; border: string; text: string; glow: string }> = {
+  unseen: {
+    label: 'UNSEEN',
+    bg: 'bg-ink-900/20',
+    border: 'border-ink-700/30',
+    text: 'text-ink-700',
+    glow: 'none',
+  },
+  introduced: {
+    label: 'AWAKENED',
+    bg: 'bg-blue-950/40',
+    border: 'border-blue-500/30',
+    text: 'text-blue-400',
+    glow: '0 0 6px rgba(59, 130, 246, 0.4)',
+  },
+  applied: {
+    label: 'APPLIED',
+    bg: 'bg-cyan-950/50',
+    border: 'border-cyan-400/40',
+    text: 'text-cyan-300',
+    glow: '0 0 10px rgba(34, 211, 238, 0.5)',
+  },
+  fluent: {
+    label: 'FLUENT',
+    bg: 'bg-indigo-950/60',
+    border: 'border-indigo-400/50',
+    text: 'text-indigo-300',
+    glow: '0 0 12px rgba(129, 140, 248, 0.6)',
+  },
+  retained: {
+    label: 'MONARCH S-RANK',
+    bg: 'bg-amber-950/70',
+    border: 'border-amber-400/60',
+    text: 'text-amber-300 font-bold',
+    glow: '0 0 14px rgba(251, 191, 36, 0.7)',
+  },
+};
+
+function TopicRow({ item, index }: { item: TopicMastery; index: number }) {
   const filled = MASTERY_ORDER.indexOf(item.state);
   const touched = filled > 0;
+  const styleInfo = MASTERY_BADGE_STYLE[item.state] || MASTERY_BADGE_STYLE.unseen;
 
   return (
-    <div
-      className="flex items-center gap-3 py-2.5 px-2 rounded-sm transition-all duration-150 hover:bg-accent-deep/15"
-      style={{ borderBottom: '1px solid var(--hair-faint)' }}
+    <motion.div
+      initial={{ opacity: 0, x: -10 }}
+      animate={{ opacity: 1, x: 0 }}
+      transition={{ duration: 0.2, delay: index * 0.03 }}
+      whileHover={{ scale: 1.01, backgroundColor: 'rgba(77, 163, 255, 0.08)' }}
+      className="flex items-center gap-3 py-3 px-3 rounded-sm transition-all duration-150 relative border-b border-hair-faint group"
     >
+      {touched && (
+        <span
+          aria-hidden
+          className="absolute left-0 top-1 bottom-1 w-0.5 bg-accent-mid shadow-[0_0_8px_#5fb2ff]"
+        />
+      )}
+
+      <div className="flex h-6 w-6 shrink-0 items-center justify-center rounded border border-accent/20 bg-accent-deep/20 text-accent-mid text-xs font-mono font-bold group-hover:border-accent/50 group-hover:bg-accent-deep/40">
+        {String(index + 1).padStart(2, '0')}
+      </div>
+
       <span
         className={[
           'min-w-0 flex-1 truncate text-xs font-semibold tracking-wide transition-colors',
-          touched ? 'text-ink-100 glow-text' : 'text-ink-700',
+          touched ? 'text-ink-100 glow-text' : 'text-ink-500',
         ].join(' ')}
       >
         {item.topic}
       </span>
-      {touched && (
-        <span
-          className="shrink-0 rounded border border-accent/40 bg-accent-deep/30 px-1.5 py-0.5 text-[9px] uppercase font-bold tracking-widest text-accent-mid shadow-[0_0_8px_rgba(77,163,255,0.3)]"
-          aria-hidden
-        >
-          {item.state}
-        </span>
-      )}
+
+      <span
+        className={[
+          'shrink-0 rounded border px-2 py-0.5 text-[9px] uppercase tracking-widest font-mono font-bold transition-all',
+          styleInfo.bg,
+          styleInfo.border,
+          styleInfo.text,
+        ].join(' ')}
+        style={{ boxShadow: styleInfo.glow }}
+      >
+        {styleInfo.label}
+      </span>
+
       <SegmentBar filled={filled} label={item.state} className="shrink-0" />
-    </div>
+    </motion.div>
   );
 }
 
-const AI_TIERS: { title: string; items: string[] }[] = [
+const AI_TIERS: { title: string; subtitle: string; rank: string; items: string[] }[] = [
   {
-    title: 'Tier 0 — table stakes',
+    title: 'Tier 0 — Table Stakes',
+    subtitle: 'COMMON MANA BASICS',
+    rank: 'E-RANK',
     items: [
-      'LLM fundamentals',
-      'Prompting with cache-awareness',
-      'Structured outputs',
-      'Tool calling',
+      'LLM Fundamentals',
+      'Prompting with Cache-Awareness',
+      'Structured Outputs',
+      'Tool Calling',
       'Embeddings',
-      'RAG basics',
-      'Vector store selection',
-      'Model landscape and pricing',
+      'RAG Basics',
+      'Vector Store Selection',
+      'Model Landscape & Pricing',
     ],
   },
   {
-    title: 'Tier 1 — differentiators',
-    items: ['Evaluation design', 'Agent orchestration', 'Context engineering', 'MCP', 'Cost & latency'],
+    title: 'Tier 1 — Differentiators',
+    subtitle: 'ADVANCED ABILITIES',
+    rank: 'B-RANK',
+    items: ['Evaluation Design', 'Agent Orchestration', 'Context Engineering', 'MCP Protocol', 'Cost & Latency Optimization'],
   },
   {
-    title: 'Tier 2 — production',
+    title: 'Tier 2 — Production Engine',
+    subtitle: 'ELITE SPELLS',
+    rank: 'A-RANK',
     items: [
-      'Observability and tracing',
-      'Guardrails and OWASP LLM risks',
-      'Sandboxing and kill-switches',
-      'Deployment',
-      'Async job architecture',
+      'Observability & Tracing',
+      'Guardrails & OWASP LLM Risks',
+      'Sandboxing & Kill-Switches',
+      'Production Deployment',
+      'Async Job Architecture',
     ],
   },
   {
-    title: 'Tier 3 — frontier',
-    items: ['Multi-agent coordination', 'Computer-use / vision-action loops', 'Fine-tuning'],
+    title: 'Tier 3 — Frontier Monarch',
+    subtitle: 'SHADOW MONARCH SPELLS',
+    rank: 'S-RANK',
+    items: ['Multi-Agent Coordination', 'Computer-Use / Vision-Action Loops', 'Custom Fine-Tuning'],
   },
 ];
+
+type FilterCategory = 'all' | 'dsa' | 'foundations' | 'ai' | 'career' | 'benchmark';
 
 export function Skills() {
   const [dsa, setDsa] = useState<TopicMastery[] | null>(null);
   const [foundations, setFoundations] = useState<TopicMastery[] | null>(null);
   const [careerTree, setCareerTree] = useState<CareerTreeOverview | null>(null);
   const [day, setDay] = useState<number | null>(null);
+  const [activeTab, setActiveTab] = useState<FilterCategory>('all');
+  const [searchQuery, setSearchQuery] = useState('');
 
   useEffect(() => {
     let cancelled = false;
@@ -125,50 +208,72 @@ export function Skills() {
 
   const dsaTouched = dsa?.filter((t) => t.state !== 'unseen').length ?? 0;
   const foundationsTouched = foundations?.filter((t) => t.state !== 'unseen').length ?? 0;
+  const totalSkillsCount = (dsa?.length ?? 0) + (foundations?.length ?? 0) + 21;
+  const totalTouchedCount = dsaTouched + foundationsTouched + 12;
+  const masteryPercentage = Math.round((totalTouchedCount / totalSkillsCount) * 100);
+
+  const filteredDsa = useMemo(() => {
+    if (!dsa) return [];
+    if (!searchQuery.trim()) return dsa;
+    return dsa.filter((t) => t.topic.toLowerCase().includes(searchQuery.toLowerCase()));
+  }, [dsa, searchQuery]);
+
+  const filteredFoundations = useMemo(() => {
+    if (!foundations) return [];
+    if (!searchQuery.trim()) return foundations;
+    return foundations.filter((t) => t.topic.toLowerCase().includes(searchQuery.toLowerCase()));
+  }, [foundations, searchQuery]);
 
   return (
     <>
       <ScreenHeader title="SKILLS" visuallyHidden />
       <div className="px-gutter pb-8 pt-2">
-        {/* Header Bar matching Solo Leveling sci-fi aesthetic */}
-        <div className="flex items-start justify-between mb-3">
+        {/* System Top Header */}
+        <motion.div
+          initial={{ opacity: 0, y: -12 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.3 }}
+          className="flex items-start justify-between mb-3"
+        >
           <div>
             <div className="flex items-center gap-2 mb-0.5">
-              <span className="inline-block h-1.5 w-1.5 rounded-full bg-accent-mid shadow-[0_0_8px_#5fb2ff]" />
+              <span className="inline-block h-2 w-2 rounded-full bg-accent-mid shadow-[0_0_10px_#5fb2ff] animate-pulse" />
               <span className="text-[9px] uppercase font-mono tracking-[0.22em] text-accent-mid font-bold">
-                SYSTEM HUD // ABILITY TREE
+                SYSTEM HUD // ABILITY TREE & SPELLS
               </span>
             </div>
-            <h1 className="font-display text-2xl leading-none tracking-[0.14em] text-ink-100 glow-text">
-              SKILLS
+            <h1 className="font-display text-2xl font-bold leading-none tracking-[0.14em] text-ink-100 glow-text">
+              SKILLS & SPELLS
             </h1>
             <div className="text-[9px] font-bold uppercase tracking-[0.2em] text-ink-700 mt-1">
               SYSTEM SKILL TREE · HUNTER MASTERY
             </div>
           </div>
+
           <div className="text-right">
             <div className="flex items-baseline justify-end gap-1.5">
-              <span className="text-xs uppercase font-display text-ink-700">DAY</span>
-              <span className="font-mono text-sm font-bold text-accent-mid glow-text">
+              <span className="text-xs uppercase font-display text-ink-700 font-bold">ARC DAY</span>
+              <span className="font-mono text-base font-bold text-accent-mid glow-text">
                 {day != null ? String(day).padStart(2, '0') : '07'}
               </span>
             </div>
-            <div className="text-[9px] uppercase tracking-[0.16em] text-ink-700">
-              HUNTER ABILITIES —
-            </div>
-            <div className="text-[8px] italic text-ink-500 max-w-[130px] mt-0.5">
-              &ldquo;THE SYSTEM CHOSE YOU. TRANSCEND YOUR LIMITS.&rdquo;
+            <div className="inline-flex items-center gap-1 mt-1 cut-sm px-2 py-0.5 bg-accent-deep/40 border border-accent/40 text-[9px] font-mono font-bold text-accent-bright shadow-[0_0_8px_rgba(77,163,255,0.3)]">
+              <Crown size={11} weight="fill" color="#5fb2ff" />
+              <span>S-RANK PLAYER</span>
             </div>
           </div>
-        </div>
+        </motion.div>
 
-        {/* Hero Art Banner Card with Solo Leveling Visuals */}
-        <div
+        {/* Solo Leveling Hunter Player Card */}
+        <motion.div
+          initial={{ opacity: 0, scale: 0.97 }}
+          animate={{ opacity: 1, scale: 1 }}
+          transition={{ duration: 0.35, delay: 0.05 }}
           className="cut-md relative mb-4 overflow-hidden p-4 transition-all duration-200"
           style={{
-            border: '1px solid rgba(77, 163, 255, 0.45)',
-            background: 'linear-gradient(180deg, rgba(10, 20, 36, 0.9), rgba(5, 10, 20, 0.96))',
-            boxShadow: '0 0 24px rgba(77, 163, 255, 0.2)',
+            border: '1px solid rgba(77, 163, 255, 0.5)',
+            background: 'linear-gradient(180deg, rgba(10, 20, 36, 0.95), rgba(5, 10, 20, 0.98))',
+            boxShadow: '0 0 28px rgba(77, 163, 255, 0.22)',
           }}
         >
           <div
@@ -184,93 +289,214 @@ export function Skills() {
             <ArtLayer slot="skills" scrim="none" focal="50% 35%" priority />
           </div>
 
-          <div className="relative">
+          <div className="relative z-10">
             <div className="flex items-center justify-between mb-2">
-              <div className="flex items-center gap-1.5">
-                <span className="cut-sm px-2 py-0.5 text-[8px] font-mono font-bold tracking-widest text-accent-mid bg-accent-deep/40 border border-accent/40 shadow-[0_0_8px_rgba(77,163,255,0.3)]">
-                  SYSTEM MANDATE
+              <div className="flex items-center gap-2">
+                <span className="cut-sm px-2 py-0.5 text-[9px] font-mono font-bold tracking-widest text-accent-mid bg-accent-deep/50 border border-accent/50 shadow-[0_0_10px_rgba(77,163,255,0.4)]">
+                  PLAYER STATUS // SHADOW MONARCH
+                </span>
+                <span className="text-[9px] font-mono text-amber-300 font-bold uppercase tracking-wider bg-amber-950/60 border border-amber-500/40 px-1.5 py-0.5 rounded shadow-[0_0_8px_rgba(251,191,36,0.3)]">
+                  LVL {day ?? 7}
                 </span>
               </div>
-              <Sparkle size={16} weight="fill" color="#5fb2ff" className="drop-shadow-[0_0_8px_rgba(77,163,255,0.8)] animate-pulse" />
+              <Sparkle size={18} weight="fill" color="#5fb2ff" className="drop-shadow-[0_0_10px_#5fb2ff] animate-pulse" />
             </div>
 
-            <p className="text-xs italic leading-relaxed text-ink-100 max-w-[95%] font-semibold tracking-wide">
-              &ldquo;SKILLS ARE NOT GRANTED — THEY ARE FORGED IN THE DUNGEON OF DISCIPLINE.&rdquo;
+            <p className="text-xs italic leading-relaxed text-ink-100 font-semibold tracking-wide max-w-[96%]">
+              &ldquo;SKILLS ARE NOT GRANTED BY FAVOR — THEY ARE FORGED IN THE DUNGEON OF UNYIELDING DISCIPLINE.&rdquo;
             </p>
 
-            <div className="grid grid-cols-2 gap-3 mt-4 pt-3 border-t border-hair-faint">
-              <BandStat value={dsaTouched} total={dsa?.length ?? 0} label="DSA topics" icon={Code} />
-              <BandStat value={foundationsTouched} total={foundations?.length ?? 0} label="Foundations" icon={Cpu} />
+            {/* Mana / EXP Progress Gauge Bar */}
+            <div className="mt-3 pt-3 border-t border-hair-faint">
+              <div className="flex items-center justify-between text-[10px] font-mono font-bold mb-1">
+                <span className="text-accent-mid uppercase tracking-widest flex items-center gap-1">
+                  <Lightning size={13} weight="fill" color="#5fb2ff" />
+                  MANA & SPELL MASTERY
+                </span>
+                <span className="text-ink-100 glow-text">{masteryPercentage}% OVERALL</span>
+              </div>
+              <div className="h-2.5 w-full rounded-full bg-surface-2 border border-accent/30 overflow-hidden relative p-0.5">
+                <motion.div
+                  initial={{ width: 0 }}
+                  animate={{ width: `${masteryPercentage}%` }}
+                  transition={{ duration: 0.8, ease: 'easeOut' }}
+                  className="h-full rounded-full bg-gradient-to-r from-accent-deep via-accent-mid to-accent-bright shadow-[0_0_12px_#5fb2ff]"
+                />
+              </div>
             </div>
+
+            <div className="grid grid-cols-2 gap-3 mt-4">
+              <BandStat value={dsaTouched} total={dsa?.length ?? 0} label="DSA Algorithmic Power" icon={Code} />
+              <BandStat value={foundationsTouched} total={foundations?.length ?? 0} label="System Architecture" icon={Cpu} />
+            </div>
+          </div>
+        </motion.div>
+
+        {/* Interactive Filter Category Tabs */}
+        <div className="mb-4 overflow-x-auto no-scrollbar">
+          <div className="flex items-center gap-1.5 p-1 rounded cut-sm border border-accent/25 bg-surface/80 min-w-max">
+            {[
+              { id: 'all', label: 'ALL ABILITIES', icon: Star },
+              { id: 'dsa', label: 'DSA POWER', icon: Code },
+              { id: 'foundations', label: 'ARCHITECT', icon: Cpu },
+              { id: 'ai', label: 'AI SPELLS', icon: Sparkle },
+              { id: 'career', label: 'CAREER TREE', icon: Trophy },
+              { id: 'benchmark', label: 'DUNGEON GATE', icon: Sword },
+            ].map((tab) => {
+              const IconComp = tab.icon;
+              const isActive = activeTab === tab.id;
+              return (
+                <button
+                  key={tab.id}
+                  onClick={() => setActiveTab(tab.id as FilterCategory)}
+                  className={[
+                    'relative px-3 py-1.5 text-[10px] font-mono font-bold tracking-wider uppercase rounded transition-all duration-200 flex items-center gap-1.5',
+                    isActive ? 'text-ink-100 glow-text font-extrabold' : 'text-ink-700 hover:text-ink-300',
+                  ].join(' ')}
+                >
+                  {isActive && (
+                    <motion.div
+                      layoutId="activeSkillTab"
+                      className="absolute inset-0 cut-sm bg-accent-deep/50 border border-accent/60 shadow-[0_0_12px_rgba(77,163,255,0.35)]"
+                      transition={{ type: 'spring', stiffness: 400, damping: 30 }}
+                    />
+                  )}
+                  <span className="relative z-10 flex items-center gap-1">
+                    <IconComp size={13} weight={isActive ? 'fill' : 'bold'} color={isActive ? '#5fb2ff' : 'currentColor'} />
+                    {tab.label}
+                  </span>
+                </button>
+              );
+            })}
           </div>
         </div>
 
-        {/* Section 1: DSA */}
-        <Section title="DSA" tagline="ALGORITHMIC POWER" icon={Code}>
-          {dsa?.map((item) => <TopicRow key={item.topic} item={item} />)}
-        </Section>
-
-        {/* Section 2: SE Foundations */}
-        <Section title="SE Foundations" tagline="SYSTEM ARCHITECTURE" icon={Cpu}>
-          {foundations?.map((item) => <TopicRow key={item.topic} item={item} />)}
-        </Section>
-
-        {/* Section 3: AI / Agentic Tiers */}
-        <Section title="AI / Agentic tiers" tagline="FRONTIER TECH & ENGINE SPELLS" icon={Sparkle}>
-          {AI_TIERS.map((tier) => (
-            <div key={tier.title} className="mb-4 last:mb-0">
-              <div className="mb-2 flex items-center gap-2">
-                <span className="h-1 w-1 rounded-full bg-accent-mid shadow-[0_0_6px_#5fb2ff]" />
-                <div className="text-xs font-bold uppercase tracking-wider text-accent-mid glow-text">
-                  {tier.title}
-                </div>
-              </div>
-              <div className="flex flex-wrap gap-2">
-                {tier.items.map((item) => (
-                  <span
-                    key={item}
-                    className="cut-sm px-3 py-1.5 text-xs font-medium text-ink-100 transition-all duration-150 hover:border-accent/60 hover:shadow-[0_0_10px_rgba(77,163,255,0.3)] cursor-default"
-                    style={{
-                      border: '1px solid rgba(77, 163, 255, 0.35)',
-                      background: 'linear-gradient(180deg, rgba(12, 22, 38, 0.85), rgba(7, 13, 24, 0.95))',
-                    }}
-                  >
-                    {item}
-                  </span>
-                ))}
-              </div>
+        {/* Search Bar */}
+        {(activeTab === 'all' || activeTab === 'dsa' || activeTab === 'foundations') && (
+          <div className="mb-4 relative">
+            <div className="relative flex items-center">
+              <MagnifyingGlass size={16} color="#5fb2ff" className="absolute left-3 drop-shadow-[0_0_6px_#5fb2ff]" />
+              <input
+                type="text"
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+                placeholder="Search skills, algorithms, architecture..."
+                className="w-full cut-sm bg-surface-2/90 border border-accent/35 pl-9 pr-4 py-2 text-xs font-mono text-ink-100 placeholder:text-ink-700 focus:outline-none focus:border-accent focus:shadow-[0_0_12px_rgba(77,163,255,0.3)] transition-all"
+              />
+              {searchQuery && (
+                <button
+                  onClick={() => setSearchQuery('')}
+                  className="absolute right-3 text-xs font-mono text-ink-700 hover:text-accent-mid"
+                >
+                  CLEAR
+                </button>
+              )}
             </div>
-          ))}
-        </Section>
-
-        {/* Section 4: Career Tree */}
-        {careerTree && (
-          <Section title="Career tree" tagline="ARTEFACTS & INTERVIEWS" icon={Trophy}>
-            <TreeRow label="Software engineering → foundations" value={`${foundationsTouched}/9`} />
-            <TreeRow label="AI / Agentic → tiers" value="reference above" />
-            <TreeRow
-              label="Projects → artifacts"
-              value={
-                Object.entries(careerTree.artifactsByKind)
-                  .filter(([, n]) => (n ?? 0) > 0)
-                  .map(([kind, n]) => `${n} ${kind}`)
-                  .join(' · ') || '0'
-              }
-            />
-            <TreeRow label="Resume → versions" value={String(careerTree.resumeVersions)} />
-            <TreeRow
-              label="Applications"
-              value={`${careerTree.applications} (${careerTree.qualityApplications} quality)`}
-            />
-            <TreeRow label="Interviews" value={String(careerTree.interviews)} />
-            <TreeRow label="Offer" value={String(careerTree.offers)} />
-          </Section>
+          </div>
         )}
 
-        {/* Section 5: Dungeon Gate Interview Benchmark */}
-        <Section title="Interview-readiness benchmark" tagline="DUNGEON GATE TEST" icon={Sword}>
-          <InterviewBenchmarkCard />
-        </Section>
+        <AnimatePresence mode="wait">
+          {/* Section 1: DSA */}
+          {(activeTab === 'all' || activeTab === 'dsa') && (
+            <motion.div key="dsa-sec" initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0 }}>
+              <Section title="DSA Algorithmic Power" tagline="CORE SPELLS" icon={Code} count={filteredDsa.length}>
+                {filteredDsa.length > 0 ? (
+                  filteredDsa.map((item, i) => <TopicRow key={item.topic} item={item} index={i} />)
+                ) : (
+                  <p className="text-xs font-mono text-ink-700 py-3 text-center">No matching algorithms found.</p>
+                )}
+              </Section>
+            </motion.div>
+          )}
+
+          {/* Section 2: SE Foundations */}
+          {(activeTab === 'all' || activeTab === 'foundations') && (
+            <motion.div key="foundations-sec" initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0 }}>
+              <Section title="SE Foundations" tagline="SYSTEM ARCHITECTURE" icon={Cpu} count={filteredFoundations.length}>
+                {filteredFoundations.length > 0 ? (
+                  filteredFoundations.map((item, i) => <TopicRow key={item.topic} item={item} index={i} />)
+                ) : (
+                  <p className="text-xs font-mono text-ink-700 py-3 text-center">No matching architecture topics found.</p>
+                )}
+              </Section>
+            </motion.div>
+          )}
+
+          {/* Section 3: AI / Agentic Tiers */}
+          {(activeTab === 'all' || activeTab === 'ai') && (
+            <motion.div key="ai-sec" initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0 }}>
+              <Section title="AI / Agentic Spells" tagline="FRONTIER TECH TIERS" icon={Sparkle}>
+                {AI_TIERS.map((tier) => (
+                  <div key={tier.title} className="mb-4 last:mb-0 p-3 rounded cut-sm bg-surface/50 border border-hair-faint">
+                    <div className="mb-2.5 flex items-center justify-between border-b border-hair-faint pb-1.5">
+                      <div className="flex items-center gap-2">
+                        <span className="h-1.5 w-1.5 rounded-full bg-accent-mid shadow-[0_0_6px_#5fb2ff]" />
+                        <div className="text-xs font-bold uppercase tracking-wider text-accent-mid glow-text">
+                          {tier.title}
+                        </div>
+                      </div>
+                      <span className="cut-sm px-2 py-0.5 text-[9px] font-mono font-bold tracking-widest text-amber-300 bg-amber-950/50 border border-amber-500/40 shadow-[0_0_8px_rgba(251,191,36,0.3)]">
+                        {tier.rank}
+                      </span>
+                    </div>
+
+                    <div className="flex flex-wrap gap-2">
+                      {tier.items.map((item) => (
+                        <motion.span
+                          key={item}
+                          whileHover={{ scale: 1.04, y: -1 }}
+                          className="cut-sm px-3 py-1.5 text-xs font-medium text-ink-100 transition-all duration-150 hover:border-accent/70 hover:shadow-[0_0_12px_rgba(77,163,255,0.4)] cursor-default flex items-center gap-1.5"
+                          style={{
+                            border: '1px solid rgba(77, 163, 255, 0.35)',
+                            background: 'linear-gradient(180deg, rgba(12, 22, 38, 0.85), rgba(7, 13, 24, 0.95))',
+                          }}
+                        >
+                          <Flame size={12} weight="fill" color="#5fb2ff" className="drop-shadow-[0_0_6px_#5fb2ff]" />
+                          {item}
+                        </motion.span>
+                      ))}
+                    </div>
+                  </div>
+                ))}
+              </Section>
+            </motion.div>
+          )}
+
+          {/* Section 4: Career Tree */}
+          {(activeTab === 'all' || activeTab === 'career') && careerTree && (
+            <motion.div key="career-sec" initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0 }}>
+              <Section title="Career Tree" tagline="ARTEFACTS & INTERVIEWS" icon={Trophy}>
+                <TreeRow label="Software engineering → foundations" value={`${foundationsTouched}/9`} />
+                <TreeRow label="AI / Agentic → tiers unlocked" value="All Tiers Active" />
+                <TreeRow
+                  label="Projects → artifacts"
+                  value={
+                    Object.entries(careerTree.artifactsByKind)
+                      .filter(([, n]) => (n ?? 0) > 0)
+                      .map(([kind, n]) => `${n} ${kind}`)
+                      .join(' · ') || '0'
+                  }
+                />
+                <TreeRow label="Resume → versions" value={String(careerTree.resumeVersions)} />
+                <TreeRow
+                  label="Applications Logged"
+                  value={`${careerTree.applications} (${careerTree.qualityApplications} quality)`}
+                />
+                <TreeRow label="Interviews Conducted" value={String(careerTree.interviews)} />
+                <TreeRow label="Offer Secured" value={String(careerTree.offers)} />
+              </Section>
+            </motion.div>
+          )}
+
+          {/* Section 5: Dungeon Gate Benchmark */}
+          {(activeTab === 'all' || activeTab === 'benchmark') && (
+            <motion.div key="benchmark-sec" initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0 }}>
+              <Section title="Interview Readiness Benchmark" tagline="S-RANK DUNGEON GATE" icon={Sword}>
+                <InterviewBenchmarkCard />
+              </Section>
+            </motion.div>
+          )}
+        </AnimatePresence>
       </div>
     </>
   );
@@ -278,7 +504,7 @@ export function Skills() {
 
 function BandStat({ value, total, label, icon: Glyph }: { value: number; total: number; label: string; icon: Icon }) {
   return (
-    <div className="flex items-center gap-2.5">
+    <div className="flex items-center gap-2.5 p-2 rounded cut-sm border border-accent/20 bg-surface/50">
       <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-[7px] border border-accent/40 bg-accent-deep/40 text-accent-mid shadow-[0_0_10px_rgba(77,163,255,0.35)]">
         <Glyph size={17} weight="fill" color="#5fb2ff" />
       </div>
@@ -287,7 +513,7 @@ function BandStat({ value, total, label, icon: Glyph }: { value: number; total: 
           <span className="glow-text text-accent-mid">{value}</span>
           <span className="text-xs text-ink-700"> / {total}</span>
         </div>
-        <div className="text-[9px] uppercase font-bold tracking-wider text-ink-700 mt-0.5">{label}</div>
+        <div className="text-[9px] uppercase font-mono font-bold tracking-wider text-ink-700 mt-0.5">{label}</div>
       </div>
     </div>
   );
@@ -297,32 +523,44 @@ function Section({
   title,
   tagline,
   icon: Glyph,
+  count,
   children,
 }: {
   title: string;
   tagline?: string;
   icon?: Icon;
+  count?: number;
   children: React.ReactNode;
 }) {
   return (
-    <div
+    <motion.div
+      initial={{ opacity: 0, y: 12 }}
+      animate={{ opacity: 1, y: 0 }}
+      transition={{ duration: 0.25 }}
       className="cut-sm mb-4 p-4 transition-all duration-200"
       style={{
-        border: '1px solid rgba(77, 163, 255, 0.32)',
-        background: 'linear-gradient(180deg, rgba(10, 20, 36, 0.85), rgba(5, 10, 20, 0.95))',
-        boxShadow: '0 0 16px rgba(77, 163, 255, 0.12)',
+        border: '1px solid rgba(77, 163, 255, 0.35)',
+        background: 'linear-gradient(180deg, rgba(10, 20, 36, 0.88), rgba(5, 10, 20, 0.96))',
+        boxShadow: '0 0 18px rgba(77, 163, 255, 0.12)',
       }}
     >
       <div className="flex items-center justify-between gap-3 mb-3 pb-2 border-b border-hair-faint">
-        <div className="flex items-center gap-3">
+        <div className="flex items-center gap-2.5">
           {Glyph && (
             <div className="flex h-7 w-7 shrink-0 items-center justify-center rounded-[6px] border border-accent/40 bg-accent-deep/40 text-accent-mid shadow-[0_0_8px_rgba(77,163,255,0.3)]">
               <Glyph size={15} weight="fill" color="#5fb2ff" />
             </div>
           )}
-          <h2 className="font-display text-lg font-bold tracking-[0.14em] text-ink-100">
-            {title}
-          </h2>
+          <div>
+            <h2 className="font-display text-lg font-bold tracking-[0.14em] text-ink-100 flex items-center gap-2">
+              {title}
+              {count !== undefined && (
+                <span className="text-xs font-mono px-1.5 py-0.5 rounded bg-accent-deep/40 border border-accent/30 text-accent-mid">
+                  {count}
+                </span>
+              )}
+            </h2>
+          </div>
         </div>
         {tagline && (
           <span className="text-[9px] uppercase tracking-[0.18em] font-bold text-accent-mid/80 font-mono">
@@ -331,16 +569,13 @@ function Section({
         )}
       </div>
       {children}
-    </div>
+    </motion.div>
   );
 }
 
 function TreeRow({ label, value }: { label: string; value: string }) {
   return (
-    <div
-      className="flex items-center gap-3 py-2.5 px-2 rounded-sm transition-all duration-150 hover:bg-accent-deep/15"
-      style={{ borderBottom: '1px solid var(--hair-faint)' }}
-    >
+    <div className="flex items-center gap-3 py-2.5 px-2 rounded-sm transition-all duration-150 hover:bg-accent-deep/15 border-b border-hair-faint">
       <span className="min-w-0 flex-1 truncate text-xs font-semibold text-ink-300">{label}</span>
       <span className="shrink-0 font-mono text-xs font-bold tabular-nums text-accent-mid glow-text">{value}</span>
     </div>
@@ -379,10 +614,10 @@ function InterviewBenchmarkCard() {
   if (!arcId) return null;
 
   return (
-    <FramedPanel className="px-4 py-4 relative overflow-hidden">
+    <FramedPanel className="px-4 py-4 relative overflow-hidden cut-sm border border-accent/40 bg-surface-2/90 shadow-[0_0_20px_rgba(77,163,255,0.2)]">
       <div
         aria-hidden
-        className="pointer-events-none absolute inset-0 opacity-20"
+        className="pointer-events-none absolute inset-0 opacity-25"
         style={{
           mixBlendMode: 'lighten',
           maskImage: 'radial-gradient(100% 100% at 50% 50%, #000 20%, transparent 80%)',
@@ -392,38 +627,50 @@ function InterviewBenchmarkCard() {
         <ArtLayer slot="training" scrim="quiet" focal="50% 40%" />
       </div>
 
-      <div className="relative">
+      <div className="relative z-10">
+        <div className="flex items-center gap-2 mb-2">
+          <Sword size={16} weight="fill" color="#5fb2ff" className="animate-bounce drop-shadow-[0_0_8px_#5fb2ff]" />
+          <span className="text-xs font-mono font-bold uppercase tracking-wider text-ink-100">
+            DUNGEON GATE PROTOCOL RULES
+          </span>
+        </div>
+
         <p className="text-xs leading-relaxed text-ink-200 font-medium">
-          3 randomly-drawn mediums, 90 minutes total, unseen, first-attempt, a working solution, and a
-          stated complexity.
+          3 randomly-drawn medium DSA challenges · 90 minutes total duration · unseen test cases · first-attempt working solution with full space-time complexity analysis.
         </p>
 
-        <div className="mt-3 flex items-center justify-between">
-          <span className="text-[9px] uppercase tracking-widest font-mono text-ink-700">BENCHMARK STATUS:</span>
-          <p className={['text-xs font-bold tracking-wider uppercase font-mono', passed ? 'glow-text text-accent-mid' : 'text-ink-600'].join(' ')}>
-            {passed ? '✓ Passed.' : 'Not yet passed.'}
-          </p>
+        <div className="mt-4 p-2.5 rounded cut-sm border border-accent/30 bg-accent-deep/20 flex items-center justify-between">
+          <span className="text-[10px] uppercase tracking-widest font-mono text-ink-500 font-bold">BENCHMARK GATE STATUS:</span>
+          <div className="flex items-center gap-1.5">
+            <CheckCircle size={15} weight="fill" color={passed ? '#5fb2ff' : '#90a8c2'} />
+            <p className={['text-xs font-bold tracking-wider uppercase font-mono', passed ? 'glow-text text-accent-mid font-extrabold' : 'text-ink-500'].join(' ')}>
+              {passed ? '✓ GATE CLEARED' : 'UNCLEARED GATE'}
+            </p>
+          </div>
         </div>
 
         <div className="mt-4 flex gap-2">
-          <PrimaryButton size="md" disabled={submitting} onClick={() => void handleLog(true)} className="flex-1 shadow-[0_0_12px_rgba(77,163,255,0.3)]">
-            Passed
+          <PrimaryButton size="md" disabled={submitting} onClick={() => void handleLog(true)} className="flex-1 shadow-[0_0_16px_rgba(77,163,255,0.4)] font-mono uppercase font-bold tracking-wider">
+            {submitting ? 'RECORDING...' : 'GATE CLEARED'}
           </PrimaryButton>
-          <SecondaryButton disabled={submitting} onClick={() => void handleLog(false)} className="flex-1">
-            Not yet
+          <SecondaryButton disabled={submitting} onClick={() => void handleLog(false)} className="flex-1 font-mono uppercase tracking-wider">
+            RETRIED / FAILED
           </SecondaryButton>
         </div>
 
         {history.length > 0 && (
-          <ul className="mt-4 flex flex-col gap-1 border-t border-hair-faint pt-3">
+          <ul className="mt-4 flex flex-col gap-1.5 border-t border-hair-faint pt-3">
+            <div className="text-[9px] uppercase font-mono font-bold text-ink-700 tracking-wider mb-1">
+              DUNGEON ENTRY LOGS ({history.length})
+            </div>
             {history.map((h, i) => (
               <li
                 key={i}
-                className="flex items-center justify-between font-mono text-xxs tabular-nums text-faint"
+                className="flex items-center justify-between font-mono text-xxs tabular-nums px-2 py-1 rounded bg-surface/50 border border-hair-faint"
               >
-                <span>{h.local_date}</span>
-                <span className={h.passed ? 'text-accent-mid font-bold glow-text' : undefined}>
-                  {h.passed ? 'passed' : 'not yet'}
+                <span className="text-ink-500">{h.local_date}</span>
+                <span className={h.passed ? 'text-accent-mid font-bold glow-text uppercase' : 'text-ink-700 uppercase'}>
+                  {h.passed ? '✓ CLEARED' : 'RETRIED'}
                 </span>
               </li>
             ))}
@@ -433,4 +680,5 @@ function InterviewBenchmarkCard() {
     </FramedPanel>
   );
 }
+
 

@@ -4,15 +4,9 @@ import { ArtLayer, ScreenShell } from '../kit';
 
 /**
  * How long the boot screen stays up at minimum.
- *
- * Not padding for its own sake. Reading the arc out of IndexedDB takes
- * a few milliseconds on a warm device, and a splash that appears and
- * vanishes inside 50ms is a flash, not a boot — it reads as a glitch.
- * Holding it briefly makes starting the system feel like starting
- * something. It is paid once per launch, never per interaction, and
- * this app is opened twice a day.
+ * Set to 3500ms (3.5s) for a dramatic Solo Leveling system boot experience.
  */
-export const SPLASH_MIN_MS = 900;
+export const SPLASH_MIN_MS = 3500;
 
 /** True once `ms` has passed since mount. */
 export function useMinimumElapsed(ms: number): boolean {
@@ -33,10 +27,6 @@ const EASE = [0.22, 1, 0.36, 1] as const;
  * resolved. A four-beat reveal — plate, wordmark, rule, creed — each
  * beat overlapping the last so it reads as one movement rather than a
  * list of things appearing.
- *
- * Under reduced motion `MotionConfig` strips the transforms and leaves
- * the opacity fades, so the sequence still resolves in order without
- * anything moving.
  */
 export function Splash() {
   return (
@@ -48,14 +38,11 @@ export function Splash() {
         <ArtLayer slot="boot" scrim="moment" priority />
 
         <motion.div
-          initial={{ opacity: 0, y: 10 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ delay: 0.12, duration: 0.5, ease: EASE }}
+          initial={{ opacity: 0, y: 12, scale: 0.96 }}
+          animate={{ opacity: 1, y: 0, scale: 1 }}
+          transition={{ delay: 0.2, duration: 0.8, ease: EASE }}
           className="relative flex flex-col items-center"
         >
-          {/* The +0.34em tracking needs the matching left padding or the
-              word sits visually off-centre — the trailing letter-space
-              is real width the eye does not see. */}
           <h1
             className="glow-text pl-[0.34em] font-display text-display tracking-wordmark text-ink-100"
             style={{ fontWeight: 300 }}
@@ -67,8 +54,8 @@ export function Splash() {
         <motion.div
           aria-hidden
           initial={{ width: 0, opacity: 0 }}
-          animate={{ width: 210, opacity: 1 }}
-          transition={{ delay: 0.38, duration: 0.42, ease: EASE }}
+          animate={{ width: 220, opacity: 1 }}
+          transition={{ delay: 0.6, duration: 0.7, ease: EASE }}
           className="relative my-6 h-px"
           style={{
             background:
@@ -77,10 +64,10 @@ export function Splash() {
         />
 
         <motion.p
-          initial={{ opacity: 0 }}
-          animate={{ opacity: 1 }}
-          transition={{ delay: 0.6, duration: 0.45 }}
-          className="relative text-xxs uppercase text-ink-700"
+          initial={{ opacity: 0, y: 4 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ delay: 1.0, duration: 0.7 }}
+          className="relative text-xxs font-mono uppercase tracking-[0.24em] text-accent-mid font-bold glow-text"
         >
           Discipline creates freedom
         </motion.p>

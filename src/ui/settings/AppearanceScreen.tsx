@@ -154,11 +154,13 @@ function Swatch({ accent }: { accent: AccentKey }) {
   return (
     <span
       aria-hidden
-      // inline-block, or the span collapses to a sliver: it sits inside
-      // the row's trailing text span, where an inline element takes its
-      // width from content it does not have.
-      className="inline-block h-3 w-3 rounded-pill align-middle"
-      style={{ background: hex ?? 'var(--accent)', border: '1px solid var(--hair)' }}
+      className="inline-block h-4 w-4 rounded-pill align-middle transition-transform duration-200 hover:scale-125"
+      style={{
+        background: hex ?? 'var(--accent)',
+        border: '1.5px solid var(--hair-strong)',
+        boxShadow: hex ? `0 0 12px ${hex}` : '0 0 12px rgba(77,163,255,0.7)',
+      }}
     />
   );
 }
+

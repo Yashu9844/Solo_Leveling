@@ -1,65 +1,58 @@
-import { Briefcase } from '@phosphor-icons/react';
+import { Briefcase, Sparkle } from '@phosphor-icons/react';
+import { motion } from 'framer-motion';
 import { IconTile, MeterBar, SectionLabel } from '../kit';
 
 /**
- * The live preview, pinned at the top of Appearance (design/03 §4).
- *
- * Settings apply instantly, so this is not a preview of something
- * pending — it is a sample of the app's own vocabulary, kept on screen
- * while you scroll a list of thirty controls. Without it you would tap
- * a theme, navigate two screens back to see what it did, and navigate
- * two screens forward to try the next one.
- *
- * The four things in it are the four things every setting touches: a
- * section label (tracking and ink), a quest row (icon tile, title, mono
- * XP, the completion circle), a meter (accent and glow), and a line of
- * display serif (the type scale, at the size where it shows).
- *
- * It is sticky rather than fixed. Fixed would escape the scroll
- * container and sit over the bottom nav; sticky stays inside the
- * screen's own flow and stops at the top of it.
+ * The live preview, pinned at the top of Appearance screen.
+ * Upgraded with a Holographic System Preview aesthetic.
  */
 export function AppearancePreview() {
   return (
     <div
       className="sticky top-0 z-10 -mx-gutter px-gutter pb-4 pt-3"
-      // An opaque ground, not a blur: the rows scrolling underneath must
-      // not show through the sample they are changing.
       style={{ background: 'var(--void)', borderBottom: '1px solid var(--hair-faint)' }}
       aria-hidden
     >
-      <div
-        className="cut-sm px-4 py-4"
-        style={{ border: '1px solid var(--hair)', background: 'var(--surface)' }}
+      <motion.div
+        initial={{ opacity: 0, scale: 0.96 }}
+        animate={{ opacity: 1, scale: 1 }}
+        transition={{ duration: 0.3 }}
+        className="cut-sm relative overflow-hidden px-4 py-4 transition-all duration-200"
+        style={{
+          border: '1px solid rgba(77, 163, 255, 0.4)',
+          background: 'linear-gradient(180deg, rgba(12, 22, 38, 0.92), rgba(6, 11, 20, 0.98))',
+          boxShadow: '0 0 20px rgba(77, 163, 255, 0.2)',
+        }}
       >
-        <SectionLabel rule className="mb-3">
-          Today&rsquo;s quests
-        </SectionLabel>
+        <div className="flex items-center justify-between mb-2">
+          <SectionLabel rule className="!mb-0 text-accent-mid font-mono tracking-widest text-[9px] uppercase">
+            LIVE SYSTEM PREVIEW HUD
+          </SectionLabel>
+          <Sparkle size={14} weight="fill" color="#5fb2ff" className="animate-pulse drop-shadow-[0_0_8px_#5fb2ff]" />
+        </div>
 
         <div className="flex items-center gap-3">
           <IconTile icon={Briefcase} />
           <span className="min-w-0 flex-1">
-            <span className="block truncate text-md text-ink-100">CAREER</span>
-            <span className="block truncate text-xs text-ink-700">3 applications</span>
+            <span className="block truncate text-md font-bold text-ink-100 glow-text">CAREER MANDATE</span>
+            <span className="block truncate text-xs text-ink-500">3 applications submitted</span>
           </span>
-          <span className="shrink-0 font-mono text-xs tabular-nums text-ink-700">+100</span>
-          <span
-            className="h-5 w-5 shrink-0 rounded-pill"
+          <span className="shrink-0 font-mono text-xs font-bold tabular-nums text-accent-mid glow-text">+100 EXP</span>
+          <motion.span
+            animate={{ scale: [1, 1.12, 1] }}
+            transition={{ repeat: Infinity, duration: 2 }}
+            className="h-5 w-5 shrink-0 rounded-pill shadow-[0_0_12px_#5fb2ff]"
             style={{ background: 'var(--accent)', boxShadow: 'var(--glow-sm)' }}
           />
         </div>
 
-        <MeterBar pct={62} height={7} className="mt-4" />
+        <MeterBar pct={68} height={8} className="mt-3" />
 
-        {/* Dropped on a short viewport. Pinned, this card takes nearly
-            half of a 320x568 screen at text scale XL, and at that point
-            it is competing with the list it exists to serve. The quest
-            row above already shows the type scale; the serif line is the
-            part that can go. */}
-        <p className="mt-4 font-display text-[calc(15px*var(--type-scale))] leading-[1.5] text-ink-700 [@media(max-height:640px)]:hidden">
-          Discipline is remembering what you want.
+        <p className="mt-3 font-display text-[calc(14px*var(--type-scale))] italic leading-[1.4] text-ink-300 [@media(max-height:640px)]:hidden">
+          &ldquo;THE SYSTEM DOES NOT WAIT FOR THE HESITANT.&rdquo;
         </p>
-      </div>
+      </motion.div>
     </div>
   );
 }
+

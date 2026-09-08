@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import {
   ArrowRight,
   Brain,
@@ -10,6 +10,7 @@ import {
 import type { CoreQuestKey, ReviewBlocker } from '../../engine/types';
 import { DEFAULT_CONFIG } from '../../engine/config';
 import { realDeps } from '../../store/deps';
+import { db } from '../../db/db';
 import { completeEveningReview, getDailyReport, type DailyReport } from '../../store/review';
 import { DotPicker } from '../components/DotPicker';
 import { SingleChipSelect } from '../components/SingleChipSelect';
@@ -49,6 +50,20 @@ export function EveningReview({ today, day, arcId, onClose }: EveningReviewProps
   const [sleptAt, setSleptAt] = useState('02:00');
   const [submitting, setSubmitting] = useState(false);
   const [report, setReport] = useState<DailyReport | null>(null);
+  const [name, setName] = useState<string | null>(null);
+
+  useEffect(() => {
+    let cancelled = false;
+    void db.profile
+      .toCollection()
+      .first()
+      .then((p) => {
+        if (!cancelled) setName(p?.name?.trim() || null);
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, []);
 
   async function handleComplete() {
     if (!blocker || submitting) return;
@@ -66,7 +81,7 @@ export function EveningReview({ today, day, arcId, onClose }: EveningReviewProps
   }
 
   if (report) {
-    return <DailyReportView report={report} day={day} onDismiss={onClose} />;
+    return <DailyReportView report={report} day={day} name={name} onDismiss={onClose} />;
   }
 
   return (
@@ -247,10 +262,12 @@ export function EveningReview({ today, day, arcId, onClose }: EveningReviewProps
 function DailyReportView({
   report,
   day,
+  name,
   onDismiss,
 }: {
   report: DailyReport;
   day: number | null;
+  name: string | null;
   onDismiss: () => void;
 }) {
   return (
@@ -272,6 +289,14 @@ function DailyReportView({
           <p className="text-center text-xxs uppercase tracking-wide text-ink-700">
             DAILY REPORT · DAY {day ?? report.day}
           </p>
+          {/* The closing line of the day is the natural place for the
+              System to say whose day it was. The name is collected on
+              onboarding step 1 and was displayed nowhere in the app. */}
+          {name && (
+            <p className="glow-text mt-1 text-center font-mono text-xxs uppercase tracking-[0.22em] text-accent-mid">
+              ⟨ PLAYER · {name.toUpperCase()} ⟩
+            </p>
+          )}
 
           <Panel cut="md" className="mx-auto mt-5 w-full max-w-[380px]" bodyClassName="px-4 py-4">
             <Row label="XP" value={`${report.xp}`} />

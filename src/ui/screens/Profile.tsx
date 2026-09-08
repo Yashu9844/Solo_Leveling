@@ -109,18 +109,23 @@ function LevelSummary() {
   const [totalXp, setTotalXp] = useState<number | null>(null);
   const [rank, setRank] = useState<string | null>(null);
   const [mainQuest, setMainQuest] = useState<string | null>(null);
+  const [name, setName] = useState<string | null>(null);
 
   useEffect(() => {
     let cancelled = false;
-    void Promise.all([getTotalXp(), getCurrentRank(), db.arc.toCollection().first()]).then(
-      ([xp, r, arc]) => {
-        if (!cancelled) {
-          setTotalXp(xp);
-          setRank(r);
-          setMainQuest(arc?.main_quest_text ?? null);
-        }
+    void Promise.all([
+      getTotalXp(),
+      getCurrentRank(),
+      db.arc.toCollection().first(),
+      db.profile.toCollection().first(),
+    ]).then(([xp, r, arc, profile]) => {
+      if (!cancelled) {
+        setTotalXp(xp);
+        setRank(r);
+        setMainQuest(arc?.main_quest_text ?? null);
+        setName(profile?.name?.trim() || null);
       }
-    );
+    });
     return () => {
       cancelled = true;
     };
@@ -154,8 +159,12 @@ function LevelSummary() {
 
       <div className="relative">
         <div className="flex items-center justify-between mb-3">
-          <span className="cut-sm px-2 py-0.5 text-[8px] font-mono font-bold tracking-widest text-accent-mid bg-accent-deep/40 border border-accent/40 shadow-[0_0_8px_rgba(77,163,255,0.3)]">
-            HUNTER IDENTITY RECORD
+          {/* The name has been collected on onboarding step 1 and stored
+              since Slice 1, and nothing in the app has ever displayed it.
+              A System that never says who it is talking to is a
+              dashboard; this is the one line that makes it an address. */}
+          <span className="cut-sm border border-accent/40 bg-accent-deep/40 px-2 py-0.5 font-mono text-[8px] font-bold tracking-widest text-accent-mid shadow-[0_0_8px_rgba(77,163,255,0.3)]">
+            {name ? `PLAYER · ${name.toUpperCase()}` : 'HUNTER IDENTITY RECORD'}
           </span>
           <Sparkle size={16} weight="fill" color="#5fb2ff" className="drop-shadow-[0_0_8px_rgba(77,163,255,0.8)] animate-pulse" />
         </div>

@@ -94,7 +94,7 @@ specific to this plan:
 
 ## Phase 4 — The player is addressed
 
-- [ ] **4.1** Store the player name where the UI can read it, and show it: `⟨ PLAYER: ADA ⟩`
+- [x] **4.1** Store the player name where the UI can read it, and show it: `⟨ PLAYER: ADA ⟩`
       on the Profile hero and on the daily report. Onboarding already collects and persists it;
       nothing displays it. Gate: fast.
 
@@ -139,4 +139,5 @@ specific to this plan:
 | 2.2 | ⟨ TIME REMAINING ⟩ | Placed where the XP figure was: the meter already told the XP story, and the day running out was told nowhere. Amber inside three hours. The crest picked up an `aria-label` since the visible "RANK" word gave way to it. |
 | 3.1 | `DayCompleteMoment` | Fires on the tap that finishes all six. Gold, because a complete day is evidence rather than an XP threshold. Checked against the optimistic list so the ceremony does not wait on the confirmed write, and queued behind LEVEL UP so one tap earning both plays them in sequence. Streak is hidden when 0 — the projection counts a day at rollover, so mid-day it reads the run *before* today. |
 | 3.2 | rarity, not a count | `FULL_SCREEN_LEVEL_UP_LIMIT = 3` spent the whole allowance by day 2.2 and left 118 days of text banners. Now levels 1-3 and every fifth; L5, L10, L15 stay events for the length of the arc. `xp.spec` moved with it — the case is now "a level-up between milestones", asserted at L4. |
+| 4.1 | the player is named | `⟨ PLAYER · ADA ⟩` on the Profile hero and on the daily report. The name has been collected on onboarding step 1 and persisted to `profile.name` since Slice 1 and was displayed in exactly zero places. Falls back to the old label when it is blank, so a skipped name never leaves an empty badge. |
 | — | plan | — |

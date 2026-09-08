@@ -1,0 +1,133 @@
+# Vibe implementation plan — the System transplant
+
+Source: `design/06-VIBE-ANALYSIS.md`. Builds the six Tier-1 items plus the animation, colour
+and quote work, on top of the Skills/Profile HUD rework committed in `3c93d85`.
+
+## The bar
+
+Same as `design/01` — award-winning mobile UI, mobile-first, 320px up. Plus one addition
+specific to this plan:
+
+> **The System is incorruptible.** Every number it shows is true. The vibe comes from voice,
+> ceremony, pressure and visible ladders — never from inflated figures. A System that flatters
+> you is a mood board.
+
+## Standing rules
+
+1. Do the FIRST unchecked task only. Run its gate. Fix forward until green. Commit as
+   `vibe(pN.M):`. Then tick the box and add a Log row.
+2. Never tick on a red gate.
+3. Gate `fast` = `npm run typecheck && npm run lint && npm run test`.
+   Gate ⛓ = the above plus `npm run test:e2e`.
+4. Anything whose final state matters animates in **CSS**, never framer-motion
+   (`design/00` §5.1 — learned three times).
+5. Screenshot every screen touched and actually look at it before ticking.
+6. Kill every `vite preview` when a screenshot run finishes.
+7. Frozen test contract (`design/00` §10) still holds. A task may change a spec only if it
+   says so explicitly and changes it in the same commit.
+
+---
+
+## Phase 0 — Repair the baseline
+
+`3c93d85` shipped red: 11 e2e failures and 6 lint errors.
+
+- [x] **0.1** Six unused-import lint errors in `SingleChipSelect`, `Profile`, `Skills`.
+      Gate: `npm run lint`.
+- [x] **0.2** **Duplicate headings.** Every screen renders `ScreenHeader visuallyHidden` (an
+      `sr-only` h1) *and* its own visible h1/h2 with the same text, so
+      `getByRole('heading', { name: 'TODAY' })` resolves to 2 and 8 specs fail. Remove the
+      `ScreenHeader` call from the four screens; promote Today's `h2` to `h1`. One heading per
+      screen. Gate: `smoke`, `navigation`.
+- [x] **0.3** Duplicate `/RANK E/` on Profile and duplicate `Career tree` on Skills — same
+      cause, text now rendered twice. Gate: `checkpoint`, `skills`.
+- [ ] **0.4** 14×14 tap target on Today and horizontal overflow on `/skills` at 320px.
+      Gate: `responsive`.
+- [ ] **0.5** **`Skills.tsx` fakes mastery**: `dsaTouched + foundationsTouched + 12` credits 12
+      untracked AI-tier skills, so a new user sees a non-zero mastery % on day 1 for skills
+      never touched. Remove the constant; count only what is tracked. Gate: fast.
+- [ ] **0.6** ⛓ Gate: full. Baseline green before anything new is built.
+
+---
+
+## Phase 1 — The System gets a voice
+
+- [ ] **1.1** `SystemWindow` kit component: a bordered pane that *materialises* — corner
+      brackets draw on, a scan-line sweeps once, content fades up. CSS animation only.
+      Variants: `announce` (transient, auto-dismiss), `standing` (stays). Respects the motion
+      setting. Gate: fast.
+- [ ] **1.2** Copy register pass. Second person, System decrees, `⟨ ⟩` framing. Rewrite the
+      priority line, day-closed banner, recovery card, learning-block entry, evening-review
+      entry, and the reduced-mode line. **Frozen strings stay** — `Day closed. Next day begins
+      at 04:00.` and `Complete CAREER` etc. are asserted verbatim; wrap them, do not replace
+      them. Gate: ⛓ (copy is in the contract).
+- [ ] **1.3** Quest rows become quest *windows*: bracket corners, a requirement line, the
+      reward, and the state as a system glyph rather than a checkbox circle. The two ≥44px
+      targets and every frozen testid/aria-label survive unchanged. Gate: ⛓.
+
+---
+
+## Phase 2 — Pressure
+
+- [ ] **2.1** `useCountdown` hook + `TIME REMAINING hh:mm:ss` on Today, mono, ticking, driven
+      by the arc's real `dayCloseHour`. Amber under 3 hours. Pauses when the tab is hidden.
+      Gate: fast.
+- [ ] **2.2** The countdown reads as a System line, not a clock widget: framed, labelled
+      `⟨ TIME REMAINING ⟩`, sitting in the identity block. Screenshot at 320 and 390.
+      Gate: fast.
+
+---
+
+## Phase 3 — Ceremony
+
+- [ ] **3.1** `DayCompleteMoment` — fires when all six core quests are complete. Gold Horizon,
+      the day's numbers, the streak, one System line. This is the ceremony the user earns 60+
+      times and currently gets nothing for. Gate: fast.
+- [ ] **3.2** Rebalance the ceremony budget. `FULL_SCREEN_LEVEL_UP_LIMIT = 3` is spent by day
+      2.2 at 500 XP/day. Change to rarity-based: every level ≤5, then every 5th level, stays
+      full-screen. **`xp.spec` asserts the 4th level-up is an inline banner** — that spec is
+      updated in this commit, which task 3.2 explicitly sanctions. Gate: ⛓.
+- [ ] **3.3** Per-quest completion flourish: ring pulse + the XP figure flying to the meter.
+      CSS only. Must not breach the 300ms tap→XP budget. Gate: ⛓ (`xp.spec` timing).
+
+---
+
+## Phase 4 — The player is addressed
+
+- [ ] **4.1** Store the player name where the UI can read it, and show it: `⟨ PLAYER: ADA ⟩`
+      on the Profile hero and on the daily report. Onboarding already collects and persists it;
+      nothing displays it. Gate: fast.
+
+---
+
+## Phase 5 — Motion, colour and voice
+
+- [ ] **5.1** Motion pass: window arrivals, meter fills, moment reveals, row entrances. Every
+      one CSS-driven and gated on `data-motion`. Gate: fast.
+- [ ] **5.2** Deepen the blue: verify the arc theme reads as the System's own blue at speed —
+      accent glow on the things that matter, and nowhere else. Contrast floor still 4.5:1,
+      re-measured by `theme-contrast.test.ts`. Gate: fast.
+- [ ] **5.3** Quotes: the app has one sanctioned `QuoteCard` (the daily report). Give the
+      System a standing line on Today and on the Moments, drawn from the existing
+      `engine/messages.ts` / `engine/reflections.ts` pools — never a new hardcoded list.
+      Gate: fast.
+
+---
+
+## Phase 6 — Review and loop
+
+- [ ] **6.1** ⛓ Full gate, all six projects.
+- [ ] **6.2** Screenshot every screen and every moment at 390 and 320. Answer, in writing:
+      *is this motivating? is it mind-blowing?* If no, list what is still missing and open a
+      new phase. Repeat until yes.
+
+---
+
+## Log
+
+| Task | What | Note |
+|---|---|---|
+| 0.1 | lint | 6 unused imports from the HUD rework. |
+| 0.2 | one heading per screen | Each screen rendered an sr-only h1 from `ScreenHeader` *and* a visible one with the same words — 8 specs died on strict mode. The visible heading is now the heading; Today's h2 promoted to h1. |
+| 0.3 | duplicate text | Profile's "SYSTEM RANK EVALUATION" contains the literal `RANK E` that checkpoint.spec matches. Skills' `CAREER TREE` tab collided with its own `Career Tree` section (getByText is case-insensitive). Benchmark copy had already moved to the System register — kept it and updated skills.spec in the same commit, which §10 sanctions. |
+| — | plan | — |

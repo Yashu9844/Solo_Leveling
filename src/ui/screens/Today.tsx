@@ -28,7 +28,7 @@ import { LogAttentionSheet } from '../lifestyle/LogAttentionSheet';
 import { MaintenanceCard } from '../lifestyle/MaintenanceCard';
 import { LearningBlockSheet } from '../foundations/LearningBlockSheet';
 import { SingleChipSelect } from '../components/SingleChipSelect';
-import { ArtLayer, MeterBar, ScreenHeader, SectionLabel } from '../kit';
+import { ArtLayer, MeterBar, SectionLabel } from '../kit';
 import { getTodaySystemLine } from '../../store/messages';
 import { recordReflectionShown } from '../../store/reflections';
 
@@ -285,7 +285,11 @@ export function Today() {
 
   return (
     <>
-      <ScreenHeader title="TODAY" visuallyHidden />
+      {/* One heading per screen. This screen used to render an sr-only
+          h1 from ScreenHeader *and* a visible one with the same words,
+          so getByRole('heading', { name: ... }) matched two elements and
+          eight specs failed on strict mode. The visible heading is the
+          heading. */}
       <div className="px-gutter pb-4 pt-2">
       {/*
         The identity block. Top taglines, Sung Jinwoo background artwork,
@@ -463,7 +467,7 @@ export function Today() {
       {/* TODAY Section Title Block */}
       <div className="mb-2">
         <div className="flex items-center justify-between gap-3">
-          <h2 className="font-display text-2xl tracking-[0.14em] text-ink-100">TODAY</h2>
+          <h1 className="font-display text-2xl tracking-[0.14em] text-ink-100">TODAY</h1>
           <div className="h-[1px] flex-1 bg-gradient-to-r from-accent-mid/40 via-hair to-transparent" />
           <span className="text-[9px] uppercase tracking-[0.18em] font-medium text-ink-700 shrink-0">
             BUILD A BETTER YOU

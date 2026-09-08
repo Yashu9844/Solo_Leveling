@@ -11,7 +11,7 @@ import { getRealitySummary, type RealitySummary } from '../../store/reality';
 import { AttributeBars } from '../components/AttributeBars';
 import { WeeklyReview } from '../review/WeeklyReview';
 import { getCurrentRank } from '../../store/checkpoint';
-import { ArtLayer, MeterBar, ScreenHeader, SectionLabel } from '../kit';
+import { ArtLayer, MeterBar, SectionLabel } from '../kit';
 
 type SubTab = 'SYSTEM' | 'REALITY';
 
@@ -35,7 +35,11 @@ export function Progress() {
 
   return (
     <>
-      <ScreenHeader title="PROGRESS" visuallyHidden />
+      {/* One heading per screen. This screen used to render an sr-only
+          h1 from ScreenHeader *and* a visible one with the same words,
+          so getByRole('heading', { name: ... }) matched two elements and
+          eight specs failed on strict mode. The visible heading is the
+          heading. */}
       <div className="px-gutter pb-6 pt-2">
         {/* Screen Header matching design screenshot */}
         <div className="flex items-start justify-between mb-3">

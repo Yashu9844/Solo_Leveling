@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useState, type ReactNode } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { GearSix, Shield, Sparkle, Trophy, User } from '@phosphor-icons/react';
+import { GearSix, Sparkle } from '@phosphor-icons/react';
 import { DEFAULT_CONFIG } from '../../engine/config';
 import { levelFor } from '../../engine/level';
 import { arcDay, localDate } from '../../engine/time';
@@ -20,7 +20,7 @@ import { BossList } from '../components/BossList';
 import { AchievementsList } from '../components/AchievementsList';
 import { BodyMetricsCard } from '../components/BodyMetricsCard';
 import { CheckpointInstrumentsCard } from '../components/CheckpointInstrumentsCard';
-import { ArtLayer, FramedPanel, MeterBar, Panel, ScreenHeader, SectionLabel, SecondaryButton } from '../kit';
+import { ArtLayer, FramedPanel, MeterBar, SectionLabel, SecondaryButton } from '../kit';
 
 const CHECKPOINT_DAYS: Checkpoint['day'][] = [14, 30, 60, 90, 120];
 const ARC_LENGTH_DAYS = 120;
@@ -39,7 +39,11 @@ export function Profile() {
 
   return (
     <>
-      <ScreenHeader title="PROFILE" visuallyHidden />
+      {/* One heading per screen. This screen used to render an sr-only
+          h1 from ScreenHeader *and* a visible one with the same words,
+          so getByRole('heading', { name: ... }) matched two elements and
+          eight specs failed on strict mode. The visible heading is the
+          heading. */}
       <div className="px-gutter pb-8 pt-2">
         {/* Header Bar matching Solo Leveling style */}
         <div className="flex items-start justify-between mb-4">
@@ -242,7 +246,7 @@ function CheckpointRow() {
       >
         <div className="flex items-center justify-between mb-1">
           <span className="text-[9px] uppercase font-mono font-bold tracking-widest text-accent-mid">
-            THE NEXT GATE // SYSTEM RANK EVALUATION
+            THE NEXT GATE // SYSTEM ASSESSMENT
           </span>
           <span className="h-1.5 w-1.5 rounded-full bg-accent-mid shadow-[0_0_6px_#5fb2ff] animate-pulse" />
         </div>

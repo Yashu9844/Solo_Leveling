@@ -1,7 +1,6 @@
 import {
   Barbell,
   BatteryLow,
-  Briefcase,
   Cloud,
   Code,
   Cpu,

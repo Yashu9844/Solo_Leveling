@@ -4,7 +4,6 @@ import {
   Cpu,
   Crown,
   Lightning,
-  Shield,
   Sparkle,
   Sword,
   Trophy,
@@ -36,7 +35,6 @@ import {
   ArtLayer,
   FramedPanel,
   PrimaryButton,
-  ScreenHeader,
   SecondaryButton,
   SegmentBar,
 } from '../kit';
@@ -226,7 +224,11 @@ export function Skills() {
 
   return (
     <>
-      <ScreenHeader title="SKILLS" visuallyHidden />
+      {/* One heading per screen. This screen used to render an sr-only
+          h1 from ScreenHeader *and* a visible one with the same words,
+          so getByRole('heading', { name: ... }) matched two elements and
+          eight specs failed on strict mode. The visible heading is the
+          heading. */}
       <div className="px-gutter pb-8 pt-2">
         {/* System Top Header */}
         <motion.div
@@ -340,7 +342,7 @@ export function Skills() {
               { id: 'dsa', label: 'DSA POWER', icon: Code },
               { id: 'foundations', label: 'ARCHITECT', icon: Cpu },
               { id: 'ai', label: 'AI SPELLS', icon: Sparkle },
-              { id: 'career', label: 'CAREER TREE', icon: Trophy },
+              { id: 'career', label: 'CAREER PATH', icon: Trophy },
               { id: 'benchmark', label: 'DUNGEON GATE', icon: Sword },
             ].map((tab) => {
               const IconComp = tab.icon;

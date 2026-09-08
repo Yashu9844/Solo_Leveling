@@ -24,9 +24,12 @@ test('Skills shows real DSA/foundations mastery, AI tiers, career tree and the i
   await expect(page.getByText('Career tree')).toBeVisible();
   await expect(page.getByText('Applications')).toBeVisible();
 
-  await expect(page.getByText('Not yet passed.')).toBeVisible();
-  await page.getByRole('button', { name: 'Passed', exact: true }).click();
-  await expect(page.getByText('✓ Passed.')).toBeVisible();
+  // The benchmark speaks in the System's register now (design/07 task
+  // 0.3): an un-cleared gate rather than "Not yet passed." The assertion
+  // still checks the same two states of the same real record.
+  await expect(page.getByText('UNCLEARED GATE')).toBeVisible();
+  await page.getByRole('button', { name: 'GATE CLEARED', exact: true }).click();
+  await expect(page.getByText('✓ GATE CLEARED')).toBeVisible();
 });
 
 test('logging a DSA problem shows up as real mastery on Skills', async ({ page }) => {

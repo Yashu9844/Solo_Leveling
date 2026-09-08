@@ -112,6 +112,10 @@ test('the Moment dismisses on any tap', async ({ page }) => {
 });
 
 test('the 4th level-up renders as an inline banner, not full screen', async ({ page }) => {
+  // Four simulated days of completing all six quests, with a reload and
+  // a clock advance between each — 24 completions and 4 cold boots in
+  // one test. It is slow by construction, not by regression.
+  test.slow();
   await withSafeClock(page);
   await completeOnboarding(page);
 

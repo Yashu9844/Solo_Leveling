@@ -36,7 +36,7 @@ test('accepting a weekly quest shows live progress on Today and claims XP on com
   await expect(page.getByText('EVIDENCE ACCEPTED')).toBeVisible();
   await page.getByText('EVIDENCE ACCEPTED').click();
 
-  await expect(page.getByTestId('weekly-quest-progress')).toContainText('complete');
+  await expect(page.getByTestId('weekly-quest-progress')).toContainText('COMPLETE');
 
   // A second visit (quest now completed) shows no active quest banner.
   await page.getByRole('link', { name: 'PROGRESS' }).click();

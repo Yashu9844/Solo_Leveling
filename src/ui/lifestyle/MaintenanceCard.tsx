@@ -48,7 +48,7 @@ export function MaintenanceCard({ today, arcId, arcStartDate, onChanged }: Maint
 
   return (
     <div
-      className="cut-sm mt-3 p-3 flex flex-wrap items-center justify-between gap-2 transition-all duration-200"
+      className="cut-sm mt-2 flex flex-wrap items-center justify-between gap-2 p-2.5 transition-all duration-200"
       data-testid="maintenance-card"
       style={{
         border: '1px solid rgba(77, 163, 255, 0.32)',
@@ -73,19 +73,28 @@ export function MaintenanceCard({ today, arcId, arcStartDate, onChanged }: Maint
               onClick={() => void toggle(field)}
               disabled={saving}
               aria-pressed={active}
-              className={[
-                'cut-sm flex min-h-[36px] items-center gap-1.5 px-3 py-1 text-xs font-semibold tracking-wide transition-all duration-150 disabled:opacity-60',
-                active
-                  ? 'text-accent-mid bg-accent-deep/45 border-accent/60 shadow-[0_0_10px_rgba(77,163,255,0.3)]'
-                  : 'text-ink-300 bg-black/40 border-hair-faint hover:border-accent/40',
-              ].join(' ')}
-              style={{
-                borderStyle: 'solid',
-                borderWidth: '1px',
-              }}
+              // The button is a transparent 44px target that gives back
+              // 10px of margin top and bottom, so its margin box still
+              // occupies the strip's original height — Today is measured
+              // to zero overflow at 412x915 and the sixth quest row has
+              // to stay above the fold (final/06 §5.2), so the pill
+              // cannot simply grow. The *visible* pill is the inner span:
+              // putting the border on the button instead made the tap
+              // area visible, and it broke out past the card's edges.
+              className="-my-[10px] flex min-h-tap shrink-0 items-center disabled:opacity-60"
             >
-              {active && <span className="text-[10px] text-accent-mid font-bold" aria-hidden>✓</span>}
-              <span>{label}</span>
+              <span
+                className={[
+                  'cut-sm flex items-center gap-1.5 px-3 py-1 text-xs font-semibold tracking-wide transition-all duration-150',
+                  active
+                    ? 'text-accent-mid bg-accent-deep/45 border-accent/60 shadow-[0_0_10px_rgba(77,163,255,0.3)]'
+                    : 'text-ink-300 bg-black/40 border-hair-faint',
+                ].join(' ')}
+                style={{ borderStyle: 'solid', borderWidth: '1px' }}
+              >
+                {active && <span className="text-[10px] font-bold text-accent-mid" aria-hidden>✓</span>}
+                {label}
+              </span>
             </button>
           );
         })}

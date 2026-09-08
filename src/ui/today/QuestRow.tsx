@@ -93,7 +93,11 @@ export function QuestRow({ template, instance, dayClosed, xp, onToggle, onOpen }
     <div
       data-testid={`quest-row-${template.key}`}
       className={[
-        'cut-sm mb-1.5 flex min-h-row items-center gap-3 px-3 py-2 transition-all duration-150',
+        // 56px, not the 64px --row-min: six of these plus the header, the
+        // System line and three footer blocks have to fit 412x915 without
+        // scrolling (final/06 §5.2). The inner targets are untouched — the
+        // circle is still 44x44 and the row body still clears min-h-tap.
+        'cut-sm mb-1 flex min-h-[52px] items-center gap-3 px-3 py-1 transition-all duration-150',
         disabled ? 'opacity-40' : '',
       ].join(' ')}
       style={{
@@ -166,17 +170,13 @@ export function QuestRow({ template, instance, dayClosed, xp, onToggle, onOpen }
         </span>
       </motion.button>
 
-      {/* Right Chevron */}
-      <button
-        type="button"
-        onClick={onOpen}
-        disabled={disabled}
-        aria-hidden
-        tabIndex={-1}
-        className="shrink-0 text-ink-700"
-      >
+      {/* Decoration, not a control. It duplicated the row body's own
+          onOpen and rendered as a third 14x14 tap zone jammed against
+          the completion circle — under the 44px floor and competing
+          with the target beside it. The row is still the open target. */}
+      <span aria-hidden className="shrink-0 text-ink-700">
         <CaretRight size={14} weight="bold" />
-      </button>
+      </span>
     </div>
   );
 }

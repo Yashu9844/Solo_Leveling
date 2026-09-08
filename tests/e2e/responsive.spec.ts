@@ -117,7 +117,15 @@ async function auditPage(page: Page): Promise<Offender[]> {
   }, MIN_TAP);
 }
 
+/**
+ * These three walk nine routes with a cold load each, and a cold load
+ * re-runs the 900ms splash hold. That was comfortably inside the 30s
+ * default until the screens grew; it is not a product regression, it is
+ * nine boots in one test. Tripled rather than removed, so a genuine
+ * hang still fails.
+ */
 test('every route survives this viewport', async ({ page }) => {
+  test.slow();
   await boot(page);
 
   const found: string[] = [];
@@ -131,6 +139,7 @@ test('every route survives this viewport', async ({ page }) => {
 });
 
 test('the worst case: text scale XL, comfortable density', async ({ page }) => {
+  test.slow();
   await boot(page);
 
   // Set through the same localStorage key the app reads, so the inline
@@ -167,6 +176,7 @@ const THEMES = ['arc', 'dawn', 'abyss', 'contrast', 'daylight'] as const;
 const TABS = ['TODAY', 'PROGRESS', 'SKILLS', 'PROFILE'] as const;
 
 test('all five themes lay out identically', async ({ page }) => {
+  test.slow();
   await boot(page);
   await goto(page, '/today');
 

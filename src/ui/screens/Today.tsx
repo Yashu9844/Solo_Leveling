@@ -295,7 +295,7 @@ export function Today() {
         The identity block. Top taglines, Sung Jinwoo background artwork,
         DAY number, Rank Crest Badge, and Level XP progress bar.
       */}
-      <div className="relative -mx-gutter mb-2 px-gutter">
+      <div className="relative -mx-gutter mb-1 px-gutter">
         <div
           aria-hidden
           className="pointer-events-none absolute right-0 top-0 h-[190px] w-[220px] overflow-hidden"
@@ -310,15 +310,24 @@ export function Today() {
         </div>
 
         <div className="relative">
-          {/* Top Taglines */}
-          <div className="flex items-center justify-between text-[9px] uppercase tracking-[0.2em] text-ink-700 mb-2">
-            <div>
-              <span className="leading-none">DISCIPLINE CREATES FREEDOM</span>
-              <div className="h-[1px] w-6 bg-accent-mid/50 mt-0.5" />
-            </div>
-            <div className="text-right">
-              <span className="leading-none">A STRONGER YOU TOMORROW</span>
-            </div>
+          {/* The screen's heading lives here rather than in a strip of
+              its own. Today is measured to zero overflow at 412x915 —
+              final/06 §5.2, the constraint that caps the core set at six
+              — and a separate title block cost 51px of that budget while
+              repeating chrome this row was already carrying. */}
+          <div className="mb-2 flex items-center gap-3">
+            <h1 className="font-display text-lg leading-none tracking-[0.16em] text-ink-100">
+              TODAY
+            </h1>
+            <div className="h-px flex-1 bg-gradient-to-r from-accent-mid/40 via-hair to-transparent" />
+            {/* Decoration, so it yields first. shrink-0 here pushed
+                Today 20px sideways at 320px with text scale XL — the
+                heading and the tagline were both intrinsically sized and
+                neither could give ground. Hidden outright on the
+                narrowest screens rather than truncated to a fragment. */}
+            <span className="hidden min-w-0 truncate text-[9px] uppercase leading-none tracking-[0.2em] text-ink-700 [@media(min-width:360px)]:inline">
+              DISCIPLINE CREATES FREEDOM
+            </span>
           </div>
 
           {/* DAY 07 & RANK Crest */}
@@ -340,7 +349,7 @@ export function Today() {
                   {levelState.xpIntoLevel} / {levelState.xpForNext} XP
                 </span>
               </div>
-              <div className="relative flex h-11 w-11 shrink-0 items-center justify-center">
+              <div className="relative flex h-10 w-10 shrink-0 items-center justify-center">
                 <svg viewBox="0 0 48 48" className="absolute inset-0 h-full w-full drop-shadow-[0_0_10px_rgba(77,163,255,0.65)]">
                   <polygon points="24,3 45,24 24,45 3,24" fill="rgba(10,20,36,0.85)" stroke="#4da3ff" strokeWidth="1.5" />
                   <polygon points="24,7 41,24 24,41 7,24" fill="none" stroke="rgba(124,196,255,0.4)" strokeWidth="1" />
@@ -376,15 +385,6 @@ export function Today() {
           style={{ borderLeft: '2px solid var(--accent)' }}
         >
           LEVEL {String(banner.fromLevel).padStart(2, '0')} → {String(banner.toLevel).padStart(2, '0')}
-        </p>
-      )}
-
-      {streak?.reduced_mode && (
-        <p
-          className="mb-3 pl-3 text-sm text-ink-500"
-          style={{ borderLeft: '2px solid var(--state-recover)' }}
-        >
-          Reduced to the floor for two days. The arc continues.
         </p>
       )}
 
@@ -437,7 +437,7 @@ export function Today() {
 
       {/* Sci-Fi System Message HUD Banner */}
       <div
-        className="cut-sm relative mb-3.5 p-3 overflow-hidden transition-all duration-200"
+        className="cut-sm relative mb-2.5 overflow-hidden p-2.5 transition-all duration-200"
         style={{
           border: '1px solid rgba(77, 163, 255, 0.35)',
           background: 'linear-gradient(180deg, rgba(10, 20, 36, 0.85), rgba(5, 10, 20, 0.9))',
@@ -447,35 +447,30 @@ export function Today() {
         {/* Left glowing corner bracket */}
         <div className="absolute left-0 top-0 bottom-0 w-[3px] bg-accent-mid shadow-[0_0_8px_#4da3ff]" />
         
+        {streak?.reduced_mode && (
+          <p className="mb-1 pl-2 text-xs leading-relaxed text-state-recover">
+            Reduced to the floor for two days. The arc continues.
+          </p>
+        )}
+
         <p className="pl-2 text-xs leading-relaxed text-ink-300">
           {priorityLine(templates, instances, today, arc)}
         </p>
 
+        {/* Clamped to two lines. The reflection is drawn at random from
+            engine/reflections.ts, so its length varies — and an unbounded
+            line made Today's height depend on which sentence came up,
+            which meant §5.2's above-the-fold budget passed or failed by
+            luck. A bounded card is a deterministic screen. */}
         {systemLine && (
-          <p className="mt-1 pl-2 text-xs italic leading-relaxed text-ink-500" data-testid="system-line">
+          <p
+            className="mt-1 line-clamp-2 pl-2 text-xs italic leading-relaxed text-ink-500"
+            data-testid="system-line"
+          >
             {systemLine}
           </p>
         )}
 
-        <div className="mt-1 text-right">
-          <span className="text-[9px] uppercase tracking-[0.24em] font-bold text-accent-mid opacity-80">
-            SYSTEM
-          </span>
-        </div>
-      </div>
-
-      {/* TODAY Section Title Block */}
-      <div className="mb-2">
-        <div className="flex items-center justify-between gap-3">
-          <h1 className="font-display text-2xl tracking-[0.14em] text-ink-100">TODAY</h1>
-          <div className="h-[1px] flex-1 bg-gradient-to-r from-accent-mid/40 via-hair to-transparent" />
-          <span className="text-[9px] uppercase tracking-[0.18em] font-medium text-ink-700 shrink-0">
-            BUILD A BETTER YOU
-          </span>
-        </div>
-        <p className="text-[11px] italic text-ink-500 mt-0.5">
-          A short session on a tired day is still a session.
-        </p>
       </div>
 
       <div>
@@ -504,7 +499,7 @@ export function Today() {
       <button
         type="button"
         onClick={() => setLearningBlockOpen(true)}
-        className="cut-sm mt-2 flex min-h-[46px] w-full items-center justify-between px-3 py-2 text-left transition-all duration-150"
+        className="cut-sm mt-2 flex min-h-tap w-full items-center justify-between px-3 py-1.5 text-left transition-all duration-150"
         style={{
           border: '1px solid rgba(77, 163, 255, 0.3)',
           background: 'linear-gradient(180deg, rgba(12, 22, 38, 0.75), rgba(7, 13, 24, 0.85))',
@@ -551,6 +546,15 @@ export function Today() {
                 </span>
               </div>
               <p className="text-xs font-bold text-ink-100 leading-snug">{weeklyQuest.row.description}</p>
+              {/* Restored. The HUD pass dropped this line, so a weekly
+                  quest could complete and pay out 200 XP with nothing on
+                  screen saying it had. A payout the user cannot see is a
+                  payout that did not land. */}
+              {weeklyQuest.justCompleted && (
+                <p className="glow-text mt-1.5 font-mono text-[10px] font-bold uppercase tracking-[0.16em] text-accent-mid">
+                  ⟨ COMPLETE ⟩ +{weeklyQuest.row.xp} XP
+                </p>
+              )}
               <div className="mt-2.5">
                 <MeterBar pct={weeklyQuest.row.target > 0 ? (weeklyQuest.progress / weeklyQuest.row.target) * 100 : 0} label="Weekly quest progress" />
               </div>
@@ -606,7 +610,7 @@ export function Today() {
         <button
           type="button"
           onClick={() => setReviewOpen(true)}
-          className="cut-sm mt-3 flex min-h-[48px] w-full items-center justify-between px-4 py-2.5 transition-all duration-200"
+          className="cut-sm mt-2 flex min-h-tap w-full items-center justify-between px-4 py-2 transition-all duration-200"
           style={{
             border: '1px solid rgba(192, 132, 252, 0.5)',
             background: 'linear-gradient(180deg, rgba(55, 20, 85, 0.85), rgba(25, 10, 42, 0.95))',

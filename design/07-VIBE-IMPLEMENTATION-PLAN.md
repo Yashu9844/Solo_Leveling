@@ -41,12 +41,12 @@ specific to this plan:
       screen. Gate: `smoke`, `navigation`.
 - [x] **0.3** Duplicate `/RANK E/` on Profile and duplicate `Career tree` on Skills — same
       cause, text now rendered twice. Gate: `checkpoint`, `skills`.
-- [ ] **0.4** 14×14 tap target on Today and horizontal overflow on `/skills` at 320px.
+- [x] **0.4** 14×14 tap target on Today and horizontal overflow on `/skills` at 320px.
       Gate: `responsive`.
-- [ ] **0.5** **`Skills.tsx` fakes mastery**: `dsaTouched + foundationsTouched + 12` credits 12
+- [x] **0.5** **`Skills.tsx` fakes mastery**: `dsaTouched + foundationsTouched + 12` credits 12
       untracked AI-tier skills, so a new user sees a non-zero mastery % on day 1 for skills
       never touched. Remove the constant; count only what is tracked. Gate: fast.
-- [ ] **0.6** ⛓ Gate: full. Baseline green before anything new is built.
+- [x] **0.6** ⛓ Gate: full. Baseline green before anything new is built.
 
 ---
 
@@ -130,4 +130,7 @@ specific to this plan:
 | 0.1 | lint | 6 unused imports from the HUD rework. |
 | 0.2 | one heading per screen | Each screen rendered an sr-only h1 from `ScreenHeader` *and* a visible one with the same words — 8 specs died on strict mode. The visible heading is now the heading; Today's h2 promoted to h1. |
 | 0.3 | duplicate text | Profile's "SYSTEM RANK EVALUATION" contains the literal `RANK E` that checkpoint.spec matches. Skills' `CAREER TREE` tab collided with its own `Career Tree` section (getByText is case-insensitive). Benchmark copy had already moved to the System register — kept it and updated skills.spec in the same commit, which §10 sanctions. |
+| 0.4 | tap targets + overflow | Skills' filter tabs were 27px and its search field 36px; a section header's tagline was `shrink-0` beside an intrinsically-sized title and ran 23px past 320px. QuestRow shipped a third 14x14 tap zone that duplicated the row's own onOpen — now decoration. Maintenance pills were back at 36px. |
+| 0.5 | honest mastery | `dsaTouched + foundationsTouched + 12` over `+ 21` showed a brand-new user 34% mastery for skills never opened. Counts only what the app tracks. |
+| 0.6 | phase 0 gate | **103/103.** Reclaiming §5.2's above-the-fold budget took the most work: the HUD pass added 136px of chrome. Merged the two stacked System boxes into one left-ruled card (§4.4 asks for exactly that), absorbed the TODAY heading into the identity block, dropped a hardcoded quote that sat under the real reflection, and trimmed rows 64→52. Also clamped the reflection to two lines — its length is random, so an unbounded line made the budget pass or fail by luck. |
 | — | plan | — |

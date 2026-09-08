@@ -23,7 +23,7 @@ test('logging a foundation topic block grants LEARN XP and fires the MASTERY Mom
 
   await page.getByRole('button', { name: /Learning block/ }).click();
   await page.getByRole('button', { name: 'Operating Systems' }).click();
-  await page.getByRole('button', { name: /Log · \+\d+ XP/ }).click();
+  await page.getByRole('button', { name: /LOG BLOCK · \+\d+ XP/ }).click();
 
   // The very first block for a topic is unseen -> introduced, a genuine
   // mastery advance, so the MASTERY Moment fires and holds the sheet
@@ -47,7 +47,7 @@ test('the System Design chip reveals system/mode fields and logs into its own ta
   await expect(page.getByLabel('System')).toBeVisible();
   await page.getByLabel('System').fill('URL shortener');
   await page.getByRole('button', { name: 'Studied' }).click();
-  await page.getByRole('button', { name: /Log · \+\d+ XP/ }).click();
+  await page.getByRole('button', { name: /LOG BLOCK · \+\d+ XP/ }).click();
 
   // System Design's mastery is tracked from logged blocks, not from
   // system_design_study rows (existing, documented design) — so this

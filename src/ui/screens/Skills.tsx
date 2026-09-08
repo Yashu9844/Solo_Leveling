@@ -206,9 +206,17 @@ export function Skills() {
 
   const dsaTouched = dsa?.filter((t) => t.state !== 'unseen').length ?? 0;
   const foundationsTouched = foundations?.filter((t) => t.state !== 'unseen').length ?? 0;
-  const totalSkillsCount = (dsa?.length ?? 0) + (foundations?.length ?? 0) + 21;
-  const totalTouchedCount = dsaTouched + foundationsTouched + 12;
-  const masteryPercentage = Math.round((totalTouchedCount / totalSkillsCount) * 100);
+  // Only what the app actually tracks. The AI tiers are a reference list
+  // with no per-skill state anywhere in this build (store/skills.ts), so
+  // they are not in the denominator and they are certainly not in the
+  // numerator: the previous version added a flat +12 touched and +21
+  // total, which showed a brand-new user 34% mastery on day one for
+  // skills they had never opened. The System does not flatter you —
+  // that is the whole reason its numbers are worth reading.
+  const totalSkillsCount = (dsa?.length ?? 0) + (foundations?.length ?? 0);
+  const totalTouchedCount = dsaTouched + foundationsTouched;
+  const masteryPercentage =
+    totalSkillsCount > 0 ? Math.round((totalTouchedCount / totalSkillsCount) * 100) : 0;
 
   const filteredDsa = useMemo(() => {
     if (!dsa) return [];
@@ -352,7 +360,7 @@ export function Skills() {
                   key={tab.id}
                   onClick={() => setActiveTab(tab.id as FilterCategory)}
                   className={[
-                    'relative px-3 py-1.5 text-[10px] font-mono font-bold tracking-wider uppercase rounded transition-all duration-200 flex items-center gap-1.5',
+                    'relative min-h-tap px-3 text-[10px] font-mono font-bold tracking-wider uppercase rounded transition-all duration-200 flex items-center gap-1.5',
                     isActive ? 'text-ink-100 glow-text font-extrabold' : 'text-ink-700 hover:text-ink-300',
                   ].join(' ')}
                 >
@@ -383,7 +391,7 @@ export function Skills() {
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
                 placeholder="Search skills, algorithms, architecture..."
-                className="w-full cut-sm bg-surface-2/90 border border-accent/35 pl-9 pr-4 py-2 text-xs font-mono text-ink-100 placeholder:text-ink-700 focus:outline-none focus:border-accent focus:shadow-[0_0_12px_rgba(77,163,255,0.3)] transition-all"
+                className="w-full min-h-tap cut-sm bg-surface-2/90 border border-accent/35 pl-9 pr-4 text-xs font-mono text-ink-100 placeholder:text-ink-700 focus:outline-none focus:border-accent focus:shadow-[0_0_12px_rgba(77,163,255,0.3)] transition-all"
               />
               {searchQuery && (
                 <button
@@ -546,8 +554,12 @@ function Section({
         boxShadow: '0 0 18px rgba(77, 163, 255, 0.12)',
       }}
     >
-      <div className="flex items-center justify-between gap-3 mb-3 pb-2 border-b border-hair-faint">
-        <div className="flex items-center gap-2.5">
+      {/* Wraps rather than overflowing. At 320px the title and the
+          tagline are both intrinsically sized and neither could give
+          ground, so the tagline ran 23px past the viewport and took
+          `main` with it. On a wide screen they still sit on one line. */}
+      <div className="mb-3 flex flex-wrap items-center justify-between gap-x-3 gap-y-1 border-b border-hair-faint pb-2">
+        <div className="flex min-w-0 items-center gap-2.5">
           {Glyph && (
             <div className="flex h-7 w-7 shrink-0 items-center justify-center rounded-[6px] border border-accent/40 bg-accent-deep/40 text-accent-mid shadow-[0_0_8px_rgba(77,163,255,0.3)]">
               <Glyph size={15} weight="fill" color="#5fb2ff" />

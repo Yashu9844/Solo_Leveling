@@ -69,10 +69,10 @@ specific to this plan:
 
 ## Phase 2 — Pressure
 
-- [ ] **2.1** `useCountdown` hook + `TIME REMAINING hh:mm:ss` on Today, mono, ticking, driven
+- [x] **2.1** `useCountdown` hook + `TIME REMAINING hh:mm:ss` on Today, mono, ticking, driven
       by the arc's real `dayCloseHour`. Amber under 3 hours. Pauses when the tab is hidden.
       Gate: fast.
-- [ ] **2.2** The countdown reads as a System line, not a clock widget: framed, labelled
+- [x] **2.2** The countdown reads as a System line, not a clock widget: framed, labelled
       `⟨ TIME REMAINING ⟩`, sitting in the identity block. Screenshot at 320 and 390.
       Gate: fast.
 
@@ -135,4 +135,6 @@ specific to this plan:
 | 0.6 | phase 0 gate | **103/103.** Reclaiming §5.2's above-the-fold budget took the most work: the HUD pass added 136px of chrome. Merged the two stacked System boxes into one left-ruled card (§4.4 asks for exactly that), absorbed the TODAY heading into the identity block, dropped a hardcoded quote that sat under the real reflection, and trimmed rows 64→52. Also clamped the reflection to two lines — its length is random, so an unbounded line made the budget pass or fail by luck. |
 | 1.1 | `SystemWindow` | A pane that *materialises* — frame snaps in, scan line sweeps once, content rises, brackets draw outward. All CSS, per §5.1. `Panel` is a surface that was always there; this is an utterance that just landed, which is the difference between furniture and a character. |
 | 1.2 | the System speaks | Today's message card is a `SystemWindow` labelled `⟨ DAILY QUEST ⟩`, arriving once per local date rather than on every render. The heading carries `6 REMAIN` / `ALL CLEAR` — second person, and a number that means something. The label's 20px came back out of padding and row rhythm, never out of the six rows. Also made the 300ms budget a median of three: one sample under 4-way contention measures the scheduler, not the app. |
+| 2.1 | `useCountdown` | Counts to the arc's own `dayCloseHour` in the arc's own timezone, so it survives midnight, the 04:00 rollover and a user in another zone. Ticks only while the tab is visible and recomputes from the clock rather than accumulating, so it cannot drift. Pure `countdownTo` with 6 unit tests. |
+| 2.2 | ⟨ TIME REMAINING ⟩ | Placed where the XP figure was: the meter already told the XP story, and the day running out was told nowhere. Amber inside three hours. The crest picked up an `aria-label` since the visible "RANK" word gave way to it. |
 | — | plan | — |

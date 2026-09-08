@@ -29,6 +29,7 @@ import { MaintenanceCard } from '../lifestyle/MaintenanceCard';
 import { LearningBlockSheet } from '../foundations/LearningBlockSheet';
 import { SingleChipSelect } from '../components/SingleChipSelect';
 import { ArtLayer, MeterBar, SectionLabel, SystemWindow } from '../kit';
+import { useCountdown } from '../hooks/useCountdown';
 import { getTodaySystemLine } from '../../store/messages';
 import { recordReflectionShown } from '../../store/reflections';
 
@@ -105,6 +106,12 @@ export function Today() {
   const [systemLine, setSystemLine] = useState<string | null>(null);
   const [revisitingId, setRevisitingId] = useState<string | null>(null);
   const dayClosed = isDayClosed(realDeps.now(), CONFIG);
+
+  // The pressure gradient the screen never had. The app has always known
+  // when the day closes — it gates logging on it and prints a banner
+  // afterwards — but it only ever said so once it was too late to act,
+  // which is why 9am and 9pm looked identical.
+  const countdown = useCountdown(CONFIG.arc.dayCloseHour, CONFIG.arc.timezone);
 
   const refreshXp = useCallback(async (date: string) => {
     const [totalXp, xpByInstance] = await Promise.all([getTotalXp(), getDayXpByInstance(date)]);
@@ -362,19 +369,43 @@ export function Today() {
             {/* Rank Crest Diamond Badge */}
             <div className="flex items-center gap-2.5">
               <div className="text-right">
-                <span className="block text-[9px] uppercase tracking-[0.18em] text-ink-700">RANK</span>
-                <span className="font-mono text-[11px] tabular-nums text-accent-mid font-semibold">
-                  {levelState.xpIntoLevel} / {levelState.xpForNext} XP
+                {/* ⟨ TIME REMAINING ⟩ replaces the XP figure that used to
+                    sit here. The meter on the row below is already the XP
+                    story; the day running out was told nowhere at all,
+                    which is why this screen looked the same at 9am and
+                    9pm. Amber inside three hours — the point where the
+                    day stops being theoretical. Hidden once the day has
+                    closed, because the banner below is then the true
+                    thing to say and a running clock would contradict it. */}
+                <span className="block text-[9px] uppercase tracking-[0.18em] text-ink-700">
+                  {dayClosed ? 'RANK' : '⟨ TIME REMAINING ⟩'}
                 </span>
+                {!dayClosed && (
+                  <span
+                    className={[
+                      'font-mono text-[13px] font-bold leading-none tabular-nums',
+                      countdown.urgent ? 'glow-text text-state-recover' : 'text-accent-mid',
+                    ].join(' ')}
+                  >
+                    {countdown.formatted}
+                  </span>
+                )}
               </div>
-              <div className="relative flex h-10 w-10 shrink-0 items-center justify-center">
-                <svg viewBox="0 0 48 48" className="absolute inset-0 h-full w-full drop-shadow-[0_0_10px_rgba(77,163,255,0.65)]">
+              {/* The visible "RANK" label gives way to the countdown, so
+                  the crest carries the name itself — otherwise the rank
+                  is announced as a bare letter, or not at all. */}
+              <div
+                role="img"
+                aria-label={`Rank ${rank}`}
+                className="relative flex h-10 w-10 shrink-0 items-center justify-center"
+              >
+                <svg aria-hidden viewBox="0 0 48 48" className="absolute inset-0 h-full w-full drop-shadow-[0_0_10px_rgba(77,163,255,0.65)]">
                   <polygon points="24,3 45,24 24,45 3,24" fill="rgba(10,20,36,0.85)" stroke="#4da3ff" strokeWidth="1.5" />
                   <polygon points="24,7 41,24 24,41 7,24" fill="none" stroke="rgba(124,196,255,0.4)" strokeWidth="1" />
                   <line x1="24" y1="3" x2="24" y2="8" stroke="#7cc4ff" strokeWidth="2" />
                   <line x1="24" y1="40" x2="24" y2="45" stroke="#7cc4ff" strokeWidth="2" />
                 </svg>
-                <span className="font-display text-lg font-bold text-ink-100 z-10">{rank}</span>
+                <span aria-hidden className="z-10 font-display text-lg font-bold text-ink-100">{rank}</span>
               </div>
             </div>
           </div>

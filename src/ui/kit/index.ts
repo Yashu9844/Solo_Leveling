@@ -15,6 +15,7 @@ export { ArtLayer, artHasText, type Scrim } from './ArtLayer';
 export { Moment } from './Moment';
 export { Field, TextInput, TextArea, StepTitle } from './Field';
 export { Portal } from './Portal';
+export { SystemWindow, type SystemWindowTone } from './SystemWindow';
 export {
   SettingsList,
   SettingsGroup,

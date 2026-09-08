@@ -28,7 +28,7 @@ import { LogAttentionSheet } from '../lifestyle/LogAttentionSheet';
 import { MaintenanceCard } from '../lifestyle/MaintenanceCard';
 import { LearningBlockSheet } from '../foundations/LearningBlockSheet';
 import { SingleChipSelect } from '../components/SingleChipSelect';
-import { ArtLayer, MeterBar, SectionLabel } from '../kit';
+import { ArtLayer, MeterBar, SectionLabel, SystemWindow } from '../kit';
 import { getTodaySystemLine } from '../../store/messages';
 import { recordReflectionShown } from '../../store/reflections';
 
@@ -283,6 +283,12 @@ export function Today() {
   const barPct =
     levelState.xpForNext > 0 ? Math.min(100, (levelState.xpIntoLevel / levelState.xpForNext) * 100) : 0;
 
+  // What the System is actually tracking: how many of the day's
+  // requirements are still outstanding. Drives the window's label and
+  // the requirement counter beside the heading.
+  const completedCount = instances.filter((i) => i.state === 'complete').length;
+  const remaining = instances.length - completedCount;
+
   return (
     <>
       {/* One heading per screen. This screen used to render an sr-only
@@ -320,12 +326,24 @@ export function Today() {
               TODAY
             </h1>
             <div className="h-px flex-1 bg-gradient-to-r from-accent-mid/40 via-hair to-transparent" />
+            {/* Second person, and a number that means something: this is
+                what the System still wants from you today. */}
+            {instances.length > 0 && (
+              <span
+                className={[
+                  'shrink-0 font-mono text-[10px] font-bold uppercase leading-none tracking-[0.14em]',
+                  remaining > 0 ? 'text-accent-mid' : 'glow-text text-state-complete',
+                ].join(' ')}
+              >
+                {remaining > 0 ? `${remaining} REMAIN` : 'ALL CLEAR'}
+              </span>
+            )}
             {/* Decoration, so it yields first. shrink-0 here pushed
                 Today 20px sideways at 320px with text scale XL — the
                 heading and the tagline were both intrinsically sized and
                 neither could give ground. Hidden outright on the
                 narrowest screens rather than truncated to a fragment. */}
-            <span className="hidden min-w-0 truncate text-[9px] uppercase leading-none tracking-[0.2em] text-ink-700 [@media(min-width:360px)]:inline">
+            <span className="hidden min-w-0 truncate text-[9px] uppercase leading-none tracking-[0.2em] text-ink-700 [@media(min-width:430px)]:inline">
               DISCIPLINE CREATES FREEDOM
             </span>
           </div>
@@ -435,18 +453,19 @@ export function Today() {
         </p>
       )}
 
-      {/* Sci-Fi System Message HUD Banner */}
-      <div
-        className="cut-sm relative mb-2.5 overflow-hidden p-2.5 transition-all duration-200"
-        style={{
-          border: '1px solid rgba(77, 163, 255, 0.35)',
-          background: 'linear-gradient(180deg, rgba(10, 20, 36, 0.85), rgba(5, 10, 20, 0.9))',
-          boxShadow: '0 0 14px rgba(77, 163, 255, 0.12)',
-        }}
+      {/*
+        The System speaking, in a window that arrives rather than a panel
+        that was always there. `arrive` is keyed on the local date, so it
+        plays once when the screen is opened on a new day and not on
+        every re-render within it — a decree that re-announced itself
+        every time a checkbox moved would stop being a decree.
+      */}
+      <SystemWindow
+        key={today}
+        arrive
+        label={remaining > 0 ? 'DAILY QUEST' : 'DAILY QUEST COMPLETE'}
+        className="cut-sm mb-2 p-2"
       >
-        {/* Left glowing corner bracket */}
-        <div className="absolute left-0 top-0 bottom-0 w-[3px] bg-accent-mid shadow-[0_0_8px_#4da3ff]" />
-        
         {streak?.reduced_mode && (
           <p className="mb-1 pl-2 text-xs leading-relaxed text-state-recover">
             Reduced to the floor for two days. The arc continues.
@@ -470,8 +489,7 @@ export function Today() {
             {systemLine}
           </p>
         )}
-
-      </div>
+      </SystemWindow>
 
       <div>
         {templates.map((template) => {

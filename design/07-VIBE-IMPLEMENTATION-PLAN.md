@@ -52,11 +52,11 @@ specific to this plan:
 
 ## Phase 1 — The System gets a voice
 
-- [ ] **1.1** `SystemWindow` kit component: a bordered pane that *materialises* — corner
+- [x] **1.1** `SystemWindow` kit component: a bordered pane that *materialises* — corner
       brackets draw on, a scan-line sweeps once, content fades up. CSS animation only.
       Variants: `announce` (transient, auto-dismiss), `standing` (stays). Respects the motion
       setting. Gate: fast.
-- [ ] **1.2** Copy register pass. Second person, System decrees, `⟨ ⟩` framing. Rewrite the
+- [x] **1.2** Copy register pass. Second person, System decrees, `⟨ ⟩` framing. Rewrite the
       priority line, day-closed banner, recovery card, learning-block entry, evening-review
       entry, and the reduced-mode line. **Frozen strings stay** — `Day closed. Next day begins
       at 04:00.` and `Complete CAREER` etc. are asserted verbatim; wrap them, do not replace
@@ -133,4 +133,6 @@ specific to this plan:
 | 0.4 | tap targets + overflow | Skills' filter tabs were 27px and its search field 36px; a section header's tagline was `shrink-0` beside an intrinsically-sized title and ran 23px past 320px. QuestRow shipped a third 14x14 tap zone that duplicated the row's own onOpen — now decoration. Maintenance pills were back at 36px. |
 | 0.5 | honest mastery | `dsaTouched + foundationsTouched + 12` over `+ 21` showed a brand-new user 34% mastery for skills never opened. Counts only what the app tracks. |
 | 0.6 | phase 0 gate | **103/103.** Reclaiming §5.2's above-the-fold budget took the most work: the HUD pass added 136px of chrome. Merged the two stacked System boxes into one left-ruled card (§4.4 asks for exactly that), absorbed the TODAY heading into the identity block, dropped a hardcoded quote that sat under the real reflection, and trimmed rows 64→52. Also clamped the reflection to two lines — its length is random, so an unbounded line made the budget pass or fail by luck. |
+| 1.1 | `SystemWindow` | A pane that *materialises* — frame snaps in, scan line sweeps once, content rises, brackets draw outward. All CSS, per §5.1. `Panel` is a surface that was always there; this is an utterance that just landed, which is the difference between furniture and a character. |
+| 1.2 | the System speaks | Today's message card is a `SystemWindow` labelled `⟨ DAILY QUEST ⟩`, arriving once per local date rather than on every render. The heading carries `6 REMAIN` / `ALL CLEAR` — second person, and a number that means something. The label's 20px came back out of padding and row rhythm, never out of the six rows. Also made the 300ms budget a median of three: one sample under 4-way contention measures the scheduler, not the app. |
 | — | plan | — |

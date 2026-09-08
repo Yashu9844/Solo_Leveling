@@ -58,12 +58,26 @@ test('tap -> XP feedback rendered in under 300ms', async ({ page }) => {
   await withSafeClock(page);
   await completeOnboarding(page);
 
-  const start = Date.now();
-  await page.getByRole('button', { name: 'Complete DSA' }).click();
-  await expect(page.getByRole('button', { name: 'Undo DSA' })).toBeVisible();
-  const elapsed = Date.now() - start;
+  // Three taps, and the median is what is asserted.
+  //
+  // final/06 §4.3's 300ms is a claim about the app, and a single sample
+  // taken while three other browsers share the cores is a measurement of
+  // the scheduler instead. The app measures 106-127ms on an idle
+  // machine; under full-suite contention one sample in a few dozen lands
+  // past 300 and the gate goes red for a reason that has nothing to do
+  // with the product. A median over three rejects that outlier without
+  // moving the threshold — if the app really regressed, at least two of
+  // three taps would show it.
+  const samples: number[] = [];
+  for (const quest of ['DSA', 'BUILD', 'CAREER']) {
+    const start = Date.now();
+    await page.getByRole('button', { name: `Complete ${quest}` }).click();
+    await expect(page.getByRole('button', { name: `Undo ${quest}` })).toBeVisible();
+    samples.push(Date.now() - start);
+  }
 
-  expect(elapsed).toBeLessThan(300);
+  const median = [...samples].sort((a, b) => a - b)[1]!;
+  expect(median, `tap->XP samples: ${samples.join(', ')}ms`).toBeLessThan(300);
 });
 
 test('undo removes the XP; total returns to its prior value', async ({ page }) => {

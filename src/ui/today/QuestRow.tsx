@@ -97,7 +97,7 @@ export function QuestRow({ template, instance, dayClosed, xp, onToggle, onOpen }
         // System line and three footer blocks have to fit 412x915 without
         // scrolling (final/06 §5.2). The inner targets are untouched — the
         // circle is still 44x44 and the row body still clears min-h-tap.
-        'cut-sm mb-1 flex min-h-[52px] items-center gap-3 px-3 py-1 transition-all duration-150',
+        'cut-sm mb-0.5 flex min-h-[52px] items-center gap-3 px-3 py-1 transition-all duration-150',
         disabled ? 'opacity-40' : '',
       ].join(' ')}
       style={{

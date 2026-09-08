@@ -5,6 +5,7 @@
 // timezone's wall-clock date.
 import { parseISO, subHours, differenceInCalendarDays } from 'date-fns';
 import { formatInTimeZone } from 'date-fns-tz';
+import type { EngineConfig } from './types';
 
 /**
  * The local calendar date this instant belongs to, under a day that rolls
@@ -17,17 +18,15 @@ export function localDate(instantIso: string, tz: string, boundaryHour = 4): str
 }
 
 /**
- * True while quests are unavailable: from `closeHour` (default 03:00,
- * i.e. sleep target 02:00 + 60 min grace) until the next `boundaryHour`
- * rollover (default 04:00). Based on wall-clock time-of-day in `tz`, not
- * on which local_date the instant maps to.
+ * True while quests are unavailable: from `config.arc.dayCloseHour`
+ * (03:00 — sleep target 02:00 + 60 min grace) until the next
+ * `config.arc.dayBoundaryHour` rollover (04:00). Based on wall-clock
+ * time-of-day in the arc's timezone, not on which local_date the instant
+ * maps to. Takes the whole config (Slice 2) so every call site reads the
+ * arc's actual close/boundary hours instead of passing loose args.
  */
-export function isDayClosed(
-  instantIso: string,
-  tz: string,
-  closeHour = 3,
-  boundaryHour = 4
-): boolean {
+export function isDayClosed(instantIso: string, config: EngineConfig): boolean {
+  const { timezone: tz, dayCloseHour: closeHour, dayBoundaryHour: boundaryHour } = config.arc;
   const wallClock = formatInTimeZone(parseISO(instantIso), tz, 'HH:mm');
   const parts = wallClock.split(':');
   const hh = Number(parts[0] ?? 0);

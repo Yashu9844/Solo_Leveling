@@ -36,6 +36,15 @@ export const DEFAULT_CONFIG: EngineConfig = {
   mvdXp: 35,
   recoveryXp: 40,
   bossXp: 500,
+  weeklyQuestXp: 200,
+  revisitXp: 20,
+  shipBonusXp: 50,
+  learningBlockXp: 25,
+  stepsBonusXp: 20,
+  maintenanceXp: 20,
+  stepsBonusThreshold: 10000,
+  wakeTargetTime: '08:30',
+  maintenanceLaundryEveryDays: 3,
   // Revised 84 (was 75) — final/01 §3 revision note, 31 Aug 2026. The
   // original 75 was tuned on a simulation that omitted the uncapped
   // BONUS/BOSS grants above; including them adds ~13% to arc totals and

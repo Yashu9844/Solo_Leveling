@@ -3,14 +3,9 @@
 // derived EngineState for the UI to read. No domain logic lives here;
 // it only wires db <-> engine <-> React.
 import { create } from 'zustand';
-import { v7 as uuidv7 } from 'uuid';
 import { applyEvents, DEFAULT_CONFIG, type EngineDeps, type EngineState } from '../engine';
 import { getAllEvents } from '../db/events';
-
-const deps: EngineDeps = {
-  now: () => new Date().toISOString(),
-  newId: () => uuidv7(),
-};
+import { realDeps } from './deps';
 
 interface SystemStore {
   deps: EngineDeps;
@@ -20,14 +15,14 @@ interface SystemStore {
 }
 
 export const useSystemStore = create<SystemStore>((set) => ({
-  deps,
+  deps: realDeps,
   state: null,
   hydrated: false,
   hydrate: async () => {
     const events = await getAllEvents();
-    // applyEvents only handles the empty-log case until Slice 2 — Phase 0
-    // has no writers yet, so the store stays un-hydrated rather than
-    // crashing if a later slice's data is present during development.
+    // applyEvents throws on the first event type it doesn't yet handle
+    // (Slice 1: anything past ARC_STARTED) — Today doesn't read `state`
+    // until Slice 2, so the store stays un-hydrated rather than crashing.
     try {
       const state = applyEvents(events, DEFAULT_CONFIG);
       set({ state, hydrated: true });

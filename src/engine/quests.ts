@@ -3,9 +3,8 @@ import type {
   EngineConfig,
   EngineDeps,
   ImplementationIntention,
-  QuestState,
+  QuestInstance,
   QuestTemplate,
-  SystemEvent,
 } from './types';
 
 // Fixed generation order — determinism (same inputs -> identical output,
@@ -42,13 +41,15 @@ const CORE_QUEST_CRITERIA: Record<CoreQuestKey, Record<string, unknown>> = {
 /**
  * Pure. Produces the six core quest templates for a new arc. XP and
  * category are always read from config.coreQuests, never hard-coded.
- * Deterministic: identical arcId/intentions/config, and an id generator
- * that yields the same sequence, produce a deep-equal result.
- *
- * Onboarding's step 5 (final/06 §5.1) only collects sentences for
- * career/dsa/training — build/sleep/attention simply carry no
- * implementation_intention. `intentions` is therefore a Partial map,
- * not a full Record<QuestKey,...> — see the Slice 1 report for why.
+ * Deterministic: identical arcId/intentions/config produce a deep-equal
+ * result, including ids — `id = "${arcId}::${key}"`, a plain composite
+ * key rather than deps.newId(). This is a Slice 3 change (was
+ * deps.newId() in Slice 1): rebuildProjections must reproduce the exact
+ * same template ids on every rebuild, and a fresh random id can't do
+ * that. See the Slice 3 report for the full reasoning. `deps` is no
+ * longer read here but stays in the signature — kept symmetric with
+ * generateQuests, and reserved for anything a later slice's template
+ * generation might need to inject.
  */
 export function generateCoreQuestTemplates(
   arcId: string,
@@ -56,10 +57,11 @@ export function generateCoreQuestTemplates(
   config: EngineConfig,
   deps: EngineDeps
 ): QuestTemplate[] {
+  void deps;
   return CORE_QUEST_KEYS.map((key) => {
     const { xp, category } = config.coreQuests[key];
     return {
-      id: deps.newId(),
+      id: `${arcId}::${key}`,
       arc_id: arcId,
       type: 'core',
       key,
@@ -75,18 +77,58 @@ export function generateCoreQuestTemplates(
   });
 }
 
-/* eslint-disable @typescript-eslint/no-unused-vars -- stub: TODO Slice 2, unused params intentional */
 /**
- * Pure. Generates the quest instance set for a given local_date from arc
- * config and prior history. Deterministic: identical inputs always produce
- * an identical quest set.
- * TODO: Slice 2
+ * Pure. Produces the day's quest instances from the active core templates.
+ * Deterministic: identical inputs produce a deep-equal result, including
+ * ids — `id = "${templateId}::${localDate}"`, not deps.newId() (same
+ * Slice 3 change and reasoning as generateCoreQuestTemplates: rebuild
+ * must reproduce the exact instance ids that QUEST_COMPLETED/UNDONE
+ * events already reference by id, live-path and rebuild-path alike).
+ *
+ * Idempotent: `existing` is assumed already scoped to `localDate` by the
+ * caller (see store/quests.ts) — any template with a matching instance in
+ * `existing` returns that instance UNCHANGED, so a mid-day refresh can
+ * never regenerate over (and silently reset) a completed quest. Only
+ * missing templates get a fresh 'available' instance.
+ *
+ * Generates for `localDate` only — no backfill of past days. A day with
+ * no instances is a day that was never opened, a distinction Slice 4's
+ * streak logic depends on.
  */
 export function generateQuests(
   localDate: string,
-  history: SystemEvent[],
-  config: EngineConfig
-): QuestState[] {
-  throw new Error('Not implemented — Slice 2');
+  templates: QuestTemplate[],
+  existing: QuestInstance[],
+  config: EngineConfig,
+  deps: EngineDeps
+): QuestInstance[] {
+  // Not read this slice — core-only generation needs nothing from config,
+  // and ids are now derived, not drawn from deps.newId(). Kept in the
+  // signature for weekly/revisit/adaptive generation in later slices.
+  void config;
+  void deps;
+
+  const existingByTemplateId = new Map(existing.map((instance) => [instance.template_id, instance]));
+
+  const activeCoreTemplates = templates.filter(
+    (t) =>
+      t.type === 'core' &&
+      t.active_from <= localDate &&
+      (t.active_to === null || localDate < t.active_to)
+  );
+
+  return activeCoreTemplates.map((template) => {
+    const found = existingByTemplateId.get(template.id);
+    if (found) {
+      return found;
+    }
+    return {
+      id: `${template.id}::${localDate}`,
+      template_id: template.id,
+      local_date: localDate,
+      state: 'available',
+      progress: {},
+      recovered: false,
+    };
+  });
 }
-/* eslint-enable @typescript-eslint/no-unused-vars */

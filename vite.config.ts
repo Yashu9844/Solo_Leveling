@@ -44,7 +44,13 @@ export default defineConfig({
         ],
       },
       devOptions: {
-        enabled: false,
+        // On in dev so the manifest actually exists there. With it off
+        // the plugin emitted nothing, the injected <link rel="manifest">
+        // resolved through navigateFallback to index.html, and every dev
+        // page load logged "Manifest: Line: 1, column: 1, Syntax error."
+        // — the browser parsing HTML as JSON.
+        enabled: true,
+        type: 'module',
       },
       manifest: {
         id: '/',

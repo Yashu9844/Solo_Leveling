@@ -30,7 +30,17 @@ createRoot(document.getElementById('root')!).render(
   <StrictMode>
     <SettingsProvider>
       <MotionRoot>
-        <BrowserRouter>
+        {/*
+          Both v7 flags opted into early. Without them React Router logs
+          two "Future Flag Warning" lines on every boot, and adopting the
+          behaviour now means the v7 upgrade is not also a behaviour
+          change. Verified against the full suite — including the 300ms
+          tap budget, which v7_startTransition could plausibly have
+          disturbed by making router updates interruptible.
+        */}
+        <BrowserRouter
+          future={{ v7_startTransition: true, v7_relativeSplatPath: true }}
+        >
           <OverlayStackProvider>
             <ArcStatusProvider>
               <App />

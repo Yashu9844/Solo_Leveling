@@ -3,23 +3,6 @@ import { completeOnboarding } from './helpers';
 
 const SAFE_TIME = '2026-09-05T10:00:00Z';
 
-/**
- * Every route the app can be sitting on, at every viewport the config
- * declares. design/00 §8 makes the responsive rules a contract rather
- * than a preference, and this is where they are enforced.
- */
-const ROUTES = [
-  '/today',
-  '/progress',
-  '/skills',
-  '/profile',
-  '/profile/settings',
-  '/profile/settings/appearance',
-  '/profile/settings/system',
-  '/profile/settings/data',
-  '/profile/settings/about',
-];
-
 /** The floor from final/06 §7. A target below this is not reliably
  * tappable with a thumb, whatever it looks like. */
 const MIN_TAP = 44;
@@ -117,33 +100,65 @@ async function auditPage(page: Page): Promise<Offender[]> {
   }, MIN_TAP);
 }
 
-/**
- * These three walk nine routes with a cold load each, and a cold load
- * re-runs the 900ms splash hold. That was comfortably inside the 30s
- * default until the screens grew; it is not a product regression, it is
- * nine boots in one test. Tripled rather than removed, so a genuine
- * hang still fails.
- */
-test('every route survives this viewport', async ({ page }) => {
-  test.slow();
-  await boot(page);
 
+/**
+ * Walks every route by tapping, and audits each one.
+ *
+ * Deliberately not nine `page.goto` calls. Each cold load re-runs the
+ * 900ms splash hold plus a full boot, so the walk cost ~44s and, under
+ * the contention of a full-suite run, blew even a tripled timeout — the
+ * test was failing for the number of boots it performed rather than for
+ * anything it found. Tapping through is how a person reaches these
+ * screens anyway, and it exercises the router on the way.
+ */
+async function walkAndAudit(page: Page, tag: string): Promise<string[]> {
   const found: string[] = [];
-  for (const route of ROUTES) {
-    await goto(page, route);
+  const record = async (label: string) => {
     for (const p of await auditPage(page)) {
-      found.push(`${route}: ${p.what} — ${p.detail}`);
+      found.push(`${label}${tag}: ${p.what} — ${p.detail}`);
     }
+  };
+
+  for (const tab of ['TODAY', 'PROGRESS', 'SKILLS', 'PROFILE'] as const) {
+    await page.getByRole('link', { name: tab }).click();
+    await page.waitForTimeout(300);
+    await record(`/${tab.toLowerCase()}`);
   }
+
+  // Settings and its four sections, from the Profile tab we are on.
+  await page.getByRole('button', { name: 'Settings' }).click();
+  await page.waitForTimeout(300);
+  await record('/profile/settings');
+
+  const sections = [
+    ['settings-appearance-row', '/profile/settings/appearance'],
+    ['settings-system-row', '/profile/settings/system'],
+    ['settings-data-row', '/profile/settings/data'],
+    ['settings-about-row', '/profile/settings/about'],
+  ] as const;
+
+  for (const [row, label] of sections) {
+    await page.getByTestId(row).click();
+    await page.waitForTimeout(300);
+    await record(label);
+    await page.getByRole('button', { name: 'Back', exact: true }).click();
+    await page.waitForTimeout(250);
+  }
+
+  return found;
+}
+
+test('every route survives this viewport', async ({ page }) => {
+  await boot(page);
+  await goto(page, '/today');
+  const found = await walkAndAudit(page, '');
   expect(found, found.join('\n')).toEqual([]);
 });
 
 test('the worst case: text scale XL, comfortable density', async ({ page }) => {
-  test.slow();
   await boot(page);
 
-  // Set through the same localStorage key the app reads, so the inline
-  // bootstrap applies it before first paint on every load below.
+  // Set through the same localStorage key the app reads.
   await page.evaluate(() => {
     const s = JSON.parse(localStorage.getItem('system.settings.v1') || '{}');
     localStorage.setItem(
@@ -152,13 +167,10 @@ test('the worst case: text scale XL, comfortable density', async ({ page }) => {
     );
   });
 
-  const found: string[] = [];
-  for (const route of ROUTES) {
-    await goto(page, route);
-    for (const p of await auditPage(page)) {
-      found.push(`${route} @XL: ${p.what} — ${p.detail}`);
-    }
-  }
+  // One cold load so the inline bootstrap picks it up before first
+  // paint; everything after this is in-app navigation.
+  await goto(page, '/today');
+  const found = await walkAndAudit(page, ' @XL');
   expect(found, found.join('\n')).toEqual([]);
 });
 
@@ -176,7 +188,6 @@ const THEMES = ['arc', 'dawn', 'abyss', 'contrast', 'daylight'] as const;
 const TABS = ['TODAY', 'PROGRESS', 'SKILLS', 'PROFILE'] as const;
 
 test('all five themes lay out identically', async ({ page }) => {
-  test.slow();
   await boot(page);
   await goto(page, '/today');
 

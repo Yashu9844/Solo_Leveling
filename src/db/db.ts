@@ -1,5 +1,5 @@
 import Dexie, { type Table } from 'dexie';
-import { SCHEMA_V1 } from './schema';
+import { SCHEMA_V1, SCHEMA_V2_ADDITIONS, SCHEMA_V3_ADDITIONS } from './schema';
 import type {
   EventRow,
   XpLedgerRow,
@@ -25,6 +25,8 @@ import type {
   PlayerStateRow,
   AttributeSnapshotRow,
   CheckpointRow,
+  ReflectionStateRow,
+  WeeklyQuestRow,
 } from './schema';
 
 export class SystemDb extends Dexie {
@@ -52,10 +54,17 @@ export class SystemDb extends Dexie {
   player_state!: Table<PlayerStateRow, string>;
   attribute_snapshot!: Table<AttributeSnapshotRow, string>;
   checkpoint!: Table<CheckpointRow, string>;
+  reflection_state!: Table<ReflectionStateRow, string>;
+  weekly_quest!: Table<WeeklyQuestRow, string>;
 
   constructor() {
     super('system-arc');
     this.version(1).stores(SCHEMA_V1);
+    // Additive only (a new object store, nothing removed or re-indexed
+    // on any existing one) — Dexie carries every unlisted table forward
+    // from version 1 unchanged, so no .upgrade() migration is needed.
+    this.version(2).stores({ ...SCHEMA_V1, ...SCHEMA_V2_ADDITIONS });
+    this.version(3).stores({ ...SCHEMA_V1, ...SCHEMA_V2_ADDITIONS, ...SCHEMA_V3_ADDITIONS });
   }
 }
 

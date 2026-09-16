@@ -56,11 +56,25 @@ Your §32 is right: don't build 21 screens because the brief listed 21.
 
 Plus the **Moments overlay** — not a screen, a layer.
 
-**Cut from V1:** interactive skill-tree graph (flat lists carry the same information) · career tree visualisation · achievement gallery (a list on Profile suffices) · reflection editor (delete-only; edit the seed file) · separate notification-settings screen (3 fields inside Settings) · separate attributes screen (inline expansion on Profile) · body-measurement detail screen (inside REALITY).
+**Cut from V1:** interactive skill-tree graph (flat lists carry the same information) · career tree visualisation · achievement gallery (a list on Profile suffices) · reflection editor (delete-only; edit the seed file) · separate notification-settings screen (3 fields inside Settings — **superseded**: the redesign builds a full settings layer at `/profile/settings`, per `design/03-SETTINGS-AND-THEMING.md`) · separate attributes screen (inline expansion on Profile) · body-measurement detail screen (inside REALITY).
 
 ---
 
 ## 4. Design system
+
+> **Superseded by `design/00-DESIGN-SYSTEM.md` (2026-09).** The token names and
+> values below are v1. The redesign replaced them with a three-layer system —
+> structural tokens, five themes keyed off `[data-theme]`, then user modifiers for
+> text scale, density, motion and art — living in `src/ui/tokens.css`. The intent of
+> this section is unchanged and every rule in it still holds; only the names moved.
+> §4.1's `--bg / --border / --text / --text-dim / --text-faint / --accent-dim` were
+> kept as aliases through the migration and deleted in task 12.5.
+>
+> **§4.1's "dark-only" line is overruled.** The user asked for a fully configurable
+> appearance layer. There are five themes now, one of them light. The reasoning that
+> produced "dark-only" is still respected: the default is dark, four of the five are
+> dark, and the light theme is opt-in rather than system-following, because this app
+> is opened at 08:30 and 02:00. See `design/03-SETTINGS-AND-THEMING.md`.
 
 ### 4.1 Tokens
 
@@ -416,6 +430,17 @@ That closing paragraph is rule-generated, and it is the sentence the whole produ
 ---
 
 ## 6. Responsive
+
+> **Superseded by `design/00-DESIGN-SYSTEM.md` §8 (2026-09).** Two changes, both
+> narrowing: the content column is capped at 430px rather than 560px, because the
+> app is a phone app and a 560px column of phone-sized components reads as a
+> stretched phone; and the tabs stay at the bottom at every width instead of moving
+> to a left rail at 1024px — one nav, one muscle memory, and a bottom bar is not
+> wrong on a desktop that is only ever showing a 430px column anyway.
+>
+> Enforced by `tests/e2e/responsive.spec.ts`, which runs six viewports from 320x568
+> to 1280x800 and asserts no horizontal scroll, 44px targets, no clipped text and no
+> nav-over-content, at both the default text scale and XL.
 
 **Android phone (< 640px)** is the design target. Single column, bottom tabs.
 **≥ 640px:** content column capped at 560px, centred. The app stays a column.

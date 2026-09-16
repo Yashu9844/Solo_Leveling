@@ -3,7 +3,7 @@
 import type {
   EventSource,
   EventType,
-  QuestInstanceState,
+  QuestInstance,
   QuestTemplate,
   XpCategory,
 } from '../engine/types';
@@ -23,6 +23,10 @@ export interface EventRow {
 export interface XpLedgerRow {
   id: string; // pk
   event_id: string;
+  // Denormalized beyond final/07 §4.1's literal xp_ledger shape — lets
+  // the UI show "this quest earned N XP" without joining back through
+  // db.event on every render. Always derivable from event_id's payload.
+  instance_id?: string;
   local_date: string;
   amount: number; // always >= 0
   category: XpCategory;
@@ -37,6 +41,11 @@ export interface ProfileRow {
   arc_timezone: string;
   height_cm?: number;
   settings: Record<string, unknown>;
+  // docs/07-data-model.md's backup nudge: "a local-only app on one phone
+  // is one broken screen away from losing the arc." Updated by every
+  // real export (store/checkpoint.ts's exportSnapshotJson), read by
+  // Profile's backup-status line and the weekly review's export prompt.
+  last_export_at?: string;
 }
 
 export interface ArcRow {
@@ -51,30 +60,11 @@ export interface ArcRow {
   status: 'active' | 'paused' | 'complete';
 }
 
-export interface QuestTemplateRow {
-  id: string; // pk
-  arc_id: string;
-  type: 'core' | 'weekly' | 'adaptive' | 'recovery' | 'revisit' | 'boss' | 'side';
-  key: string;
-  title: string;
-  category: XpCategory;
-  xp: number;
-  criterion: Record<string, unknown>;
-  implementation_intention?: { time: string; place: string; first_action: string };
-  active_from: string;
-  active_to?: string;
-  locked_until_checkpoint: boolean;
-}
+// Same shape as the pure engine type — the row IS the persisted template.
+export type QuestTemplateRow = QuestTemplate;
 
-export interface QuestInstanceRow {
-  id: string; // pk
-  template_id: string;
-  local_date: string;
-  state: QuestInstanceState;
-  progress: Record<string, unknown>;
-  completed_at?: string;
-  recovered: boolean;
-}
+// Same shape as the pure engine type — the row IS the generated instance.
+export type QuestInstanceRow = QuestInstance;
 
 export interface ApplicationRow {
   id: string; // pk
@@ -177,6 +167,9 @@ export interface ArtifactRow {
   project_key: string;
   local_date: string;
   notes?: string;
+  // final/03 §4.4's P2 requirement ("cost per task measured and
+  // stated") — a self-certification, kind: 'project' only.
+  cost_per_task_stated?: boolean;
 }
 
 export interface SkillNodeRow {
@@ -207,7 +200,7 @@ export interface TrainingSessionRow {
 export interface MetricSampleRow {
   id: string; // pk
   local_date: string;
-  kind: 'weight_kg' | 'waist_cm' | 'bodyfat_pct' | 'steps' | 'screen_time_min' | 'wake_time' | 'sleep_time';
+  kind: 'weight_kg' | 'waist_cm' | 'bodyfat_pct' | 'steps' | 'screen_time_min' | 'wake_time' | 'sleep_time' | 'interview_benchmark';
   value: number;
   unit: string;
   note?: string;
@@ -267,6 +260,10 @@ export interface AttributeSnapshotRow {
   components: Record<string, number>;
 }
 
+// export_verified is required true before sealing from Day 30 onward
+// (final/07 §8's export-before-seal rule) — Day 0 is exempt since there
+// is nothing to export yet at arc creation. Enforced at the write site
+// (src/store/onboarding.ts for Day 0; Slice 12 for Day 30+), not here.
 export interface CheckpointRow {
   id: string; // pk
   day: 0 | 14 | 30 | 60 | 90 | 120;
@@ -283,6 +280,37 @@ export interface CheckpointRow {
   external: Record<string, unknown>;
   verdict_text?: string;
   quest_templates_snapshot: Record<string, unknown>;
+}
+
+export interface ReflectionStateRow {
+  id: string; // pk — matches the reflection's static id in engine/reflections.ts
+  times_shown: number;
+  last_shown_at?: string;
+}
+
+/**
+ * final/00 §C8 / final/01 §2.1.1's "weekly quest payout" — one accepted
+ * proposal per week, direct-write like `checkpoint`'s self_efficacy
+ * field (not event-sourced for its acceptance; only completion is,
+ * via WEEKLY_QUEST_COMPLETED, for the XP grant's audit trail).
+ * `progress` is never stored — store/weeklyQuest.ts always recomputes
+ * it live from the real underlying table (dsa_attempt, currently the
+ * only proposal kind), the same "derived, not cached" principle as
+ * every other live-computed status in this app (Boss windows, mastery
+ * states). `completed_at` is set once, the moment progress first
+ * reaches `target` — checked on every read, same idempotent-claim
+ * pattern as store/boss.ts's clearBoss.
+ */
+export interface WeeklyQuestRow {
+  id: string; // pk
+  week_start_date: string;
+  week_end_date: string;
+  kind: 'dsa_topic_volume' | 'ship_project';
+  description: string;
+  target: number;
+  topic?: string; // set for kind: 'dsa_topic_volume'
+  xp: number;
+  completed_at?: string;
 }
 
 /**
@@ -314,4 +342,24 @@ export const SCHEMA_V1 = {
   player_state: 'id',
   attribute_snapshot: 'id, local_date, attribute',
   checkpoint: 'id, day, sealed_at',
+} as const;
+
+// final/05 §1.2 — the reflection library's content (id, text, category,
+// tone, context, day range, cooldown) is static and lives in code
+// (engine/reflections.ts), not a table — it never changes at runtime,
+// same reasoning as engine/config.ts's constants. Only the mutable
+// per-reflection show-state needs a live row, added here as a real
+// Dexie version bump rather than folded into SCHEMA_V1: unlike every
+// other change this session (new optional fields on existing rows,
+// which Dexie never validates and so need no schema change at all),
+// this is a brand-new object store — a browser that already
+// materialized version 1 would never pick it up if it were only added
+// to that version's stores string, since Dexie only runs `.stores()`
+// upgrade logic when the version number itself increases.
+export const SCHEMA_V2_ADDITIONS = {
+  reflection_state: 'id, last_shown_at',
+} as const;
+
+export const SCHEMA_V3_ADDITIONS = {
+  weekly_quest: 'id, week_start_date, week_end_date, completed_at',
 } as const;

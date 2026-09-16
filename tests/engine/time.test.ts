@@ -1,5 +1,6 @@
 import { describe, it, expect } from 'vitest';
 import { localDate, isDayClosed, arcDay } from '../../src/engine/time';
+import { DEFAULT_CONFIG } from '../../src/engine/config';
 
 const IST = 'Asia/Kolkata';
 
@@ -15,20 +16,34 @@ describe('localDate — 04:00 boundary, Asia/Kolkata', () => {
   });
 });
 
-describe('isDayClosed — 03:00 close, 04:00 boundary, Asia/Kolkata', () => {
+describe('isDayClosed — 03:00 close, 04:00 boundary, reads config.arc (Slice 2)', () => {
   it('03:05 IST → day is closed', () => {
     // 2026-09-12T21:35:00Z = 2026-09-13T03:05 IST
-    expect(isDayClosed('2026-09-12T21:35:00Z', IST)).toBe(true);
+    expect(isDayClosed('2026-09-12T21:35:00Z', DEFAULT_CONFIG)).toBe(true);
   });
 
   it('02:25 IST → day is not yet closed', () => {
     // 2026-09-12T20:55:00Z = 2026-09-13T02:25 IST
-    expect(isDayClosed('2026-09-12T20:55:00Z', IST)).toBe(false);
+    expect(isDayClosed('2026-09-12T20:55:00Z', DEFAULT_CONFIG)).toBe(false);
   });
 
   it('04:01 IST → boundary has already rolled the day over, so day is open again', () => {
     // 2026-09-12T22:31:00Z = 2026-09-13T04:01 IST
-    expect(isDayClosed('2026-09-12T22:31:00Z', IST)).toBe(false);
+    expect(isDayClosed('2026-09-12T22:31:00Z', DEFAULT_CONFIG)).toBe(false);
+  });
+
+  it('02:59 local → day open, and still files under the PREVIOUS local_date', () => {
+    // 2026-09-12T21:29:00Z = 2026-09-13T02:59 IST
+    const instant = '2026-09-12T21:29:00Z';
+    expect(isDayClosed(instant, DEFAULT_CONFIG)).toBe(false);
+    expect(localDate(instant, IST)).toBe('2026-09-12');
+  });
+
+  it('04:01 local → day open, and now files under the NEW local_date', () => {
+    // 2026-09-12T22:31:00Z = 2026-09-13T04:01 IST
+    const instant = '2026-09-12T22:31:00Z';
+    expect(isDayClosed(instant, DEFAULT_CONFIG)).toBe(false);
+    expect(localDate(instant, IST)).toBe('2026-09-13');
   });
 });
 

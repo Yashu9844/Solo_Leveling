@@ -12,10 +12,10 @@ test('logging a 45-minute build session auto-completes the BUILD quest', async (
   await completeOnboarding(page);
 
   await page.getByTestId('quest-row-build-open').click();
-  await page.getByRole('button', { name: 'Log session' }).click();
+  await page.getByRole('button', { name: /Forge Construct|Log session/ }).click();
   await page.getByRole('button', { name: 'LEARN', exact: true }).click();
   await page.getByLabel('Project').fill('agent-project');
-  await page.getByRole('button', { name: 'Log session' }).click();
+  await page.getByRole('button', { name: /Forge Construct|Log session/ }).click();
 
   await waitForQuestInstanceState(page, 'BUILD', '2026-09-05', 'complete');
   await expect(page.getByRole('button', { name: 'Undo BUILD' })).toBeVisible();

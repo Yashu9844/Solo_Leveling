@@ -47,10 +47,10 @@ export function LogTrainingSheet({ today, arcId, onClose }: LogTrainingSheetProp
     <Sheet
       open
       onClose={onClose}
-      title="Log training"
+      title="Record Vitality Trial"
       footer={
         <PrimaryButton size="md" disabled={!canLog || submitting} onClick={() => void handleLog()}>
-          {submitting ? 'Logging…' : mode === 'Session' ? 'Log session' : 'Log steps'}
+          {submitting ? 'Logging…' : mode === 'Session' ? 'Record Vitality Trial' : 'Log steps'}
         </PrimaryButton>
       }
     >

@@ -61,9 +61,6 @@ export function SettingsGroup({
               {title}
             </span>
           </div>
-          <span className="text-[8px] font-mono font-bold tracking-widest text-ink-700 uppercase">
-            [SYS // CFG]
-          </span>
         </div>
       )}
       <div

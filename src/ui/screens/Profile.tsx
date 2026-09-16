@@ -20,7 +20,15 @@ import { BossList } from '../components/BossList';
 import { AchievementsList } from '../components/AchievementsList';
 import { BodyMetricsCard } from '../components/BodyMetricsCard';
 import { CheckpointInstrumentsCard } from '../components/CheckpointInstrumentsCard';
-import { ArtLayer, FramedPanel, MeterBar, SectionLabel, SecondaryButton } from '../kit';
+import {
+  ArtLayer,
+  DayMeta,
+  FramedPanel,
+  MeterBar,
+  ScreenTitle,
+  SectionLabel,
+  SecondaryButton,
+} from '../kit';
 
 const CHECKPOINT_DAYS: Checkpoint['day'][] = [14, 30, 60, 90, 120];
 const ARC_LENGTH_DAYS = 120;
@@ -45,47 +53,22 @@ export function Profile() {
           eight specs failed on strict mode. The visible heading is the
           heading. */}
       <div className="px-gutter pb-8 pt-2">
-        {/* Header Bar matching Solo Leveling style */}
-        <div className="flex items-start justify-between mb-4">
-          <div>
-            <div className="flex items-center gap-2 mb-0.5">
-              <span className="inline-block h-1.5 w-1.5 rounded-full bg-accent-mid shadow-[0_0_8px_#5fb2ff]" />
-              <span className="text-[9px] uppercase font-mono tracking-[0.22em] text-accent-mid font-bold">
-                SYSTEM HUD // HUNTER RECORD
-              </span>
-            </div>
-            <h1 className="font-display text-2xl leading-none tracking-[0.14em] text-ink-100 glow-text">
-              PROFILE
-            </h1>
-            <div className="text-[9px] font-bold uppercase tracking-[0.2em] text-ink-700 mt-1">
-              HUNTER IDENTITY & SYSTEM RECORD
-            </div>
-          </div>
-
-          <div className="flex items-center gap-3">
-            {day != null && (
-              <div className="text-right">
-                <div className="flex items-baseline justify-end gap-1">
-                  <span className="text-xs uppercase font-display text-ink-700">DAY</span>
-                  <span className="font-mono text-sm font-bold text-accent-mid glow-text">
-                    {day}
-                  </span>
-                  <span className="text-xs text-ink-700">/ {ARC_LENGTH_DAYS}</span>
-                </div>
-                <div className="text-[8px] uppercase tracking-[0.16em] text-ink-700">
-                  SYSTEM ARC —
-                </div>
-              </div>
-            )}
-            <button
-              type="button"
-              onClick={() => navigate('/profile/settings')}
-              aria-label="Settings"
-              className="-mr-1 flex min-h-tap min-w-[44px] items-center justify-center rounded-lg border border-accent/30 bg-accent-deep/30 text-accent-mid shadow-[0_0_8px_rgba(77,163,255,0.25)] transition-all hover:bg-accent-deep/50 hover:border-accent/60"
-            >
-              <GearSix size={20} aria-hidden />
-            </button>
-          </div>
+        {/* The settings gear is a control, not decoration, so it sits
+            outside the title row and keeps its own 44px target. */}
+        <div className="mb-4 flex items-center gap-3">
+          <ScreenTitle
+            title="PROFILE"
+            meta={<DayMeta day={day} of={ARC_LENGTH_DAYS} />}
+            className="min-w-0 flex-1"
+          />
+          <button
+            type="button"
+            onClick={() => navigate('/profile/settings')}
+            aria-label="Settings"
+            className="-mr-1 flex min-h-tap min-w-[44px] shrink-0 items-center justify-center text-ink-500 transition-colors hover:text-accent-mid"
+          >
+            <GearSix size={20} aria-hidden />
+          </button>
         </div>
 
         <LevelSummary />
@@ -164,7 +147,7 @@ function LevelSummary() {
               A System that never says who it is talking to is a
               dashboard; this is the one line that makes it an address. */}
           <span className="cut-sm border border-accent/40 bg-accent-deep/40 px-2 py-0.5 font-mono text-[8px] font-bold tracking-widest text-accent-mid shadow-[0_0_8px_rgba(77,163,255,0.3)]">
-            {name ? `PLAYER · ${name.toUpperCase()}` : 'HUNTER IDENTITY RECORD'}
+            {name ? `PLAYER · ${name.toUpperCase()}` : 'PLAYER IDENTITY RECORD'}
           </span>
           <Sparkle size={16} weight="fill" color="#5fb2ff" className="drop-shadow-[0_0_8px_rgba(77,163,255,0.8)] animate-pulse" />
         </div>
@@ -253,13 +236,11 @@ function CheckpointRow() {
         className="w-full px-4 py-4 text-left group transition-all duration-150"
         style={{ minHeight: 56 }}
       >
-        <div className="flex items-center justify-between mb-1">
-          <span className="text-[9px] uppercase font-mono font-bold tracking-widest text-accent-mid">
-            THE NEXT GATE // SYSTEM ASSESSMENT
-          </span>
-          <span className="h-1.5 w-1.5 rounded-full bg-accent-mid shadow-[0_0_6px_#5fb2ff] animate-pulse" />
-        </div>
-        <span className="mt-1 block font-display text-lg leading-tight text-ink-100 group-hover:text-accent-mid transition-colors">
+        {/* The eyebrow here said "THE NEXT GATE // SYSTEM ASSESSMENT"
+            directly above "Next checkpoint: Day N" — the same fact in
+            costume, plus a dot that pulsed whether or not anything was
+            due. The line below is the information. */}
+        <span className="block font-display text-lg leading-tight text-ink-100 group-hover:text-accent-mid transition-colors">
           Next checkpoint: Day {nextCheckpointDay}
         </span>
         <span

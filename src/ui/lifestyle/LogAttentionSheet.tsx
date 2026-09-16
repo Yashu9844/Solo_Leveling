@@ -32,10 +32,10 @@ export function LogAttentionSheet({ today, arcId, onClose }: LogAttentionSheetPr
     <Sheet
       open
       onClose={onClose}
-      title="Log screen time"
+      title="Log Friction Control"
       footer={
         <PrimaryButton size="md" disabled={submitting} onClick={() => void handleLog()}>
-          {submitting ? 'Logging…' : 'Log screen time'}
+          {submitting ? 'Logging…' : 'Log Friction Control'}
         </PrimaryButton>
       }
     >

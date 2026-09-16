@@ -120,7 +120,7 @@ export function LogApplicationSheet({ today, arcId, onClose }: LogApplicationShe
     <Sheet
       open
       onClose={onClose}
-      title={mode === 'application' ? 'Log application' : 'Substitute work'}
+      title={mode === 'application' ? 'Despatch Ascension' : 'Substitute Ascension Work'}
       footer={
         // The mode switch lives beside the primary action rather than
         // buried in the body: final/06 §5.4 puts "substitute career work
@@ -134,10 +134,10 @@ export function LogApplicationSheet({ today, arcId, onClose }: LogApplicationShe
               disabled={!canLogApplication || submitting}
               onClick={() => void handleLogApplication()}
             >
-              {submitting ? 'Logging…' : 'Log application'}
+              {submitting ? 'Despatching…' : 'Despatch Ascension'}
             </PrimaryButton>
             <QuietButton onClick={() => setMode('substitute')}>
-              Substitute career work instead
+              Substitute ascension work instead
             </QuietButton>
           </div>
         ) : (
@@ -150,7 +150,7 @@ export function LogApplicationSheet({ today, arcId, onClose }: LogApplicationShe
               {submitting ? 'Logging…' : 'Log substitute work'}
             </PrimaryButton>
             <QuietButton onClick={() => setMode('application')}>
-              Log an application instead
+              Despatch an ascension instead
             </QuietButton>
           </div>
         )

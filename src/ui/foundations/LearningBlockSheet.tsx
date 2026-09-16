@@ -98,7 +98,7 @@ export function LearningBlockSheet({ today, arcId, onClose }: LearningBlockSheet
       <Sheet
         open
         onClose={onClose}
-        title="Learning block"
+        title="Foundational Trial"
         hideHeader
         footer={
           <div className="flex flex-col gap-3">
@@ -163,7 +163,7 @@ export function LearningBlockSheet({ today, arcId, onClose }: LearningBlockSheet
 
             <div>
               <h1 className="font-display text-3xl leading-none tracking-[0.14em] text-ink-100">
-                LEARNING BLOCK
+                FOUNDATIONAL TRIAL
               </h1>
               <div className="font-bold text-xs uppercase tracking-[0.22em] text-accent-mid mt-1">
                 FOUNDATION MASTERY

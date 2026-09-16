@@ -37,12 +37,12 @@ test('logging a DSA problem shows up as real mastery on Skills', async ({ page }
   await completeOnboarding(page);
 
   await page.getByTestId('quest-row-dsa-open').click();
-  await page.getByRole('button', { name: 'Log problem' }).click();
+  await page.getByRole('button', { name: /Record Logic Trial|Log problem/ }).click();
   await page.getByLabel('Problem', { exact: true }).fill('Two Sum');
   await page.getByRole('button', { name: 'Arrays' }).click();
   await page.getByRole('button', { name: 'E', exact: true }).click();
-  await page.getByRole('button', { name: 'First attempt' }).click();
-  await page.getByRole('button', { name: 'Log problem' }).click();
+  await page.getByRole('button', { name: /First impact|First attempt/ }).click();
+  await page.getByRole('button', { name: /Record Logic Trial|Log problem/ }).click();
 
   await page.getByRole('link', { name: 'SKILLS' }).click();
   const arraysRow = page.getByText('Arrays', { exact: true }).locator('..');

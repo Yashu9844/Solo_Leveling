@@ -14,7 +14,9 @@ interface FieldProps {
 export function Field({ label, children, hint, className = '' }: FieldProps) {
   return (
     <label className={['block', className].join(' ')}>
-      <span className="mb-2 block text-xxs uppercase text-ink-700">{label}</span>
+      <span className="mb-2 block font-mono text-[9px] font-bold uppercase tracking-[0.2em] text-ink-700">
+        {label}
+      </span>
       {children}
       {hint && <span className="mt-1.5 block text-xs text-faint">{hint}</span>}
     </label>
@@ -78,8 +80,32 @@ export function TextArea({ className = '', ...rest }: TextAreaProps) {
 
 /** The ceremonial heading inside a step or sheet — Cormorant, tracked,
  * distinct from a screen title so a step reads as a chapter. */
-export function StepTitle({ children }: { children: ReactNode }) {
+/**
+ * A step's heading, in the System's register.
+ *
+ * The `kicker` is the System saying what it is doing before it asks for
+ * anything — the same move the rest of the app makes with its ⟨ … ⟩
+ * labels. Onboarding used to open each step with a bare noun, which read
+ * as a web form's fieldset legend rather than as a machine bringing
+ * itself online around you.
+ */
+export function StepTitle({ children, kicker }: { children: ReactNode; kicker?: string }) {
   return (
-    <h1 className="font-display text-title uppercase tracking-label text-ink-100">{children}</h1>
+    <div className="mb-1">
+      {kicker && (
+        <div className="mb-1.5 font-mono text-[9px] font-bold uppercase tracking-[0.22em] text-accent-mid">
+          ⟨ {kicker} ⟩
+        </div>
+      )}
+      <h1 className="font-display text-title uppercase tracking-label text-ink-100">{children}</h1>
+      <div
+        aria-hidden
+        className="mt-2 h-px w-full"
+        style={{
+          background:
+            'linear-gradient(to right, var(--accent), color-mix(in srgb, var(--accent) 20%, transparent) 45%, transparent)',
+        }}
+      />
+    </div>
   );
 }

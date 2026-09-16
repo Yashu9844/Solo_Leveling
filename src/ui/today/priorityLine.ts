@@ -29,12 +29,12 @@ export function priorityLine(
 ): string {
   if (instances.length === 0) {
     if (arc && localDate < arc.start_date) {
-      return `Arc begins ${arc.start_date}.`;
+      return `⟨ ARC INITIALIZATION ⟩ Arc begins ${arc.start_date}.`;
     }
     if (arc && localDate > arc.end_date) {
-      return 'Arc complete. See your report.';
+      return '⟨ ARC CONCLUDED ⟩ See your final report.';
     }
-    return 'No quests today.';
+    return '⟨ NO ACTIVE QUESTS ⟩ System standing by.';
   }
 
   if (instances.every((i) => i.state === 'complete')) {
@@ -50,8 +50,8 @@ export function priorityLine(
     const instance = instanceByTemplateId.get(template.id);
     if (instance && instance.state !== 'complete') {
       return template.implementation_intention
-        ? `Today: ${template.title} at ${template.implementation_intention.time}.`
-        : `Today: ${template.title}.`;
+        ? `⟨ ${template.title} ⟩ Required at ${template.implementation_intention.time}.`
+        : `⟨ ${template.title} ⟩ Outstanding requirement.`;
     }
   }
 

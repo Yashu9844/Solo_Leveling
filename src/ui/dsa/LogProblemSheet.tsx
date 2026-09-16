@@ -16,10 +16,10 @@ const TOPICS = DSA_TOPICS;
 const DIFFICULTIES = ['E', 'M', 'H'] as const;
 const OUTCOMES: AttemptOutcome[] = ['first_attempt', 'hint', 'editorial', 'unsolved'];
 const OUTCOME_LABELS: Record<AttemptOutcome, string> = {
-  first_attempt: 'First attempt',
-  hint: 'Hint',
-  editorial: 'Editorial',
-  unsolved: 'Unsolved',
+  first_attempt: 'First impact',
+  hint: 'Clue',
+  editorial: 'Decree',
+  unsolved: 'Unresolved',
 };
 
 interface LogProblemSheetProps {
@@ -84,14 +84,14 @@ export function LogProblemSheet({ today, arcId, onClose }: LogProblemSheetProps)
       <Sheet
         open
         onClose={onClose}
-        title="Log problem"
+        title="Record Logic Trial"
         footer={
           <PrimaryButton
             size="md"
             disabled={!canLog || submitting}
             onClick={() => void handleLog()}
           >
-            {submitting ? 'Logging…' : 'Log problem'}
+            {submitting ? 'Recording…' : 'Record Logic Trial'}
           </PrimaryButton>
         }
       >

@@ -28,11 +28,11 @@ test('shipping an artifact this week surfaces the resume-content nudge in Weekly
   await completeOnboarding(page);
 
   await page.getByTestId('quest-row-build-open').click();
-  await page.getByRole('button', { name: 'Log session' }).click();
+  await page.getByRole('button', { name: /Forge Construct|Log session/ }).click();
   await page.getByRole('button', { name: 'SHIP', exact: true }).click();
   await page.getByLabel('Project').fill('agent');
   await page.getByPlaceholder('e.g. Tool-calling retry logic').fill('Retry logic');
-  await page.getByRole('button', { name: 'Log session' }).click();
+  await page.getByRole('button', { name: /Forge Construct|Log session/ }).click();
   await expect(page.getByText('EVIDENCE ACCEPTED')).toBeVisible();
   await page.getByText('EVIDENCE ACCEPTED').click(); // dismiss the Moment
 

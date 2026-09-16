@@ -32,10 +32,10 @@ export function LogSleepSheet({ today, arcId, onClose }: LogSleepSheetProps) {
     <Sheet
       open
       onClose={onClose}
-      title="Log sleep"
+      title="Log Synchronization"
       footer={
         <PrimaryButton size="md" disabled={submitting} onClick={() => void handleLog()}>
-          {submitting ? 'Logging…' : 'Log wake time'}
+          {submitting ? 'Logging…' : 'Log Synchronization'}
         </PrimaryButton>
       }
     >

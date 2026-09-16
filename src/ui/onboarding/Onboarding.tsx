@@ -228,8 +228,40 @@ export function Onboarding({ onComplete }: OnboardingProps) {
       <div className="relative flex flex-1 flex-col overflow-hidden text-ink-100">
         {showArt && <ArtLayer slot="onboarding" scrim="moment" priority={step === 1} />}
 
+        {/* Steps 2-5 are forms, and final/06 is right that a form does
+            not want a full backdrop — but bare was the other extreme,
+            and it is why onboarding read as a different application. A
+            masked corner bleed gives the screen the same atmosphere
+            Today has without putting anything behind the fields. */}
+        {!showArt && (
+          <div
+            aria-hidden
+            className="pointer-events-none absolute right-0 top-0 h-[220px] w-[240px] overflow-hidden"
+            style={{
+              mixBlendMode: 'lighten',
+              opacity: 0.4,
+              maskImage: 'radial-gradient(125% 105% at 100% 0%, #000 30%, transparent 74%)',
+              WebkitMaskImage: 'radial-gradient(125% 105% at 100% 0%, #000 30%, transparent 74%)',
+            }}
+          >
+            <ArtLayer slot="onboarding" scrim="none" focal="62% 25%" />
+          </div>
+        )}
+
         <div className="relative flex min-h-0 flex-1 flex-col">
           <SafeTop />
+
+          {/* The System naming the process, and the step count as a
+              readout rather than as "3/6" buried in a progress bar. */}
+          <div className="flex items-baseline justify-between px-gutter pt-3">
+            <span className="font-mono text-[9px] font-bold uppercase tracking-[0.22em] text-accent-mid">
+              ⟨ SYSTEM INITIALISATION ⟩
+            </span>
+            <span className="font-mono text-[10px] font-bold tabular-nums text-ink-700">
+              {String(step).padStart(2, '0')} / {String(TOTAL_STEPS).padStart(2, '0')}
+            </span>
+          </div>
+
           <StepRail step={step} />
 
           {/* `my-auto` rather than `justify-center`: auto margins absorb
@@ -382,7 +414,7 @@ function Step2Arc({
 }) {
   return (
     <div className="space-y-5">
-      <StepTitle>Arc</StepTitle>
+      <StepTitle kicker="DEFINE THE WINDOW">Arc</StepTitle>
       <Field label="Start">
         <TextInput type="date" value={startDate} onChange={(e) => onChangeStart(e.target.value)} />
       </Field>
@@ -432,7 +464,7 @@ function Step3Rhythm({
 }) {
   return (
     <div className="space-y-5">
-      <StepTitle>Rhythm</StepTitle>
+      <StepTitle kicker="CALIBRATE THE DAY">Rhythm</StepTitle>
       <div className="grid grid-cols-2 gap-3">
         <Field label="Wake">
           <TextInput type="time" value={wakeTime} onChange={(e) => onChangeWake(e.target.value)} />
@@ -476,7 +508,7 @@ function Step3Rhythm({
 function Step4MainQuest({ value, onChange }: { value: string; onChange: (v: string) => void }) {
   return (
     <div className="space-y-5">
-      <StepTitle>Main quest</StepTitle>
+      <StepTitle kicker="PRIME DIRECTIVE">Main quest</StepTitle>
       <p className="text-sm text-ink-500">
         One sentence. What has to be true on {DEFAULT_CONFIG.arc.endDate}?
       </p>
@@ -571,7 +603,7 @@ function Step5Intentions({
 }) {
   return (
     <div className="space-y-4">
-      <StepTitle>When and where</StepTitle>
+      <StepTitle kicker="TRIGGER PROTOCOL">When and where</StepTitle>
       {/* final/06 §5.1 marks this step "THE IMPORTANT ONE". Implementation
           intentions are the highest-leverage thing in onboarding, so the
           instruction is stated plainly rather than softened. */}
@@ -631,7 +663,7 @@ function Step6Baseline({
 }) {
   return (
     <div className="space-y-5">
-      <StepTitle>Baseline</StepTitle>
+      <StepTitle kicker="BASELINE CAPTURE">Baseline</StepTitle>
       <div className="grid grid-cols-2 gap-3">
         <Field label="Height (cm)">
           <TextInput

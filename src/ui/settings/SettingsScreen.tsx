@@ -1,9 +1,9 @@
-import { Database, Info, PaintBrush, SlidersHorizontal, Cpu, ShieldCheck, Lightning } from '@phosphor-icons/react';
+import { CaretLeft, Database, Info, PaintBrush, SlidersHorizontal, Cpu, Lightning } from '@phosphor-icons/react';
 import { useNavigate } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import { useSettings } from '../../store/SettingsContext';
 import { ACCENTS } from '../../store/settings';
-import { ScreenHeader, SettingsGroup, SettingsList, SettingsRow } from '../kit';
+import { ScreenTitle, SettingsGroup, SettingsList, SettingsRow } from '../kit';
 import { THEME_LABELS, TEXT_SCALE_LABELS } from './labels';
 
 /**
@@ -21,38 +21,24 @@ export function SettingsScreen() {
 
   return (
     <>
-      <ScreenHeader title="SETTINGS" onBack={() => navigate('/profile')} visuallyHidden />
       <div className="px-gutter pb-8 pt-2" data-testid="settings-screen">
-        {/* System Control Panel Header */}
-        <motion.div
-          initial={{ opacity: 0, y: -10 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.3 }}
-          className="mb-4 flex items-start justify-between"
-        >
-          <div>
-            <div className="flex items-center gap-2 mb-1">
-              <span className="inline-block h-2 w-2 rounded-full bg-accent-mid shadow-[0_0_10px_#5fb2ff] animate-pulse" />
-              <span className="text-[9px] uppercase font-mono tracking-[0.22em] text-accent-mid font-bold">
-                SYSTEM CORE // CONFIG PROTOCOL
-              </span>
-            </div>
-            <h1 className="font-display text-2xl font-bold leading-none tracking-[0.14em] text-ink-100 glow-text">
-              SETTINGS
-            </h1>
-            <div className="text-[9px] font-bold uppercase tracking-[0.2em] text-ink-700 mt-1">
-              PLAYER SYSTEM PROTOCOL & PREFERENCES
-            </div>
-          </div>
-          <div className="text-right">
-            <div className="inline-flex items-center gap-1.5 px-2 py-0.5 rounded border border-accent/40 bg-accent-deep/30 shadow-[0_0_8px_rgba(77,163,255,0.25)]">
-              <ShieldCheck size={13} weight="fill" color="#5fb2ff" />
-              <span className="text-[9px] font-mono font-bold tracking-widest text-accent-mid uppercase">
-                SYS ONLINE
-              </span>
-            </div>
-          </div>
-        </motion.div>
+        {/* One h1 per screen. This screen rendered the sr-only one from
+            ScreenHeader *and* a visible one with the same word, so a
+            heading query matched two elements — the same strict-mode
+            fault already fixed on the four tabs. The back control is
+            kept (design/02 §5: a route you pushed by tapping must be
+            leavable by tapping) and its "Back" name is frozen by §10. */}
+        <div className="mb-4 flex items-center gap-2">
+          <button
+            type="button"
+            onClick={() => navigate('/profile')}
+            aria-label="Back"
+            className="-ml-2 flex min-h-tap min-w-[44px] shrink-0 items-center justify-center text-ink-500 transition-colors hover:text-accent-mid"
+          >
+            <CaretLeft size={18} aria-hidden />
+          </button>
+          <ScreenTitle title="SETTINGS" className="min-w-0 flex-1" />
+        </div>
 
         {/* System Status Dashboard Card */}
         <motion.div

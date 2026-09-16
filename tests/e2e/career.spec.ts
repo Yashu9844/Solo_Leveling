@@ -15,7 +15,7 @@ async function withSafeClock(page: Page) {
  * still-open previous sheet and silently do nothing. */
 async function fillAndSubmitApplication(page: Page, company: string, whyLine: string) {
   await page.getByTestId('quest-row-career-open').click();
-  await page.getByRole('button', { name: 'Log application' }).click();
+  await page.getByRole('button', { name: /Despatch Ascension|Log application/ }).click();
   await page.getByLabel('Company').fill(company);
   await page.getByLabel('Role', { exact: true }).fill('Backend Engineer');
   await page.getByRole('button', { name: 'Backend' }).click();
@@ -28,12 +28,12 @@ async function fillAndSubmitApplication(page: Page, company: string, whyLine: st
   // not just that the click's synchronous handler ran.
   await expect(newVersionInput).toHaveValue('');
   await page.getByLabel(/Why this role/).fill(whyLine);
-  await page.getByRole('button', { name: 'Log application' }).click();
+  await page.getByRole('button', { name: /Despatch Ascension|Log application/ }).click();
 }
 
 async function logPassingApplication(page: Page, company: string, whyLine: string) {
   await fillAndSubmitApplication(page, company, whyLine);
-  await expect(page.getByRole('heading', { name: 'LOG APPLICATION' })).toHaveCount(0, { timeout: 8000 });
+  await expect(page.getByRole('heading', { name: /DESPATCH ASCENSION|LOG APPLICATION/ })).toHaveCount(0, { timeout: 8000 });
 }
 
 test('logging 3 quality applications auto-completes the CAREER quest', async ({ page }) => {

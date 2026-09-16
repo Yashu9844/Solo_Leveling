@@ -9,9 +9,12 @@ import { getTotalXp } from '../../store/playerState';
 import { getStreakState, type LiveStreakState } from '../../store/streak';
 import { getRealitySummary, type RealitySummary } from '../../store/reality';
 import { AttributeBars } from '../components/AttributeBars';
+import { StreakGrid } from '../components/StreakGrid';
 import { WeeklyReview } from '../review/WeeklyReview';
 import { getCurrentRank } from '../../store/checkpoint';
-import { ArtLayer, MeterBar, SectionLabel } from '../kit';
+import { ArtLayer, DayMeta, MeterBar, ScreenTitle, SectionLabel } from '../kit';
+
+const ARC_LENGTH_DAYS = 120;
 
 type SubTab = 'SYSTEM' | 'REALITY';
 
@@ -41,31 +44,7 @@ export function Progress() {
           eight specs failed on strict mode. The visible heading is the
           heading. */}
       <div className="px-gutter pb-6 pt-2">
-        {/* Screen Header matching design screenshot */}
-        <div className="flex items-start justify-between mb-3">
-          <div>
-            <h1 className="font-display text-2xl leading-none tracking-[0.14em] text-ink-100">
-              PROGRESS
-            </h1>
-            <div className="text-[9px] font-bold uppercase tracking-[0.2em] text-ink-700 mt-1">
-              TRACK · IMPROVE · TRANSCEND
-            </div>
-          </div>
-          <div className="text-right">
-            <div className="flex items-baseline justify-end gap-1.5">
-              <span className="text-xs uppercase font-display text-ink-700">DAY</span>
-              <span className="font-mono text-sm font-bold text-accent-mid">
-                {day != null ? String(day).padStart(2, '0') : '07'}
-              </span>
-            </div>
-            <div className="text-[9px] uppercase tracking-[0.16em] text-ink-700">
-              WINTER ARC —
-            </div>
-            <div className="text-[8px] italic text-ink-500 max-w-[120px] mt-0.5">
-              &ldquo;PROGRESS TURNS EFFORT INTO FREEDOM.&rdquo;
-            </div>
-          </div>
-        </div>
+        <ScreenTitle title="PROGRESS" meta={<DayMeta day={day} of={ARC_LENGTH_DAYS} />} className="mb-3" />
 
         {/* SubTab Switcher (SYSTEM / REALITY) */}
         <div className="grid grid-cols-2 gap-2 mb-3">
@@ -218,6 +197,8 @@ function SystemTab() {
           </div>
         </div>
       </div>
+
+      <StreakGrid />
 
       {/* Weekly Review Action Banner */}
       <button

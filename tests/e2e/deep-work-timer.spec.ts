@@ -17,7 +17,7 @@ test('the deep-work timer is optional and fills the minutes field when stopped',
   await completeOnboarding(page);
 
   await page.getByTestId('quest-row-dsa-open').click();
-  await page.getByRole('button', { name: 'Log problem' }).click();
+  await page.getByRole('button', { name: /Record Logic Trial|Log problem/ }).click();
 
   await expect(page.getByTestId('deep-work-elapsed')).toHaveText('00:00');
   await page.getByRole('button', { name: 'Start deep work' }).click();
@@ -38,12 +38,12 @@ test('logging a problem without ever touching the timer still works — it is ne
   await completeOnboarding(page);
 
   await page.getByTestId('quest-row-dsa-open').click();
-  await page.getByRole('button', { name: 'Log problem' }).click();
+  await page.getByRole('button', { name: /Record Logic Trial|Log problem/ }).click();
   await page.getByLabel('Problem', { exact: true }).fill('Two Sum');
   await page.getByRole('button', { name: 'Arrays' }).click();
   await page.getByRole('button', { name: 'E', exact: true }).click();
-  await page.getByRole('button', { name: 'First attempt' }).click();
-  await page.getByRole('button', { name: 'Log problem' }).click();
+  await page.getByRole('button', { name: /First impact|First attempt/ }).click();
+  await page.getByRole('button', { name: /Record Logic Trial|Log problem/ }).click();
 
   await expect(page.getByRole('button', { name: 'Undo DSA' })).toBeVisible();
 });

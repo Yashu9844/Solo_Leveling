@@ -71,6 +71,88 @@ export function ScreenHeader({
   );
 }
 
+interface ScreenTitleProps {
+  /** Frozen for the four tabs by design/00 §10 — TODAY / PROGRESS /
+   * SKILLS / PROFILE, each matching its nav link. */
+  title: string;
+  /**
+   * One live value, right-aligned. The *only* other thing allowed on
+   * this row, and it must be real: a count that changes, a day that
+   * advances. Not a tagline, not a hardcoded rank, not a slogan.
+   */
+  meta?: ReactNode;
+  /** Today only. final/06 §5.2 requires all six core quests above the
+   * fold on a 6" Android screen, so its title runs a step smaller. */
+  compact?: boolean;
+  className?: string;
+}
+
+/**
+ * The header every tab screen wears.
+ *
+ * Three rules, and they are the whole design:
+ *
+ * 1. **One line.** Each screen had grown an eyebrow, a title and a
+ *    tagline that all said the same thing — `SYSTEM HUD // PLAYER
+ *    RECORD` over `PROFILE` over `PLAYER IDENTITY & SYSTEM RECORD`.
+ *    Three labels is not three times the information, it is a third of
+ *    the confidence. The name of the screen is the name of the screen.
+ *
+ * 2. **The title does not glow.** Glow is how this app marks something
+ *    that just *happened* — a level gained, a day cleared. Chrome that
+ *    glows permanently spends that signal on furniture and leaves
+ *    nothing for the moments. The accent tick carries the light here;
+ *    the word stays plain ink.
+ *
+ * 3. **The right side is earned.** A hardcoded `S-RANK PLAYER` badge is
+ *    a lie told to a user on day one, and the System's whole authority
+ *    rests on it never flattering anybody.
+ *
+ * The fading rule is load-bearing: a full-width line would box the
+ * header into a strip and fight the full-bleed art behind it. Seeded in
+ * accent at the title and fading out, it reads as a system trace.
+ */
+export function ScreenTitle({ title, meta, compact = false, className = '' }: ScreenTitleProps) {
+  return (
+    <div className={['flex items-center gap-3', className].join(' ')}>
+      <span
+        aria-hidden
+        className={[
+          'shrink-0 bg-accent-mid',
+          compact ? 'h-[15px] w-[2px]' : 'h-[19px] w-[2px]',
+        ].join(' ')}
+        style={{ boxShadow: '0 0 7px var(--accent-mid)' }}
+      />
+      <h1
+        className={[
+          'shrink-0 font-display leading-none tracking-[0.18em] text-ink-100',
+          compact ? 'text-lg' : 'text-2xl',
+        ].join(' ')}
+      >
+        {title}
+      </h1>
+      {/* min-w-0 so the rule yields before anything with words in it. */}
+      <span
+        aria-hidden
+        className="h-px min-w-0 flex-1 bg-gradient-to-r from-accent-mid/40 via-hair to-transparent"
+      />
+      {meta && <span className="shrink-0 leading-none">{meta}</span>}
+    </div>
+  );
+}
+
+/** The `DAY 07 / 120` counter that three screens carry. Renders nothing
+ * until the real day is known — the placeholder `07` these screens used
+ * to print while loading was indistinguishable from a true day 7. */
+export function DayMeta({ day, of }: { day: number | null; of: number }) {
+  if (day == null) return null;
+  return (
+    <span className="font-mono text-[10px] font-bold uppercase leading-none tracking-[0.14em] text-ink-700">
+      DAY <span className="text-accent-mid">{String(day).padStart(2, '0')}</span> / {of}
+    </span>
+  );
+}
+
 interface SectionLabelProps {
   children: ReactNode;
   /** Extends a hairline from the label to the right edge. */

@@ -12,7 +12,7 @@ test('logging 10,000+ steps auto-completes TRAINING', async ({ page }) => {
   await completeOnboarding(page);
 
   await page.getByTestId('quest-row-training-open').click();
-  await page.getByRole('button', { name: 'Log training' }).click();
+  await page.getByRole('button', { name: /Record Vitality Trial|Log training/ }).click();
   await page.getByRole('button', { name: 'Steps', exact: true }).click();
   // Stepper starts at 8000 with a +500 step; click + 4 times to clear 10,000.
   for (let i = 0; i < 4; i++) {
@@ -29,9 +29,9 @@ test('logging a wake time inside the window auto-completes SLEEP', async ({ page
   await completeOnboarding(page);
 
   await page.getByTestId('quest-row-sleep-open').click();
-  await page.getByRole('button', { name: 'Log wake time' }).click();
+  await page.getByRole('button', { name: /Log Synchronization|Log wake time/ }).click();
   await page.getByLabel('Wake time').fill('08:15');
-  await page.getByRole('button', { name: 'Log wake time' }).click();
+  await page.getByRole('button', { name: /Log Synchronization|Log wake time/ }).click();
 
   await waitForQuestInstanceState(page, 'SLEEP', '2026-09-05', 'complete');
   await expect(page.getByRole('button', { name: 'Undo SLEEP' })).toBeVisible();
@@ -42,8 +42,8 @@ test('logging screen time at or under the limit auto-completes ATTENTION', async
   await completeOnboarding(page);
 
   await page.getByTestId('quest-row-attention-open').click();
-  await page.getByRole('button', { name: 'Log screen time' }).click();
-  await page.getByRole('button', { name: 'Log screen time' }).click(); // default 45 <= 60
+  await page.getByRole('button', { name: /Log Friction Control|Log screen time/ }).click();
+  await page.getByRole('button', { name: /Log Friction Control|Log screen time/ }).click(); // default 45 <= 60
 
   await waitForQuestInstanceState(page, 'ATTENTION', '2026-09-05', 'complete');
   await expect(page.getByRole('button', { name: 'Undo ATTENTION' })).toBeVisible();

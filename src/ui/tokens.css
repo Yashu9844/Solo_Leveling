@@ -45,6 +45,18 @@
 
   --type-scale: 1; /* multiplied into every font size; set by [data-text-scale] */
   --art-opacity: 1; /* gated by [data-art] */
+
+  /* Motion tokens — design/00-DESIGN-SYSTEM.md §5 */
+  --duration-instant: 0ms;
+  --duration-micro: 120ms;
+  --duration-fast: 180ms;
+  --duration-std: 280ms;
+  --duration-deliberate: 450ms;
+  --duration-cinematic: 1200ms;
+
+  --ease-system: cubic-bezier(0.22, 1, 0.36, 1);
+  --ease-system-in-out: cubic-bezier(0.4, 0, 0.2, 1);
+  --ease-system-spring: cubic-bezier(0.175, 0.885, 0.32, 1.275);
 }
 
 /* ══════════════════════════════════════════════════════════════════════

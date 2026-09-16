@@ -20,12 +20,12 @@ const CORE_QUEST_KEYS: readonly CoreQuestKey[] = [
 ];
 
 const CORE_QUEST_TITLES: Record<CoreQuestKey, string> = {
-  career: 'CAREER',
-  dsa: 'DSA',
-  build: 'BUILD',
-  training: 'TRAINING',
-  sleep: 'SLEEP',
-  attention: 'ATTENTION',
+  career: 'ASCENSION',
+  dsa: 'LOGIC TRIAL',
+  build: 'FORGE',
+  training: 'VITALITY TRIAL',
+  sleep: 'RECONSTITUTION',
+  attention: 'WILL TRIAL',
 };
 
 // final/10-SLICE-1-PROMPT.md Step 1.2's criterion table, verbatim.

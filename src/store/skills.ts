@@ -1,25 +1,39 @@
-// final/06 §row 11 — "SKILLS | DSA topics · SE foundations · AI tiers ·
-// career tree | L10." This screen was scaffolded (Skills.tsx said
-// "Phase 0 — not implemented") but never built. AI tiers (final/03
-// §4.2) have no per-skill tracked data anywhere in this build — they're
-// rendered as a flat reference list, not an interactive one, which
-// matches the row's own "flat lists" description. The "career tree" is
-// final/02 §6's MAIN QUEST breakdown: every branch already has real
-// backing data in this app (SOFTWARE ENGINEERING -> foundations mastery,
-// AI/AGENTIC -> tiers, PROJECTS -> artifact table, RESUME -> resume_
-// version, APPLICATIONS/INTERVIEWS/OFFER -> application/career_event) —
-// nothing here is invented, it's a rollup of tables the app already
-// maintains.
 import { DSA_TOPICS } from '../engine/dsa';
 import { FOUNDATION_TOPICS } from '../engine/foundations';
 import { getDsaTopicMastery, getFoundationTopicMastery } from './mastery';
 import { db } from '../db/db';
-import type { MasteryState } from '../engine/types';
+import type { MasteryState, EngineConfig, EngineDeps } from '../engine/types';
+import { logLearningBlock } from './build';
+import { foundationMasteryFor } from '../engine/foundations';
 
 export interface TopicMastery {
   topic: string;
   state: MasteryState;
 }
+
+export const AI_TIER_TOPICS = [
+  'LLM Fundamentals',
+  'Prompting with Cache-Awareness',
+  'Structured Outputs',
+  'Tool Calling',
+  'Embeddings',
+  'RAG Basics',
+  'Vector Store Selection',
+  'Model Landscape & Pricing',
+  'Evaluation Design',
+  'Agent Orchestration',
+  'Context Engineering',
+  'MCP Protocol',
+  'Cost & Latency Optimization',
+  'Observability & Tracing',
+  'Guardrails & OWASP LLM Risks',
+  'Sandboxing & Kill-Switches',
+  'Production Deployment',
+  'Async Job Architecture',
+  'Multi-Agent Coordination',
+  'Computer-Use / Vision-Action Loops',
+  'Custom Fine-Tuning',
+] as const;
 
 export async function getDsaSkillsOverview(): Promise<TopicMastery[]> {
   return Promise.all(DSA_TOPICS.map(async (topic) => ({ topic, state: await getDsaTopicMastery(topic) })));
@@ -27,6 +41,60 @@ export async function getDsaSkillsOverview(): Promise<TopicMastery[]> {
 
 export async function getFoundationSkillsOverview(): Promise<TopicMastery[]> {
   return Promise.all(FOUNDATION_TOPICS.map(async (topic) => ({ topic, state: await getFoundationTopicMastery(topic) })));
+}
+
+export async function getAiSkillsOverview(): Promise<TopicMastery[]> {
+  const blocks = await db.learning_block.toArray();
+  return AI_TIER_TOPICS.map((topic) => ({
+    topic,
+    state: foundationMasteryFor(
+      topic,
+      blocks.map((b) => ({ topic: b.topic, local_date: b.local_date }))
+    ),
+  }));
+}
+
+export interface TodayAutoFillSummary {
+  dsaCount: number;
+  learningBlockCount: number;
+  buildMinutes: number;
+  recentTopics: string[];
+}
+
+export async function getTodayAutoFillSummary(today: string): Promise<TodayAutoFillSummary> {
+  const [dsaAttempts, learningBlocks, buildSessions] = await Promise.all([
+    db.dsa_attempt.where('local_date').equals(today).toArray(),
+    db.learning_block.where('local_date').equals(today).toArray(),
+    db.build_session.where('local_date').equals(today).toArray(),
+  ]);
+
+  const dsaProblems = await db.dsa_problem.toArray();
+  const problemMap = new Map(dsaProblems.map((p) => [p.id, p]));
+
+  const dsaTopicsToday = dsaAttempts.map((a) => problemMap.get(a.problem_id)?.topic).filter((t): t is string => Boolean(t));
+  const learnTopicsToday = learningBlocks.map((b) => b.topic);
+
+  const uniqueTopics = Array.from(new Set([...dsaTopicsToday, ...learnTopicsToday]));
+  const buildMinutes = buildSessions.reduce((sum, s) => sum + s.minutes, 0);
+
+  return {
+    dsaCount: dsaAttempts.length,
+    learningBlockCount: learningBlocks.length,
+    buildMinutes,
+    recentTopics: uniqueTopics,
+  };
+}
+
+export async function logQuickSkillPractice(
+  today: string,
+  arcId: string,
+  topic: string,
+  minutes: number,
+  config: EngineConfig,
+  deps: EngineDeps,
+  note?: string
+): Promise<void> {
+  await logLearningBlock(today, arcId, topic, minutes, config, deps, note);
 }
 
 export interface CareerTreeOverview {
@@ -55,10 +123,9 @@ export async function getCareerTreeOverview(): Promise<CareerTreeOverview> {
     applications: applications.length,
     qualityApplications: applications.filter((a) => a.quality_pass).length,
     resumeVersions: resumeVersions.length,
-    // final/02 §6 groups "INTERVIEWS" as one branch; onsite is a
-    // further-stage interview, not a separate branch.
     interviews: careerEvents.filter((e) => e.kind === 'interview' || e.kind === 'onsite').length,
     offers: careerEvents.filter((e) => e.kind === 'offer').length,
     artifactsByKind,
   };
 }
+

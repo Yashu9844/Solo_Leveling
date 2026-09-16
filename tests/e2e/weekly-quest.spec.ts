@@ -28,11 +28,11 @@ test('accepting a weekly quest shows live progress on Today and claims XP on com
   await expect(page.getByTestId('weekly-quest-progress')).toContainText('0/1');
 
   await page.getByTestId('quest-row-build-open').click();
-  await page.getByRole('button', { name: 'Log session' }).click();
+  await page.getByRole('button', { name: /Forge Construct|Log session/ }).click();
   await page.getByRole('button', { name: 'SHIP', exact: true }).click();
   await page.getByLabel('Project').fill('agent');
   await page.getByPlaceholder('e.g. Tool-calling retry logic').fill('Retry logic');
-  await page.getByRole('button', { name: 'Log session' }).click();
+  await page.getByRole('button', { name: /Forge Construct|Log session/ }).click();
   await expect(page.getByText('EVIDENCE ACCEPTED')).toBeVisible();
   await page.getByText('EVIDENCE ACCEPTED').click();
 

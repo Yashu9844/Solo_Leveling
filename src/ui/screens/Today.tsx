@@ -29,7 +29,7 @@ import { LogAttentionSheet } from '../lifestyle/LogAttentionSheet';
 import { MaintenanceCard } from '../lifestyle/MaintenanceCard';
 import { LearningBlockSheet } from '../foundations/LearningBlockSheet';
 import { SingleChipSelect } from '../components/SingleChipSelect';
-import { ArtLayer, MeterBar, SectionLabel, SystemWindow } from '../kit';
+import { ArtLayer, MeterBar, ScreenTitle, SectionLabel, SystemWindow } from '../kit';
 import { useCountdown } from '../hooks/useCountdown';
 import { getTodaySystemLine } from '../../store/messages';
 import { recordReflectionShown } from '../../store/reflections';
@@ -304,17 +304,17 @@ export function Today() {
     }
     switch (key) {
       case 'career':
-        return { label: 'Log application', onOpen: () => open(setCareerLogOpen) };
+        return { label: 'Despatch Ascension', onOpen: () => open(setCareerLogOpen) };
       case 'dsa':
-        return { label: 'Log problem', onOpen: () => open(setDsaLogOpen) };
+        return { label: 'Record Logic Trial', onOpen: () => open(setDsaLogOpen) };
       case 'build':
-        return { label: 'Log session', onOpen: () => open(setBuildLogOpen) };
+        return { label: 'Forge Construct', onOpen: () => open(setBuildLogOpen) };
       case 'training':
-        return { label: 'Log training', onOpen: () => open(setTrainingLogOpen) };
+        return { label: 'Record Vitality Trial', onOpen: () => open(setTrainingLogOpen) };
       case 'sleep':
-        return { label: 'Log wake time', onOpen: () => open(setSleepLogOpen) };
+        return { label: 'Log Synchronization', onOpen: () => open(setSleepLogOpen) };
       case 'attention':
-        return { label: 'Log screen time', onOpen: () => open(setAttentionLogOpen) };
+        return { label: 'Log Friction Control', onOpen: () => open(setAttentionLogOpen) };
     }
   }
 
@@ -363,32 +363,27 @@ export function Today() {
               final/06 §5.2, the constraint that caps the core set at six
               — and a separate title block cost 51px of that budget while
               repeating chrome this row was already carrying. */}
-          <div className="mb-2 flex items-center gap-3">
-            <h1 className="font-display text-lg leading-none tracking-[0.16em] text-ink-100">
-              TODAY
-            </h1>
-            <div className="h-px flex-1 bg-gradient-to-r from-accent-mid/40 via-hair to-transparent" />
-            {/* Second person, and a number that means something: this is
-                what the System still wants from you today. */}
-            {instances.length > 0 && (
-              <span
-                className={[
-                  'shrink-0 font-mono text-[10px] font-bold uppercase leading-none tracking-[0.14em]',
-                  remaining > 0 ? 'text-accent-mid' : 'glow-text text-state-complete',
-                ].join(' ')}
-              >
-                {remaining > 0 ? `${remaining} REMAIN` : 'ALL CLEAR'}
-              </span>
-            )}
-            {/* Decoration, so it yields first. shrink-0 here pushed
-                Today 20px sideways at 320px with text scale XL — the
-                heading and the tagline were both intrinsically sized and
-                neither could give ground. Hidden outright on the
-                narrowest screens rather than truncated to a fragment. */}
-            <span className="hidden min-w-0 truncate text-[9px] uppercase leading-none tracking-[0.2em] text-ink-700 [@media(min-width:430px)]:inline">
-              DISCIPLINE CREATES FREEDOM
-            </span>
-          </div>
+          {/* The slogan that used to ride along here ("DISCIPLINE
+              CREATES FREEDOM") is gone. It never changed, so after day
+              one it was read as texture rather than as words, and it was
+              competing with the one thing on this row that does change. */}
+          <ScreenTitle
+            title="TODAY"
+            compact
+            className="mb-2"
+            meta={
+              instances.length > 0 ? (
+                <span
+                  className={[
+                    'font-mono text-[10px] font-bold uppercase leading-none tracking-[0.14em]',
+                    remaining > 0 ? 'text-accent-mid' : 'glow-text text-state-complete',
+                  ].join(' ')}
+                >
+                  {remaining > 0 ? `${remaining} REMAIN` : 'ALL CLEAR'}
+                </span>
+              ) : null
+            }
+          />
 
           {/* DAY 07 & RANK Crest */}
           <div className="flex items-center justify-between gap-3">
@@ -597,7 +592,7 @@ export function Today() {
             </svg>
           </div>
           <span className="text-xs font-bold uppercase tracking-[0.14em] text-ink-100">
-            Learning block
+            Foundational Trial
           </span>
         </div>
         <div className="flex items-center gap-2">

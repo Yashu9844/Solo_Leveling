@@ -4,7 +4,7 @@
 export { ScreenShell, SafeTop, SafeBottom } from './ScreenShell';
 export { PageTransition, type TransitionEdge } from './PageTransition';
 export { Panel, FramedPanel, type CutSize } from './Panel';
-export { ScreenHeader, SectionLabel } from './ScreenHeader';
+export { ScreenHeader, ScreenTitle, DayMeta, SectionLabel } from './ScreenHeader';
 export { QuoteCard } from './QuoteCard';
 export { PrimaryButton, SecondaryButton, QuietButton, type ButtonTone } from './Button';
 export { IconTile } from './IconTile';

@@ -11,7 +11,13 @@ interface StepperProps {
 export function Stepper({ value, onChange, step = 1, min = 0, suffix, label }: StepperProps) {
   return (
     <div>
-      {label && <div className="mb-2 text-xxs uppercase tracking-wide text-ink-700">{label}</div>}
+      {/* Same mono micro-label as ChipToggle and Field, so a form built
+          from three different primitives still reads as one surface. */}
+      {label && (
+        <div className="mb-2 font-mono text-[9px] font-bold uppercase tracking-[0.2em] text-ink-700">
+          {label}
+        </div>
+      )}
       <div className="flex items-center gap-3">
         <button
           type="button"

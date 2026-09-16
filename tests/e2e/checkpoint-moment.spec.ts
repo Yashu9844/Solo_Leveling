@@ -17,12 +17,12 @@ test('sealing a checkpoint with real logged progress shows the self-paced CHECKP
   // which is all checkpointImproved needs to fire, independent of
   // whether the Day 14 rank gate itself passes.
   await page.getByTestId('quest-row-dsa-open').click();
-  await page.getByRole('button', { name: 'Log problem' }).click();
+  await page.getByRole('button', { name: /Record Logic Trial|Log problem/ }).click();
   await page.getByLabel('Problem', { exact: true }).fill('Two Sum');
   await page.getByRole('button', { name: 'Arrays' }).click();
   await page.getByRole('button', { name: 'E', exact: true }).click();
-  await page.getByRole('button', { name: 'First attempt' }).click();
-  await page.getByRole('button', { name: 'Log problem' }).click();
+  await page.getByRole('button', { name: /First impact|First attempt/ }).click();
+  await page.getByRole('button', { name: /Record Logic Trial|Log problem/ }).click();
 
   await page.getByRole('link', { name: 'PROFILE' }).click();
   await page.getByRole('button', { name: /Next checkpoint: Day 14/ }).click();

@@ -104,7 +104,7 @@ test.describe('overlays and the back gesture', () => {
 
     for (let i = 0; i < 3; i++) {
       await page.getByTestId('quest-row-career-open').click();
-      await page.getByRole('button', { name: 'Log application' }).click();
+      await page.getByRole('button', { name: /Despatch Ascension|Log application/ }).click();
       await expect(page.getByRole('dialog')).toBeVisible();
       await page.getByRole('button', { name: 'Close' }).click();
       await expect(page.getByRole('dialog')).toHaveCount(0);

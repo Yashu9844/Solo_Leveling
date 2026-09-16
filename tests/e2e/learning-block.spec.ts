@@ -21,7 +21,7 @@ test('logging a foundation topic block grants LEARN XP and fires the MASTERY Mom
 
   expect(await barWidthPct(page)).toBe(0);
 
-  await page.getByRole('button', { name: /Learning block/ }).click();
+  await page.getByRole('button', { name: /Foundational Trial|Learning block/ }).click();
   await page.getByRole('button', { name: 'Operating Systems' }).click();
   await page.getByRole('button', { name: /LOG BLOCK · \+\d+ XP/ }).click();
 
@@ -40,7 +40,7 @@ test('the System Design chip reveals system/mode fields and logs into its own ta
   await withSafeClock(page);
   await completeOnboarding(page);
 
-  await page.getByRole('button', { name: /Learning block/ }).click();
+  await page.getByRole('button', { name: /Foundational Trial|Learning block/ }).click();
   await page.getByRole('button', { name: 'System Design' }).click();
 
   // Distinct from every other topic — final/03 §3.3's "extra structure."
@@ -53,6 +53,6 @@ test('the System Design chip reveals system/mode fields and logs into its own ta
   // system_design_study rows (existing, documented design) — so this
   // path never fires a MASTERY Moment on a fresh topic; the sheet
   // closes straight away.
-  await expect(page.getByRole('heading', { name: 'LEARNING BLOCK' })).toHaveCount(0);
+  await expect(page.getByRole('heading', { name: /FOUNDATIONAL TRIAL|LEARNING BLOCK/ })).toHaveCount(0);
   await expect.poll(() => barWidthPct(page)).toBeGreaterThan(0);
 });

@@ -72,14 +72,14 @@ export function LogBuildSessionSheet({ today, arcId, onClose }: LogBuildSessionS
       <Sheet
         open
         onClose={onClose}
-        title="Log build session"
+        title="Forge Construct"
         footer={
           <PrimaryButton
             size="md"
             disabled={!canLog || submitting}
             onClick={() => void handleLog()}
           >
-            {submitting ? 'Logging…' : 'Log session'}
+            {submitting ? 'Forging…' : 'Forge Construct'}
           </PrimaryButton>
         }
       >

@@ -363,3 +363,39 @@ export const SCHEMA_V2_ADDITIONS = {
 export const SCHEMA_V3_ADDITIONS = {
   weekly_quest: 'id, week_start_date, week_end_date, completed_at',
 } as const;
+
+/**
+ * design/04-SYSTEM-MESSAGE-ENGINE.md §14 — the System-voice layer's two
+ * mutable tables. The library itself is static code (engine/voicePack.ts),
+ * for the same reason engine/reflections.ts's is.
+ *
+ * `system_message_state` mirrors `reflection_state` exactly: per-line
+ * show history, so the cooldown and the least-shown-first ranking have
+ * something to read.
+ *
+ * `system_transmission` is what makes the message stable. One row per
+ * local_date holding the state fingerprint it was chosen for — a reload,
+ * a re-render or a round trip through another tab recomputes the same
+ * fingerprint and reuses the row, so the System does not change its mind
+ * about a day it has already reported on. Neither table is an event:
+ * which sentence was displayed is device state, not evidence about the
+ * arc, and putting it in the log would weaken what verifyIntegrity()
+ * proves (design/00 §10).
+ */
+export const SCHEMA_V4_ADDITIONS = {
+  system_message_state: 'id, last_shown_date',
+  system_transmission: 'local_date',
+} as const;
+
+export interface SystemMessageStateRow {
+  id: string; // pk — the static id in engine/voicePack.ts
+  times_shown: number;
+  last_shown_date?: string;
+}
+
+export interface SystemTransmissionRow {
+  local_date: string; // pk — the 04:00-boundary date
+  fingerprint: string;
+  message_id: string;
+  chosen_at: string;
+}

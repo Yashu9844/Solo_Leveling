@@ -1,5 +1,5 @@
 import Dexie, { type Table } from 'dexie';
-import { SCHEMA_V1, SCHEMA_V2_ADDITIONS, SCHEMA_V3_ADDITIONS } from './schema';
+import { SCHEMA_V1, SCHEMA_V2_ADDITIONS, SCHEMA_V3_ADDITIONS, SCHEMA_V4_ADDITIONS } from './schema';
 import type {
   EventRow,
   XpLedgerRow,
@@ -27,6 +27,8 @@ import type {
   CheckpointRow,
   ReflectionStateRow,
   WeeklyQuestRow,
+  SystemMessageStateRow,
+  SystemTransmissionRow,
 } from './schema';
 
 export class SystemDb extends Dexie {
@@ -56,6 +58,8 @@ export class SystemDb extends Dexie {
   checkpoint!: Table<CheckpointRow, string>;
   reflection_state!: Table<ReflectionStateRow, string>;
   weekly_quest!: Table<WeeklyQuestRow, string>;
+  system_message_state!: Table<SystemMessageStateRow, string>;
+  system_transmission!: Table<SystemTransmissionRow, string>;
 
   constructor() {
     super('system-arc');
@@ -65,6 +69,12 @@ export class SystemDb extends Dexie {
     // from version 1 unchanged, so no .upgrade() migration is needed.
     this.version(2).stores({ ...SCHEMA_V1, ...SCHEMA_V2_ADDITIONS });
     this.version(3).stores({ ...SCHEMA_V1, ...SCHEMA_V2_ADDITIONS, ...SCHEMA_V3_ADDITIONS });
+    this.version(4).stores({
+      ...SCHEMA_V1,
+      ...SCHEMA_V2_ADDITIONS,
+      ...SCHEMA_V3_ADDITIONS,
+      ...SCHEMA_V4_ADDITIONS,
+    });
   }
 }
 

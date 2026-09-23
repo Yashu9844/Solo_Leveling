@@ -32,6 +32,8 @@ import { SingleChipSelect } from '../components/SingleChipSelect';
 import { ArtLayer, MeterBar, ScreenTitle, SectionLabel, SystemWindow } from '../kit';
 import { useCountdown } from '../hooks/useCountdown';
 import { getTodaySystemLine } from '../../store/messages';
+import { resolveTransmission, type Transmission } from '../../store/systemMessage';
+import { SystemTransmission } from '../today/SystemTransmission';
 import { recordReflectionShown } from '../../store/reflections';
 
 const CONFIG = DEFAULT_CONFIG;
@@ -122,6 +124,11 @@ export function Today() {
   const [weeklyQuest, setWeeklyQuest] = useState<ActiveWeeklyQuest | null>(null);
   const [rank, setRank] = useState('E');
   const [systemLine, setSystemLine] = useState<string | null>(null);
+  // design/04 §12 — the System's reading of the current state. Resolved
+  // from the same derived tables the rest of this screen reads, and
+  // cached by state fingerprint, so a re-render or a return to this tab
+  // never re-rolls it.
+  const [transmission, setTransmission] = useState<Transmission | null>(null);
   const [revisitingId, setRevisitingId] = useState<string | null>(null);
   const dayClosed = isDayClosed(realDeps.now(), CONFIG);
 
@@ -135,6 +142,22 @@ export function Today() {
     const [totalXp, xpByInstance] = await Promise.all([getTotalXp(), getDayXpByInstance(date)]);
     setLevelState(levelFor(totalXp, CONFIG));
     setDayXp(xpByInstance);
+  }, []);
+
+  /**
+   * Re-reads the System's verdict on the current state.
+   *
+   * Cheap and idempotent: resolveTransmission compares a fingerprint of
+   * the state against the one it cached for this local date and only
+   * selects (and writes) when something the System would actually have a
+   * different opinion about has moved. Calling it after a quest toggle is
+   * therefore free inside a band and meaningful when a tap crosses one.
+   */
+  const refreshTransmission = useCallback(async (date: string) => {
+    const arcRow = await db.arc.toCollection().first();
+    if (!arcRow) return;
+    const dayNumber = arcDay(realDeps.now(), arcRow.start_date, arcRow.timezone, arcRow.day_boundary_hour);
+    setTransmission(await resolveTransmission(date, dayNumber, CONFIG, realDeps));
   }, []);
 
   const refresh = useCallback(async () => {
@@ -175,7 +198,9 @@ export function Today() {
     if (line.source === 'reflection' && line.reflectionId) {
       await recordReflectionShown(line.reflectionId, date);
     }
-  }, [refreshXp]);
+
+    await refreshTransmission(date);
+  }, [refreshXp, refreshTransmission]);
 
   useEffect(() => {
     void refresh();
@@ -227,6 +252,7 @@ export function Today() {
         await completeQuest(instance, template.key, arc.id, CONFIG, realDeps);
       }
       await refreshXp(today);
+      await refreshTransmission(today);
 
       if (!wasComplete) {
         // The day just became complete on this tap. Checked against the
@@ -274,6 +300,7 @@ export function Today() {
       setRecoverable(null);
       setRecoveryReason(null);
       await refreshXp(today);
+      await refreshTransmission(today);
     } catch {
       setNotice('Could not save — try again.');
       setTimeout(() => setNotice(null), 3000);
@@ -512,6 +539,20 @@ export function Today() {
         >
           Day closed. Next day begins at 04:00.
         </p>
+      )}
+
+      {/*
+        The System's reading of where the Player actually is — design/04.
+        Above the quest window on purpose: the System states the condition
+        first, then lists the requirements. Reversed, the line becomes a
+        footnote on a checklist.
+      */}
+      {transmission && (
+        <SystemTransmission
+          message={transmission.message}
+          context={transmission.context}
+          fingerprint={transmission.fingerprint}
+        />
       )}
 
       {/*

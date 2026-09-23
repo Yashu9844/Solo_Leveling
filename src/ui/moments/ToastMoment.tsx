@@ -53,7 +53,7 @@ export function ToastMoment({
       >
         <div
           className={[
-            'cut-sm flex max-w-shell items-center gap-3 px-4 py-3 transition-all',
+            'cut-sm flex w-full sm:max-w-shell items-center gap-3 px-4 py-3 transition-all',
             still ? '' : 'duration-300 ease-out',
             visible ? 'translate-y-0 opacity-100' : 'translate-y-2 opacity-0',
           ].join(' ')}

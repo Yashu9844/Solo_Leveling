@@ -10,9 +10,11 @@ export default defineConfig({
   plugins: [
     react(),
     VitePWA({
-      registerType: 'prompt',
+      registerType: 'autoUpdate',
       injectRegister: 'auto',
       workbox: {
+        skipWaiting: true,
+        clientsClaim: true,
         // woff2 is not optional here: the three self-hosted families are
         // the type system (design/00-DESIGN-SYSTEM.md §4), and this app is
         // offline-first by design. Without them precached, an offline

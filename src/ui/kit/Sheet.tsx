@@ -104,7 +104,7 @@ export function Sheet({ open, onClose, title, children, footer, testId, hideHead
           />
 
           <div
-            className="relative w-full max-w-shell"
+            className="relative w-full sm:max-w-shell"
             style={{ animation: 'sheet-in 280ms cubic-bezier(0.22, 1, 0.36, 1) both' }}
           >
           <motion.div

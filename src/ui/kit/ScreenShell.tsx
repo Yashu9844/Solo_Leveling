@@ -35,7 +35,7 @@ export function ScreenShell({ children, className = '' }: ScreenShellProps) {
           // a `flex-1 overflow-y-auto` child never gets a scrollable box:
           // the document scrolls instead, and the bottom nav — which is a
           // sibling, not a fixed element — scrolls away with the content.
-          'relative flex h-dvh w-full max-w-shell flex-col overflow-hidden bg-void',
+          'relative flex h-dvh w-full sm:max-w-shell flex-col overflow-hidden bg-void',
           // The device frame — only from 640px up.
           'sm:h-[min(880px,92dvh)] sm:min-h-0 sm:rounded-[40px] sm:border sm:border-hair',
           'sm:shadow-[0_24px_70px_rgba(0,0,0,0.6)]',

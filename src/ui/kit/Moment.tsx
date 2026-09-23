@@ -81,7 +81,7 @@ export function Moment({
       >
         {slot && <ArtLayer slot={slot} scrim="moment" priority />}
 
-        <FramedPanel tone={tone} className="relative w-full max-w-shell px-5 py-8">
+        <FramedPanel tone={tone} className="relative w-full sm:max-w-shell px-5 py-8">
           {children}
         </FramedPanel>
 

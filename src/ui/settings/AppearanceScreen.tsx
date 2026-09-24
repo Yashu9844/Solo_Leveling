@@ -12,6 +12,7 @@ import {
 import { ScreenHeader, Segmented, SettingsGroup, SettingsList, SettingsRow } from '../kit';
 import { speakSystemLine, stopSpeaking } from '../speech/systemSpeech';
 import { playClip, stopClip } from '../speech/voicePackAudio';
+import { VoiceStatus } from './VoiceStatus';
 import { AppearancePreview } from './AppearancePreview';
 import {
   ART_LABELS,
@@ -209,6 +210,7 @@ export function AppearanceScreen() {
               }
             />
           </SettingsList>
+          <VoiceStatus />
         </SettingsGroup>
       </div>
     </>

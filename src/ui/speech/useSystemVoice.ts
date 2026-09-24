@@ -1,24 +1,8 @@
 import { useEffect, useRef } from 'react';
 import { useSettings } from '../../store/SettingsContext';
-import { armOnFirstGesture, speakSystemLine } from './systemSpeech';
-import { playClip, stopClip } from './voicePackAudio';
+import { announce, silence } from './announce';
 
-/**
- * Session memory of what has already been said.
- *
- * Module-level on purpose. A page reload is a new app open and the System
- * should greet you again; a re-render, a tab round trip or a quest toggle
- * inside the same state is not, and must stay silent. The fingerprint is
- * already the identity of a state (engine/systemVoice.ts), so keying on
- * it means "speak when the System has something new to say" falls out
- * for free rather than needing a second rule.
- */
-const spokenThisSession = new Set<string>();
-
-/** Test seam — the e2e spec re-opens the app inside one browser context. */
-export function resetSpokenMemory(): void {
-  spokenThisSession.clear();
-}
+export { resetSpokenMemory } from './announce';
 
 interface UseSystemVoiceArgs {
   /** The id of the line, which is also the name of its rendered clip. */
@@ -32,74 +16,44 @@ interface UseSystemVoiceArgs {
 /**
  * Says the current System line once per app open.
  *
- * Two engines, tried in order:
+ * Deliberately thin. All of the hard parts — the two engines, the
+ * first-gesture fallback, and saying a line exactly once — live in
+ * announce.ts, outside React, because tying them to an effect's lifetime
+ * is what broke this the first time: StrictMode's extra unmount cancelled
+ * the fallback before it was armed, and the line became unreachable on
+ * any browser that blocks autoplay. A hook that only forwards arguments
+ * has no race to lose.
  *
- *  1. The rendered clip (`/voice/<id>.mp3`) — the actual character voice,
- *     pre-rendered at build time. This is what the Player hears normally.
- *  2. The device's own speech engine — flat, synthetic, and always
- *     present. It covers a line whose clip is missing and a build that
- *     shipped without a pack at all.
- *
- * The gesture fallback wrapping both is not an edge case, it is the
- * normal path on a phone: browsers reject `audio.play()` and drop
- * `speechSynthesis` calls until the document has seen a user
- * interaction, and a PWA launched from the home screen has seen none. So
- * the first attempt is *expected* to fail there, and the line is armed
- * rather than lost — it says itself at the Player's first touch.
+ * A page reload is a new app open and the System greets you again; a
+ * re-render, a tab round trip or a quest toggle inside the same state is
+ * not, and stays silent — the fingerprint is already the identity of a
+ * state (engine/systemVoice.ts), so that falls out rather than needing a
+ * second rule.
  */
 export function useSystemVoice({ messageId, text, fingerprint }: UseSystemVoiceArgs): void {
   const { settings } = useSettings();
   const enabled = settings.voice;
 
-  // Read through a ref inside the effect so toggling the setting off does
-  // not re-run the effect and re-speak a line that is already said.
+  // Read through a ref so the gesture fallback, which may fire minutes
+  // later, checks the setting as it is *then* rather than as it was when
+  // the line was chosen.
   const enabledRef = useRef(enabled);
   enabledRef.current = enabled;
 
   useEffect(() => {
     if (!enabled || !text || !fingerprint) return;
-    if (spokenThisSession.has(fingerprint)) return;
-
-    // Claimed before the first await: React may run this effect twice in
-    // StrictMode, and two overlapping utterances of the same line is the
-    // one failure mode a user notices immediately.
-    spokenThisSession.add(fingerprint);
-
-    let disarm: (() => void) | undefined;
-    let cancelled = false;
-
-    const say = async (): Promise<boolean> => {
-      if (messageId && (await playClip(messageId))) return true;
-      return speakSystemLine(text);
-    };
-
-    void (async () => {
-      const spoke = await say();
-      if (spoke || cancelled || !enabledRef.current) return;
-
-      disarm = armOnFirstGesture(() => {
-        if (!cancelled && enabledRef.current) void say();
-      });
-    })();
-
-    return () => {
-      cancelled = true;
-      disarm?.();
-    };
+    announce({ fingerprint, messageId, text, stillEnabled: () => enabledRef.current });
   }, [enabled, text, messageId, fingerprint]);
 
   // Turning the voice off should stop the System mid-sentence rather than
   // take effect after it finishes talking.
   useEffect(() => {
-    if (!enabled) stopClip();
+    if (!enabled) silence();
   }, [enabled]);
 
   // Note what is deliberately absent: a cancel on unmount. Today unmounts
   // on every tab change, and these lines run three or four seconds, so
   // cutting one off mid-word to move to Skills reads as a glitch rather
   // than as tidiness. Overlap is impossible anyway — both engines stop
-  // whatever is playing before they start. It also keeps React's
-  // StrictMode double-mount in development from clipping the first word
-  // of every session, which would look exactly like a bug worth
-  // reporting and would not be one.
+  // whatever is playing before they start.
 }

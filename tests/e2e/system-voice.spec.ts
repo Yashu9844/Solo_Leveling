@@ -212,3 +212,61 @@ test('turning the voice off makes it silent', async ({ page }) => {
   expect(played).toHaveLength(0);
   expect(await spoken(page)).toHaveLength(0);
 });
+
+/**
+ * Refuses autoplay the way a real browser does on a page nobody has
+ * touched yet: `play()` rejects with NotAllowedError, and speechSynthesis
+ * accepts the call but never fires `start`.
+ */
+async function blockAutoplay(page: Page) {
+  await page.addInitScript(() => {
+    const realPlay = HTMLMediaElement.prototype.play;
+    let unlocked = false;
+    window.addEventListener('pointerdown', () => { unlocked = true; }, { capture: true });
+    window.addEventListener('keydown', () => { unlocked = true; }, { capture: true });
+
+    HTMLMediaElement.prototype.play = function play(this: HTMLMediaElement) {
+      if (unlocked) return realPlay.call(this);
+      return Promise.reject(
+        Object.assign(new Error('play() failed because the user didn’t interact first'), {
+          name: 'NotAllowedError',
+        })
+      );
+    };
+  });
+}
+
+test('a blocked first attempt is armed, not lost: the line plays on the first tap', async ({
+  page,
+}) => {
+  test.skip((await packSize(page)) === 0, 'no rendered voice pack — run `npm run voice`');
+
+  const played = watchClips(page);
+  await blockAutoplay(page);
+  // No speech engine either, so the clip is the only way this line can be
+  // heard and the test cannot pass through the fallback by accident.
+  await page.addInitScript(() => {
+    Object.defineProperty(window, 'speechSynthesis', { value: undefined, configurable: true });
+  });
+  await page.clock.install({ time: new Date(AFTERNOON) });
+  await completeOnboarding(page);
+  await expect(page.getByTestId('system-transmission')).toBeVisible();
+
+  // Reload so the document has no user activation at all — this is what
+  // opening an already-onboarded app actually looks like, and the case
+  // every earlier test in this file missed by arriving via onboarding.
+  played.length = 0;
+  await page.reload();
+  await expect(page.getByTestId('system-transmission')).toBeVisible();
+  await page.waitForTimeout(1200);
+
+  // The clip was requested but refused playback, so nothing was heard.
+  const beforeTap = played.length;
+
+  // One touch anywhere, and the System says the line it was holding.
+  // Before the fix this tap did nothing at all: StrictMode's extra
+  // unmount cancelled the arming before it happened, so the line was
+  // unreachable for the rest of the session.
+  await page.mouse.click(200, 400);
+  await expect.poll(() => played.length, { timeout: 8000 }).toBeGreaterThan(beforeTap);
+});

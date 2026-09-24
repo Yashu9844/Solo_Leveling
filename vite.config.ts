@@ -30,6 +30,24 @@ export default defineConfig({
         navigateFallback: '/index.html',
         runtimeCaching: [
           {
+            // The System's rendered voice, cached the same way and for the
+            // same reason as the art above: the pack is 4.8 MB across 166
+            // clips, and a Player hears one or two lines a day. Precaching
+            // all of it would make every install pay for 164 sentences it
+            // will not hear that week. Each clip is permanent once heard,
+            // so the lines that matter — the ones this Player's actual
+            // states produce — accumulate offline within days, and a
+            // missing clip falls back to the device's own speech engine
+            // rather than to silence. See design/04 §16.1.
+            urlPattern: /\/voice\/.*\.mp3$/,
+            handler: 'CacheFirst',
+            options: {
+              cacheName: 'system-voice-v1',
+              expiration: { maxEntries: 200, maxAgeSeconds: 60 * 60 * 24 * 365 },
+              cacheableResponse: { statuses: [0, 200] },
+            },
+          },
+          {
             // The app still makes no *data* requests — this is same-origin
             // art only, and it is immutable: Vite content-hashes every
             // filename, so a changed plate is a new URL and CacheFirst can

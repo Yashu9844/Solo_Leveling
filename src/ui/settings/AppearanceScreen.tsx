@@ -10,7 +10,8 @@ import {
   type AccentKey,
 } from '../../store/settings';
 import { ScreenHeader, Segmented, SettingsGroup, SettingsList, SettingsRow } from '../kit';
-import { speakSystemLine, speechAvailable, stopSpeaking } from '../speech/systemSpeech';
+import { speakSystemLine, stopSpeaking } from '../speech/systemSpeech';
+import { playClip, stopClip } from '../speech/voicePackAudio';
 import { AppearancePreview } from './AppearancePreview';
 import {
   ART_LABELS,
@@ -167,7 +168,10 @@ export function AppearanceScreen() {
                     // Turning it off mid-sentence should be immediate —
                     // a preference that takes effect after the System
                     // finishes talking is not a preference, it is a wait.
-                    if (v === 'off') stopSpeaking();
+                    if (v === 'off') {
+                      stopSpeaking();
+                      stopClip();
+                    }
                     update({ voice: v === 'on' });
                   }}
                   options={[
@@ -179,17 +183,28 @@ export function AppearanceScreen() {
             />
             <SettingsRow
               label="Preview"
-              description={speechAvailable() ? undefined : 'This browser has no speech engine.'}
+              description="Hear a real line in the System's voice."
               control={
                 <button
                   type="button"
-                  disabled={!speechAvailable()}
-                  onClick={() => void speakSystemLine('SYSTEM VOICE ONLINE. STATUS: READY.')}
+                  // A real library line rather than a bespoke preview
+                  // recording: it is the actual clip the Player will hear,
+                  // so the preview cannot flatter a pack that is missing
+                  // or a voice that was re-rendered badly. Tapping it is
+                  // also the gesture that unlocks audio on a phone, which
+                  // is half of why this row exists.
+                  onClick={() => {
+                    void (async () => {
+                      if (!(await playClip('cleared-001'))) {
+                        void speakSystemLine('DAILY CONDITIONS SATISFIED.');
+                      }
+                    })();
+                  }}
                   data-testid="voice-preview"
-                  className="cut-sm min-h-tap px-4 text-xs uppercase tracking-[0.14em] disabled:opacity-40"
+                  className="cut-sm min-h-tap px-4 text-xs uppercase tracking-[0.14em]"
                   style={{ border: '1px solid var(--hair-strong)', color: 'var(--accent-mid)' }}
                 >
-                  Speak
+                  Play
                 </button>
               }
             />

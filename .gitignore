@@ -23,3 +23,10 @@ blob-report/
 
 # PWA generated
 dev-dist/
+
+# The System's rendered voice pack (scripts/generate-voice-pack.mjs).
+# Local build output, not source: ~5 MB of cloned character audio that
+# belongs on the Player's own machine rather than in a public repo.
+# Regenerate with `npm run voice` — the app falls back to the device's
+# speech engine wherever a clip is absent.
+public/voice/

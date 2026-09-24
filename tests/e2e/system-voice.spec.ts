@@ -4,11 +4,21 @@ import { completeOnboarding } from './helpers';
 /**
  * The System, out loud.
  *
- * `speechSynthesis` is stubbed before any app script runs, for two
- * reasons: a CI browser has no installed voices and would silently speak
- * nothing, and a real utterance is not observable from a test anyway.
- * The stub records what was handed to the engine, which is exactly the
- * boundary this app is responsible for.
+ * Two engines, and the spec covers both: the pre-rendered character voice
+ * under /voice, and the device's own speech engine behind it.
+ *
+ * Two things shape how this is written.
+ *
+ * `page.route` cannot intercept an `<audio>` element's request — media
+ * loads come from the media stack rather than the fetch stack, so a route
+ * handler on `*.mp3` never fires and a spec built on one silently proves
+ * nothing. Requests are therefore *observed* through `page.on('request')`,
+ * and only the manifest — an ordinary fetch — is ever stubbed.
+ *
+ * The rendered pack is a local artifact (`npm run voice`), gitignored and
+ * absent on a fresh clone. The tests that need real clips skip themselves
+ * with a message saying so rather than failing for the wrong reason; the
+ * fallback tests stub an empty manifest and run everywhere.
  */
 const AFTERNOON = '2026-09-05T10:00:00Z';
 
@@ -63,7 +73,6 @@ async function stubSpeech(page: Page) {
           pitch: u.pitch,
           voice: u.voice ? u.voice.name : null,
         });
-        // Mirror a real engine: start, then finish a tick later.
         u.onstart?.();
         setTimeout(() => u.onend?.(), 0);
       },
@@ -77,10 +86,60 @@ async function stubSpeech(page: Page) {
   });
 }
 
+/** Records every clip the app actually asks the media stack for. */
+function watchClips(page: Page): string[] {
+  const played: string[] = [];
+  page.on('request', (request) => {
+    const match = /\/voice\/([^/?]+)\.mp3$/.exec(request.url());
+    if (match) played.push(decodeURIComponent(match[1]));
+  });
+  return played;
+}
+
+/** Declares the pack empty — a clone that has never run `npm run voice`. */
+async function serveEmptyPack(page: Page) {
+  await page.route('**/voice/manifest.json', (route) =>
+    route.fulfill({
+      status: 200,
+      contentType: 'application/json',
+      body: JSON.stringify({ voiceId: 'test', model: 's2.1-pro-free', bitrate: 64, ids: [] }),
+    })
+  );
+}
+
+/** How many clips this checkout actually has rendered. */
+async function packSize(page: Page): Promise<number> {
+  const response = await page.request.get('/voice/manifest.json');
+  if (!response.ok()) return 0;
+  const body = (await response.json()) as { ids?: string[] };
+  return body.ids?.length ?? 0;
+}
+
 const spoken = (page: Page) => page.evaluate(() => window.__spoken);
 
-test('the System speaks its line when the app opens', async ({ page }) => {
+test('the System plays its rendered line when the app opens', async ({ page }) => {
+  test.skip((await packSize(page)) === 0, 'no rendered voice pack — run `npm run voice`');
+
+  const played = watchClips(page);
   await stubSpeech(page);
+  await page.clock.install({ time: new Date(AFTERNOON) });
+  await completeOnboarding(page);
+
+  await expect(page.getByTestId('system-transmission')).toBeVisible();
+  await expect.poll(() => played.length).toBeGreaterThan(0);
+
+  // The clip that plays is the line that is on screen — one library, one
+  // id, so the System's mouth and its words cannot drift apart.
+  expect(played[0]).toMatch(/^[a-z0-9-]+$/);
+
+  // The character voice carries it; the device engine stays out of the way.
+  expect(await spoken(page)).toHaveLength(0);
+});
+
+test('a line with no rendered clip falls back to the device voice', async ({ page }) => {
+  const played = watchClips(page);
+  await stubSpeech(page);
+  await serveEmptyPack(page);
   await page.clock.install({ time: new Date(AFTERNOON) });
   await completeOnboarding(page);
 
@@ -91,33 +150,27 @@ test('the System speaks its line when the app opens', async ({ page }) => {
   )?.trim();
 
   await expect.poll(async () => (await spoken(page)).length).toBeGreaterThan(0);
-
   const lines = await spoken(page);
-  // What it says is what the screen says — one source, never a second
-  // library written for the ear.
+
+  // Same words, lesser voice — never silence.
   expect(lines[0].text).toBe(onScreen);
-});
+  expect(lines[0].rate).toBeLessThan(1);
+  expect(lines[0].pitch).toBeLessThan(1);
+  expect(lines[0].voice).toContain('Ravi');
 
-test('it speaks in the System register, in the best voice the device has', async ({ page }) => {
-  await stubSpeech(page);
-  await page.clock.install({ time: new Date(AFTERNOON) });
-  await completeOnboarding(page);
-
-  await expect.poll(async () => (await spoken(page)).length).toBeGreaterThan(0);
-  const [first] = await spoken(page);
-
-  expect(first.rate).toBeLessThan(1);
-  expect(first.pitch).toBeLessThan(1);
-  // en-IN over en-US, and never the Hindi engine.
-  expect(first.voice).toContain('Ravi');
+  // And it did not waste a request on a clip the manifest says is absent.
+  expect(played).toHaveLength(0);
 });
 
 test('it says the line once, not on every render or tab round trip', async ({ page }) => {
+  test.skip((await packSize(page)) === 0, 'no rendered voice pack — run `npm run voice`');
+
+  const played = watchClips(page);
   await stubSpeech(page);
   await page.clock.install({ time: new Date(AFTERNOON) });
   await completeOnboarding(page);
 
-  await expect.poll(async () => (await spoken(page)).length).toBe(1);
+  await expect.poll(() => played.length).toBe(1);
 
   await page.getByRole('link', { name: 'SKILLS' }).click();
   await expect(page.getByRole('heading', { name: 'SKILLS' })).toBeVisible();
@@ -126,14 +179,15 @@ test('it says the line once, not on every render or tab round trip', async ({ pa
 
   // Same state, same line already heard — the System does not repeat itself.
   await page.waitForTimeout(500);
-  expect(await spoken(page)).toHaveLength(1);
+  expect(played).toHaveLength(1);
 });
 
 test('turning the voice off makes it silent', async ({ page }) => {
+  const played = watchClips(page);
   await stubSpeech(page);
   await page.clock.install({ time: new Date(AFTERNOON) });
   await completeOnboarding(page);
-  await expect.poll(async () => (await spoken(page)).length).toBe(1);
+  await expect(page.getByTestId('system-transmission')).toBeVisible();
 
   await page.getByRole('link', { name: 'PROFILE' }).click();
   await page.getByRole('button', { name: 'Settings' }).click();
@@ -142,11 +196,19 @@ test('turning the voice off makes it silent', async ({ page }) => {
 
   await page.getByTestId('voice-toggle-row').getByRole('button', { name: 'Off' }).click();
 
-  // A fresh open, which is the trigger — and it must stay quiet.
+  played.length = 0;
+  await page.evaluate(() => {
+    window.__spoken = [];
+  });
+
+  // A fresh open, which is the trigger — and it must stay quiet, in both
+  // engines.
   await page.reload();
   await expect(page.getByTestId('appearance-screen')).toBeVisible();
   await page.getByRole('link', { name: 'TODAY' }).click();
   await expect(page.getByTestId('system-transmission')).toBeVisible();
-  await page.waitForTimeout(500);
+  await page.waitForTimeout(600);
+
+  expect(played).toHaveLength(0);
   expect(await spoken(page)).toHaveLength(0);
 });

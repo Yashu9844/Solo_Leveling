@@ -1,6 +1,7 @@
 import { useEffect, useRef } from 'react';
 import { useSettings } from '../../store/SettingsContext';
 import { armOnFirstGesture, speakSystemLine } from './systemSpeech';
+import { playClip, stopClip } from './voicePackAudio';
 
 /**
  * Session memory of what has already been said.
@@ -20,7 +21,9 @@ export function resetSpokenMemory(): void {
 }
 
 interface UseSystemVoiceArgs {
-  /** The line to say. Null while the transmission is still resolving. */
+  /** The id of the line, which is also the name of its rendered clip. */
+  messageId: string | null;
+  /** The same line as text, for the device-speech fallback. */
   text: string | null;
   /** The state it was chosen for. Null disables speech entirely. */
   fingerprint: string | null;
@@ -29,14 +32,22 @@ interface UseSystemVoiceArgs {
 /**
  * Says the current System line once per app open.
  *
- * The gesture fallback is not an edge case — it is the normal path on a
- * phone. Mobile browsers drop `speechSynthesis` calls made before the
- * document has seen a user interaction, and a PWA launched from the home
- * screen has seen none, so the first attempt is expected to fail there.
- * When it does, the line is armed and says itself at the Player's first
- * touch instead of being lost.
+ * Two engines, tried in order:
+ *
+ *  1. The rendered clip (`/voice/<id>.mp3`) — the actual character voice,
+ *     pre-rendered at build time. This is what the Player hears normally.
+ *  2. The device's own speech engine — flat, synthetic, and always
+ *     present. It covers a line whose clip is missing and a build that
+ *     shipped without a pack at all.
+ *
+ * The gesture fallback wrapping both is not an edge case, it is the
+ * normal path on a phone: browsers reject `audio.play()` and drop
+ * `speechSynthesis` calls until the document has seen a user
+ * interaction, and a PWA launched from the home screen has seen none. So
+ * the first attempt is *expected* to fail there, and the line is armed
+ * rather than lost — it says itself at the Player's first touch.
  */
-export function useSystemVoice({ text, fingerprint }: UseSystemVoiceArgs): void {
+export function useSystemVoice({ messageId, text, fingerprint }: UseSystemVoiceArgs): void {
   const { settings } = useSettings();
   const enabled = settings.voice;
 
@@ -57,12 +68,17 @@ export function useSystemVoice({ text, fingerprint }: UseSystemVoiceArgs): void 
     let disarm: (() => void) | undefined;
     let cancelled = false;
 
+    const say = async (): Promise<boolean> => {
+      if (messageId && (await playClip(messageId))) return true;
+      return speakSystemLine(text);
+    };
+
     void (async () => {
-      const spoke = await speakSystemLine(text);
+      const spoke = await say();
       if (spoke || cancelled || !enabledRef.current) return;
 
       disarm = armOnFirstGesture(() => {
-        if (!cancelled && enabledRef.current) void speakSystemLine(text);
+        if (!cancelled && enabledRef.current) void say();
       });
     })();
 
@@ -70,13 +86,19 @@ export function useSystemVoice({ text, fingerprint }: UseSystemVoiceArgs): void 
       cancelled = true;
       disarm?.();
     };
-  }, [enabled, text, fingerprint]);
+  }, [enabled, text, messageId, fingerprint]);
+
+  // Turning the voice off should stop the System mid-sentence rather than
+  // take effect after it finishes talking.
+  useEffect(() => {
+    if (!enabled) stopClip();
+  }, [enabled]);
 
   // Note what is deliberately absent: a cancel on unmount. Today unmounts
   // on every tab change, and these lines run three or four seconds, so
   // cutting one off mid-word to move to Skills reads as a glitch rather
-  // than as tidiness. Overlap is impossible anyway — speakSystemLine
-  // cancels whatever is queued before it speaks. It also keeps React's
+  // than as tidiness. Overlap is impossible anyway — both engines stop
+  // whatever is playing before they start. It also keeps React's
   // StrictMode double-mount in development from clipping the first word
   // of every session, which would look exactly like a bug worth
   // reporting and would not be one.

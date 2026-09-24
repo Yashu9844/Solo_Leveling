@@ -408,45 +408,77 @@ navigating back to Today does not re-announce a decree the Player has already re
 
 ## 16.1 The spoken voice
 
-The line is also **said out loud**, once per app open, in the System's own register.
+The line is also **said out loud**, once per app open, in a Sung Jin-Woo character voice.
 
-**Why the browser's own engine.** `speechSynthesis` is the only option that keeps §18's
-constraints: the voices are already installed on the device, so it works with the network off,
-adds nothing to the bundle, and sends no word of the Player's state anywhere. A pack of
-pre-rendered audio would have meant ~150 files and a download; a cloud TTS call would have put
-an online dependency on the app's first paint.
+### Two engines, in order
 
-**The register.** `rate 0.82`, `pitch 0.65`. Slower and lower than conversation, and
-deliberately near the lower bound of natural — pushed further it stops reading as a system and
-starts reading as a novelty filter. Voice selection is scored, not taken from the platform
-default: English only (a Hindi or French engine reading English capitals produces noise, not an
-accent), then `en-IN` first — this is an arc run in Asia/Kolkata, and the accent the Player
-hears every day is the one that sounds least like a costume — then offline voices over cloud
-ones, then a masculine name over the synthetic soprano most devices default to.
+1. **The rendered pack** — `/voice/<message id>.mp3`, one clip per line in `engine/voicePack.ts`,
+   pre-rendered by `scripts/generate-voice-pack.mjs` (`npm run voice`) through Fish Audio. This
+   is what the Player normally hears.
+2. **The device's own `speechSynthesis`** — flat and synthetic, but always present. It covers a
+   line whose clip is missing, a checkout that has never rendered the pack, and any device where
+   audio playback fails. The System is never silent for want of a file.
 
-**Two API facts drive the implementation.**
+### Why a build step and not an API call from the app
 
-1. `getVoices()` is empty on the first call in Chrome and fills in later via `voiceschanged`.
-   Picking a voice synchronously on load gets the platform default forever, so the pick waits —
-   with a 1.2 s ceiling, because an empty list is a valid outcome and the default beats silence.
-2. **Mobile browsers refuse to speak before the document has seen a user gesture**, and a PWA
-   launched from the home screen has seen none. So a line that is merely spoken on mount is
-   dropped on exactly the platform this app targets. The fallback is `armOnFirstGesture`: if
-   `start` does not fire within 1.5 s the line is *armed rather than lost*, and says itself at
-   the Player's first tap. The check is the `start` event and never `speechSynthesis.speaking`
-   — a browser holding an utterance back reports `speaking === true` while nothing is audible,
-   which would suppress the fallback in precisely the case it exists for.
+This was not a preference. `api.fish.audio` **serves no CORS headers** — its preflight returns
+404 — so a browser cannot call it at all. Beyond that, three reasons make the build step the
+better design even if CORS were open:
 
-**Trigger.** Keyed on the same fingerprint as the surface, in a module-level set. A page reload
-is a new app open and the System greets you again; a re-render, a tab round trip or a quest
-toggle inside one state is not. There is no cancel on unmount: these lines run three or four
-seconds, and cutting one off to move to Skills reads as a glitch rather than as tidiness —
-overlap is impossible anyway, since every utterance cancels the queue before it speaks.
+- The library is **166 fixed lines**. They do not vary by Player, by day or by state, so there
+  is nothing to synthesise at runtime. Rendering the same 166 files on every device forever
+  would be a per-play wait (~2 s measured) and a per-play cost for an identical result.
+- **No API key reaches the client.** A key in a bundle is a key anyone who opens devtools can
+  spend. The key lives in `.env.local` (gitignored) and is read only by Node, at render time.
+- **Offline-first survives** (§18). Static files on the app's own origin are cached by the
+  service worker; a live TTS call would have put a network dependency on the app's first breath.
 
-**Setting.** `settings.voice`, default on, in Appearance → Voice, with a Preview button (which
-doubles as the user gesture that unlocks audio on a phone). Unlike every other field in
-`Settings` it is **not** stamped on the root element — no CSS keys off it, and `applyToRoot`'s
-output is part of the theming contract.
+### Voice and model
+
+`FISH_VOICE_ID` in `.env.local`, default `a6aabeb8…` — the most-used public Sung Jin-Woo model
+on the platform at time of writing (37 likes / 23.7k generations), English, described as deep
+and authoritative. Rendered with **`s2.1-pro-free`**: the paid models answer `402 Insufficient
+API credit` on a zero balance, and this one is the dashboard's "S2.1 Pro is now free for
+developers". 64 kbps mono — transparent for speech, and half the storage of 128.
+
+### Caching
+
+`/voice/*.mp3` is **runtime CacheFirst**, not precached — exactly the treatment, and for exactly
+the reason, that `.webp` art already gets (`vite.config.ts`): the pack is 4.8 MB across 166
+clips and a Player hears one or two lines a day, so precaching all of it would make every
+install pay for 164 sentences it will not hear that week. Each clip is permanent once heard, so
+the lines this Player's actual states produce accumulate offline within days.
+
+### The gesture problem
+
+Browsers reject `audio.play()` **and** drop `speechSynthesis` calls until the document has seen
+a user interaction, and a PWA launched from the home screen has seen none. So the first attempt
+is *expected* to fail on a phone. `armOnFirstGesture` wraps both engines: the line is **armed
+rather than lost**, and says itself at the Player's first touch. For `speechSynthesis` the check
+is the `start` event and never `speechSynthesis.speaking` — a browser holding an utterance back
+reports `speaking === true` while nothing is audible, which would suppress the fallback in
+precisely the case it exists for.
+
+### Trigger and settings
+
+Keyed on the same fingerprint as the surface, in a module-level set: a page reload is a new app
+open and the System greets you again; a re-render, a tab round trip or a quest toggle inside one
+state is not. There is no cancel on unmount — these lines run three or four seconds, and cutting
+one off to move to Skills reads as a glitch rather than as tidiness; overlap is impossible
+anyway, since both engines stop whatever is playing before they start.
+
+`settings.voice`, default on, in Appearance → Voice, with a Play button that previews a real
+library line (`cleared-001`) rather than a bespoke recording — so the preview cannot flatter a
+pack that is missing, and tapping it doubles as the gesture that unlocks audio on a phone.
+Unlike every other field in `Settings` it is **not** stamped on the root element: no CSS keys
+off it, and `applyToRoot`'s output is part of the theming contract.
+
+### What is not in the repository
+
+The rendered pack is a **local artifact**, gitignored alongside `.env.local`. It is ~5 MB of
+cloned character audio, which belongs on the Player's own machine rather than published in a
+public repo, and it is reproducible in one command. A fresh clone therefore speaks in the device
+voice until `npm run voice` is run.
 
 ---
 

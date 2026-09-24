@@ -136,6 +136,7 @@ export function Today() {
   // it speaks when there is something new to say and stays quiet through
   // re-renders, tab round trips and quest toggles inside the same state.
   useSystemVoice({
+    messageId: transmission?.message.id ?? null,
     text: transmission?.message.text ?? null,
     fingerprint: transmission?.fingerprint ?? null,
   });

@@ -6,6 +6,9 @@ import { Today } from './ui/screens/Today';
 import { Progress } from './ui/screens/Progress';
 import { Skills } from './ui/screens/Skills';
 import { Profile } from './ui/screens/Profile';
+import { BodyDetailScreen } from './ui/screens/BodyDetailScreen';
+import { MindDetailScreen } from './ui/screens/MindDetailScreen';
+import { CraftDetailScreen } from './ui/screens/CraftDetailScreen';
 import { SHORTCUT_ROUTES, OPEN_PARAM, type OpenTarget } from './ui/routing/shortcuts';
 import { Splash, SPLASH_MIN_MS, useMinimumElapsed } from './ui/boot/Splash';
 import { Start } from './ui/boot/Start';
@@ -76,6 +79,11 @@ export function App() {
           <Route path="progress" element={<Progress />} />
           <Route path="skills" element={<Skills />} />
           <Route path="profile" element={<Profile />} />
+
+          {/* Attribute detail screens */}
+          <Route path="attributes/body" element={<BodyDetailScreen />} />
+          <Route path="attributes/mind" element={<MindDetailScreen />} />
+          <Route path="attributes/craft" element={<CraftDetailScreen />} />
           {/* Child routes of the profile tab, not modals — design/02
               §3.2. The bottom nav stays visible the whole way down, so
               the four-tab contract is never broken by going deeper. */}

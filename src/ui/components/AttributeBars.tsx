@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react';
-import { Barbell, Brain, Cpu, type Icon } from '@phosphor-icons/react';
+import { useNavigate } from 'react-router-dom';
+import { Barbell, Brain, Cpu, CaretRight, type Icon } from '@phosphor-icons/react';
 import { DEFAULT_CONFIG } from '../../engine/config';
 import { localDate } from '../../engine/time';
 import { realDeps } from '../../store/deps';
@@ -17,23 +18,32 @@ const ATTRIBUTE_LABELS: Record<Attribute, string> = {
   VITALITY: 'VITALITY',
 };
 
-const GROUPS: { heading: string; tagline: string; icon: Icon; attributes: Attribute[] }[] = [
+const GROUPS: {
+  heading: string;
+  tagline: string;
+  icon: Icon;
+  route: string;
+  attributes: Attribute[];
+}[] = [
   {
     heading: 'MIND',
     tagline: 'A SHARPER YOU',
     icon: Brain,
+    route: '/attributes/mind',
     attributes: ['DISCIPLINE', 'DEPTH', 'PROBLEM_SOLVING'],
   },
   {
     heading: 'CRAFT',
     tagline: 'BUILD SKILLS. BUILD OPTIONS.',
     icon: Cpu,
+    route: '/attributes/craft',
     attributes: ['ENGINEERING', 'MOMENTUM'],
   },
   {
     heading: 'BODY',
     tagline: 'A STRONGER YOU',
     icon: Barbell,
+    route: '/attributes/body',
     attributes: ['VITALITY'],
   },
 ];
@@ -55,6 +65,7 @@ function Bar({ result }: { result: AttributeResult }) {
 
 /** All 0-100, non-editable, 28-day rolling window — final/01 §5. Cut-corner HUD cards matching the Progress design screenshot */
 export function AttributeBars() {
+  const navigate = useNavigate();
   const [results, setResults] = useState<AttributeResult[] | null>(null);
 
   useEffect(() => {
@@ -78,7 +89,13 @@ export function AttributeBars() {
         return (
           <div
             key={group.heading}
-            className="cut-sm p-3.5 transition-all duration-200"
+            onClick={() => navigate(group.route)}
+            role="button"
+            tabIndex={0}
+            onKeyDown={(e) => {
+              if (e.key === 'Enter' || e.key === ' ') navigate(group.route);
+            }}
+            className="cut-sm p-3.5 transition-all duration-200 cursor-pointer group hover:border-accent/80 hover:shadow-[0_0_20px_rgba(77,163,255,0.25)]"
             style={{
               border: '1px solid rgba(77, 163, 255, 0.28)',
               background: 'linear-gradient(180deg, rgba(10, 20, 36, 0.8), rgba(5, 10, 20, 0.9))',
@@ -88,16 +105,19 @@ export function AttributeBars() {
             {/* Header of Attribute Card */}
             <div className="flex items-center justify-between gap-3 mb-2.5 pb-2 border-b border-hair-faint">
               <div className="flex items-center gap-3">
-                <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-[7px] border border-accent/40 bg-accent-deep/30 text-accent-mid shadow-[0_0_8px_rgba(77,163,255,0.3)]">
+                <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-[7px] border border-accent/40 bg-accent-deep/30 text-accent-mid shadow-[0_0_8px_rgba(77,163,255,0.3)] group-hover:border-accent group-hover:scale-105 transition-all">
                   <Glyph size={18} weight="fill" color="#5fb2ff" />
                 </div>
-                <h3 className="font-display text-lg font-bold tracking-[0.14em] text-ink-100">
+                <h3 className="font-display text-lg font-bold tracking-[0.14em] text-ink-100 group-hover:text-accent-bright transition-colors">
                   {group.heading}
                 </h3>
               </div>
-              <span className="text-[9px] uppercase tracking-[0.18em] font-medium text-ink-700">
-                {group.tagline}
-              </span>
+              <div className="flex items-center gap-1">
+                <span className="text-[9px] uppercase tracking-[0.18em] font-medium text-ink-700 group-hover:text-accent-mid transition-colors">
+                  {group.tagline}
+                </span>
+                <CaretRight size={14} weight="bold" className="text-ink-700 group-hover:text-accent-bright group-hover:translate-x-0.5 transition-all" />
+              </div>
             </div>
 
             {/* Attribute Rows */}

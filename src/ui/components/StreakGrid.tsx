@@ -245,10 +245,10 @@ export function StreakGrid({ compact = false }: StreakGridProps) {
       )}
 
       {/* GitHub Style Grid Container */}
-      <div className="relative overflow-x-auto no-scrollbar py-1">
-        <div className="flex gap-1.5 min-w-max">
+      <div className="relative w-full overflow-x-auto no-scrollbar py-1">
+        <div className="flex w-full items-center justify-between gap-1 sm:gap-1.5 min-w-full">
           {/* Day of Week Labels (Mon to Sun) */}
-          <div className="flex flex-col gap-1 pr-1 border-r border-hair-faint">
+          <div className="flex flex-col gap-1 pr-1 border-r border-hair-faint shrink-0">
             {ROW_LABELS.map((lbl, idx) => (
               <span
                 key={idx}
@@ -260,7 +260,7 @@ export function StreakGrid({ compact = false }: StreakGridProps) {
           </div>
 
           {/* Week Columns */}
-          <div className="flex gap-1">
+          <div className="flex-1 flex justify-between gap-0.5 sm:gap-1">
             {gridWeeks.map((week, wIdx) => (
               <div key={wIdx} className="flex flex-col gap-1">
                 {week.map((cell, rIdx) => {

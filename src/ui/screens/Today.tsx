@@ -34,6 +34,7 @@ import { useCountdown } from '../hooks/useCountdown';
 import { getTodaySystemLine } from '../../store/messages';
 import { resolveTransmission, type Transmission } from '../../store/systemMessage';
 import { SystemTransmission } from '../today/SystemTransmission';
+import { useSystemVoice } from '../speech/useSystemVoice';
 import { recordReflectionShown } from '../../store/reflections';
 
 const CONFIG = DEFAULT_CONFIG;
@@ -130,6 +131,15 @@ export function Today() {
   // never re-rolls it.
   const [transmission, setTransmission] = useState<Transmission | null>(null);
   const [revisitingId, setRevisitingId] = useState<string | null>(null);
+  // The System says its line out loud once per app open, when the Player
+  // has the voice turned on. Keyed on the transmission's fingerprint, so
+  // it speaks when there is something new to say and stays quiet through
+  // re-renders, tab round trips and quest toggles inside the same state.
+  useSystemVoice({
+    text: transmission?.message.text ?? null,
+    fingerprint: transmission?.fingerprint ?? null,
+  });
+
   const dayClosed = isDayClosed(realDeps.now(), CONFIG);
 
   // The pressure gradient the screen never had. The app has always known
@@ -547,51 +557,46 @@ export function Today() {
         first, then lists the requirements. Reversed, the line becomes a
         footnote on a checklist.
       */}
-      {transmission && (
+      {transmission ? (
         <SystemTransmission
           message={transmission.message}
           context={transmission.context}
           fingerprint={transmission.fingerprint}
+          systemLine={systemLine}
         />
+      ) : (
+        <SystemWindow
+          key={today}
+          arrive
+          label={remaining > 0 ? 'DAILY QUEST' : 'DAILY QUEST COMPLETE'}
+          className="cut-sm mb-2 p-2"
+        >
+          {streak?.reduced_mode && (
+            <p className="mb-1 pl-2 text-xs leading-relaxed text-state-recover">
+              Reduced to the floor for two days. The arc continues.
+            </p>
+          )}
+
+          <p className="pl-2 text-xs leading-relaxed text-ink-300">
+            {priorityLine(templates, instances, today, arc)}
+          </p>
+
+          {systemLine && (
+            <p
+              className="mt-1 line-clamp-2 pl-2 text-xs italic leading-relaxed text-ink-500"
+              data-testid="system-line"
+            >
+              {systemLine}
+            </p>
+          )}
+        </SystemWindow>
       )}
 
-      {/*
-        The System speaking, in a window that arrives rather than a panel
-        that was always there. `arrive` is keyed on the local date, so it
-        plays once when the screen is opened on a new day and not on
-        every re-render within it — a decree that re-announced itself
-        every time a checkbox moved would stop being a decree.
-      */}
-      <SystemWindow
-        key={today}
-        arrive
-        label={remaining > 0 ? 'DAILY QUEST' : 'DAILY QUEST COMPLETE'}
-        className="cut-sm mb-2 p-2"
-      >
-        {streak?.reduced_mode && (
-          <p className="mb-1 pl-2 text-xs leading-relaxed text-state-recover">
-            Reduced to the floor for two days. The arc continues.
-          </p>
-        )}
-
-        <p className="pl-2 text-xs leading-relaxed text-ink-300">
-          {priorityLine(templates, instances, today, arc)}
-        </p>
-
-        {/* Clamped to two lines. The reflection is drawn at random from
-            engine/reflections.ts, so its length varies — and an unbounded
-            line made Today's height depend on which sentence came up,
-            which meant §5.2's above-the-fold budget passed or failed by
-            luck. A bounded card is a deterministic screen. */}
-        {systemLine && (
-          <p
-            className="mt-1 line-clamp-2 pl-2 text-xs italic leading-relaxed text-ink-500"
-            data-testid="system-line"
-          >
-            {systemLine}
-          </p>
-        )}
-      </SystemWindow>
+      {transmission && streak?.reduced_mode && (
+        <div className="cut-sm mb-2 px-3 py-2 border border-state-recover/40 bg-state-recover/10 text-xs font-semibold text-state-recover">
+          Reduced to the floor for two days. The arc continues.
+        </div>
+      )}
 
       <div>
         {templates.map((template) => {

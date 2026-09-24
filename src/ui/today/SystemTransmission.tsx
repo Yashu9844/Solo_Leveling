@@ -38,68 +38,124 @@ interface SystemTransmissionProps {
   context: SystemMessageContext;
   /** The state the message was chosen for. Re-keys the arrival animation. */
   fingerprint: string;
+  systemLine?: string | null;
 }
 
-export function SystemTransmission({ message, context, fingerprint }: SystemTransmissionProps) {
+export function SystemTransmission({
+  message,
+  context,
+  fingerprint,
+  systemLine,
+}: SystemTransmissionProps) {
   const tone = TONE_FRAME[message.tone] ?? 'accent';
   const lit = message.tone === 'verdict' || message.tone === 'momentum';
 
+  const isComplete = context.coreCompleted >= (context.coreTotal || 6) && context.coreTotal > 0;
+
   return (
-    <SystemWindow
-      // Keyed on the fingerprint, not on the date: the window re-plays its
-      // arrival when the System has something new to say, and stays put
-      // when the Player is merely coming back to a screen they have
-      // already read. A decree that re-announces itself on every
-      // navigation stops being a decree.
-      key={fingerprint}
-      arrive
-      tone={tone}
-      label={`SYSTEM · ${message.label}`}
-      className="cut-sm mb-2 px-3 pb-2.5 pt-2"
-      testId="system-transmission"
-    >
-      {/*
-        role="status" rather than role="alert": a screen reader should
-        announce the line once when it lands, without interrupting
-        whatever the Player was doing or stealing focus from the quest
-        list below.
-      */}
-      <p
-        role="status"
-        className="font-display text-[15px] uppercase leading-[1.35] tracking-[0.055em] text-ink-100 line-clamp-2"
-        style={lit ? { textShadow: 'var(--glow-text)' } : undefined}
+    <div className="mb-3 space-y-2.5" data-testid="system-transmission">
+      {/* Sleek 3-Column Core HUD Stat Dashboard */}
+      <div className="grid grid-cols-3 gap-2">
+        {/* Stat 1: DAY */}
+        <div
+          className="cut-sm flex flex-col items-center justify-center py-2 px-1 relative overflow-hidden"
+          style={{
+            background: 'linear-gradient(180deg, rgba(14, 28, 50, 0.9) 0%, rgba(7, 14, 26, 0.95) 100%)',
+            border: '1px solid rgba(77, 163, 255, 0.4)',
+            boxShadow: '0 0 14px rgba(77, 163, 255, 0.15)',
+          }}
+        >
+          <span className="text-[9px] font-bold uppercase tracking-[0.18em] text-accent-mid">
+            DAY
+          </span>
+          <span className="font-mono text-xl font-black leading-none tabular-nums text-ink-100 mt-1">
+            {String(context.arcDay).padStart(2, '0')}
+          </span>
+        </div>
+
+        {/* Stat 2: TASKS CLEARED */}
+        <div
+          className="cut-sm flex flex-col items-center justify-center py-2 px-1 relative overflow-hidden"
+          style={{
+            background: isComplete
+              ? 'linear-gradient(180deg, rgba(20, 55, 38, 0.9) 0%, rgba(8, 26, 18, 0.95) 100%)'
+              : 'linear-gradient(180deg, rgba(14, 28, 50, 0.9) 0%, rgba(7, 14, 26, 0.95) 100%)',
+            border: isComplete
+              ? '1px solid rgba(52, 211, 153, 0.6)'
+              : '1px solid rgba(77, 163, 255, 0.4)',
+            boxShadow: isComplete
+              ? '0 0 14px rgba(52, 211, 153, 0.25)'
+              : '0 0 14px rgba(77, 163, 255, 0.15)',
+          }}
+        >
+          <span className="text-[9px] font-bold uppercase tracking-[0.18em] text-accent-mid">
+            CLEARED
+          </span>
+          <div className="flex items-baseline gap-1 mt-1">
+            <span
+              className={[
+                'font-mono text-xl font-black leading-none tabular-nums',
+                isComplete ? 'text-emerald-400 glow-text' : 'text-ink-100',
+              ].join(' ')}
+            >
+              {context.coreCompleted}
+            </span>
+            <span className="font-mono text-xs font-semibold text-ink-500">
+              / {context.coreTotal || 6}
+            </span>
+            <span className="sr-only">CLEARED</span>
+          </div>
+        </div>
+
+        {/* Stat 3: XP TODAY */}
+        <div
+          className="cut-sm flex flex-col items-center justify-center py-2 px-1 relative overflow-hidden"
+          style={{
+            background: 'linear-gradient(180deg, rgba(14, 28, 50, 0.9) 0%, rgba(7, 14, 26, 0.95) 100%)',
+            border: '1px solid rgba(77, 163, 255, 0.4)',
+            boxShadow: '0 0 14px rgba(77, 163, 255, 0.15)',
+          }}
+        >
+          <span className="text-[9px] font-bold uppercase tracking-[0.18em] text-accent-mid">
+            XP TODAY
+          </span>
+          <div className="flex items-baseline gap-1 mt-1">
+            <span className="font-mono text-xl font-black leading-none tabular-nums text-amber-400">
+              {context.xpEarned}
+            </span>
+            <span className="font-mono text-xs font-semibold text-ink-500">
+              / {context.xpTarget}
+            </span>
+            <span className="sr-only">XP</span>
+          </div>
+        </div>
+      </div>
+
+      {/* Single Clean System Transmission Panel */}
+      <SystemWindow
+        key={fingerprint}
+        arrive
+        tone={tone}
+        label={`SYSTEM · ${message.label}`}
+        className="cut-sm px-3.5 py-3"
       >
-        {message.text}
-      </p>
+        <p
+          role="status"
+          className="font-display text-[15px] uppercase leading-[1.35] tracking-[0.055em] text-ink-100"
+          style={lit ? { textShadow: 'var(--glow-text)' } : undefined}
+        >
+          {message.text}
+        </p>
 
-      <div
-        aria-hidden
-        className="mt-2 mb-1.5 h-px"
-        style={{
-          background:
-            'linear-gradient(to right, transparent, var(--hair-strong) 20%, var(--hair-strong) 80%, transparent)',
-        }}
-      />
-
-      {/*
-        The receipt under the decree. Affectless on purpose — it is the
-        evidence for the sentence above, and the reason the line reads as
-        measured rather than asserted. tabular-nums so the figures do not
-        shift as the day fills.
-      */}
-      <p className="font-mono text-[9.5px] uppercase tabular-nums tracking-[0.16em] text-faint">
-        DAY {String(context.arcDay).padStart(2, '0')}
-        {' · '}
-        {context.coreCompleted}/{context.coreTotal || 6} CLEARED
-        {' · '}
-        {context.xpEarned}/{context.xpTarget} XP
-        {context.streak > 0 && (
-          <>
-            {' · '}
-            STREAK {context.streak}
-          </>
+        {systemLine && (
+          <p
+            className="mt-2 text-xs italic leading-relaxed text-ink-400 border-t border-hair-faint pt-1.5"
+            data-testid="system-line"
+          >
+            {systemLine}
+          </p>
         )}
-      </p>
-    </SystemWindow>
+      </SystemWindow>
+    </div>
   );
 }

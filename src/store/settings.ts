@@ -1,5 +1,5 @@
 /**
- * Device preferences — theme, text size, density, motion, art.
+ * Device preferences — theme, text size, density, motion, art, voice.
  *
  * These live in localStorage and deliberately NOT in the event log
  * (design/03-SETTINGS-AND-THEMING.md §2). The event log holds evidence
@@ -29,6 +29,15 @@ export interface Settings {
   motion: MotionPref;
   art: ArtIntensity;
   glow: boolean;
+  /**
+   * Whether the System says its line out loud when the app opens
+   * (design/04 §16.1). A device preference like every other field here:
+   * it belongs to this browser, not to the arc, so it never reaches the
+   * event log. Unlike the rest it is deliberately NOT stamped on the
+   * root element — no CSS keys off it, and applyToRoot's output is part
+   * of the theming contract.
+   */
+  voice: boolean;
 }
 
 export const SETTINGS_KEY = 'system.settings.v1';
@@ -72,6 +81,7 @@ export const DEFAULT_SETTINGS: Settings = {
   motion: 'system',
   art: 'full',
   glow: true,
+  voice: true,
 };
 
 function oneOf<T extends string>(allowed: readonly T[], value: unknown, fallback: T): T {
@@ -109,6 +119,7 @@ export function parseSettings(raw: string | null | undefined): Settings {
     motion: oneOf(MOTIONS, o.motion, DEFAULT_SETTINGS.motion),
     art: oneOf(ART_INTENSITIES, o.art, DEFAULT_SETTINGS.art),
     glow: typeof o.glow === 'boolean' ? o.glow : DEFAULT_SETTINGS.glow,
+    voice: typeof o.voice === 'boolean' ? o.voice : DEFAULT_SETTINGS.voice,
   };
 }
 

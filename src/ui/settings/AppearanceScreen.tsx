@@ -10,6 +10,7 @@ import {
   type AccentKey,
 } from '../../store/settings';
 import { ScreenHeader, Segmented, SettingsGroup, SettingsList, SettingsRow } from '../kit';
+import { speakSystemLine, speechAvailable } from '../speech/systemSpeech';
 import { AppearancePreview } from './AppearancePreview';
 import {
   ART_LABELS,
@@ -137,6 +138,53 @@ export function AppearanceScreen() {
                     { value: 'off', label: 'Off' },
                   ]}
                 />
+              }
+            />
+          </SettingsList>
+        </SettingsGroup>
+
+        {/*
+          The voice reads from the device's own speech engine, so it costs
+          no download and works with the network off — but which voices
+          exist is the platform's decision, not this app's. A device with
+          none of them still shows the row; it simply never speaks, and
+          the preview below is how you find that out in one tap rather
+          than by wondering every morning.
+        */}
+        <SettingsGroup
+          title="Voice"
+          footnote="Uses the voices already installed on this device. On a phone the first line of a session may wait for your first tap — browsers do not allow sound before you touch the screen."
+        >
+          <SettingsList>
+            <SettingsRow
+              testId="voice-toggle-row"
+              label="Spoken system message"
+              description="The System reads its line aloud when you open the app."
+              control={
+                <Segmented
+                  value={settings.voice ? 'on' : 'off'}
+                  onChange={(v) => update({ voice: v === 'on' })}
+                  options={[
+                    { value: 'on', label: 'On' },
+                    { value: 'off', label: 'Off' },
+                  ]}
+                />
+              }
+            />
+            <SettingsRow
+              label="Preview"
+              description={speechAvailable() ? undefined : 'This browser has no speech engine.'}
+              control={
+                <button
+                  type="button"
+                  disabled={!speechAvailable()}
+                  onClick={() => void speakSystemLine('SYSTEM VOICE ONLINE. STATUS: READY.')}
+                  data-testid="voice-preview"
+                  className="cut-sm min-h-tap px-4 text-xs uppercase tracking-[0.14em] disabled:opacity-40"
+                  style={{ border: '1px solid var(--hair-strong)', color: 'var(--accent-mid)' }}
+                >
+                  Speak
+                </button>
               }
             />
           </SettingsList>

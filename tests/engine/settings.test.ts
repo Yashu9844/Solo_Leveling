@@ -53,6 +53,7 @@ describe('parseSettings', () => {
       motion: 'reduced',
       art: 'off',
       glow: false,
+      voice: false,
     };
     expect(parseSettings(serializeSettings(s))).toEqual(s);
   });

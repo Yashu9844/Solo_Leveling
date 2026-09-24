@@ -10,7 +10,7 @@ import {
   type AccentKey,
 } from '../../store/settings';
 import { ScreenHeader, Segmented, SettingsGroup, SettingsList, SettingsRow } from '../kit';
-import { speakSystemLine, speechAvailable } from '../speech/systemSpeech';
+import { speakSystemLine, speechAvailable, stopSpeaking } from '../speech/systemSpeech';
 import { AppearancePreview } from './AppearancePreview';
 import {
   ART_LABELS,
@@ -163,7 +163,13 @@ export function AppearanceScreen() {
               control={
                 <Segmented
                   value={settings.voice ? 'on' : 'off'}
-                  onChange={(v) => update({ voice: v === 'on' })}
+                  onChange={(v) => {
+                    // Turning it off mid-sentence should be immediate —
+                    // a preference that takes effect after the System
+                    // finishes talking is not a preference, it is a wait.
+                    if (v === 'off') stopSpeaking();
+                    update({ voice: v === 'on' });
+                  }}
                   options={[
                     { value: 'on', label: 'On' },
                     { value: 'off', label: 'Off' },

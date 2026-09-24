@@ -89,13 +89,22 @@ test('the System speaks again once the day has actually moved', async ({ page })
       .click();
   }
 
+  // Wait on the second completion landing, not merely on the text
+  // changing: each toggle is its own projections rebuild, and the first
+  // one alone already moves the message off ZERO. Polling the receipt is
+  // what makes this assert the state it means to assert.
+  //
+  // Whitespace-insensitive because the receipt is a three-tile HUD whose
+  // exact spacing is display copy, and this spec is about the engine.
   await expect
-    .poll(async () => transmissionText(page), { timeout: 10000 })
-    .not.toBe(zeroProgress);
+    .poll(async () => (await transmission(page).innerText()).replace(/\s+/g, ''), {
+      timeout: 10000,
+    })
+    .toContain('2/6');
 
   const moved = await transmissionText(page);
+  expect(moved).not.toBe(zeroProgress);
   expect(moved).toBe(moved.toUpperCase());
-  await expect(transmission(page)).toContainText('2/6 CLEARED');
 });
 
 test('the message is readable with motion disabled', async ({ page }) => {

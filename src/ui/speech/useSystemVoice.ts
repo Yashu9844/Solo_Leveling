@@ -1,6 +1,6 @@
 import { useEffect, useRef } from 'react';
 import { useSettings } from '../../store/SettingsContext';
-import { armOnFirstGesture, speakSystemLine, stopSpeaking } from './systemSpeech';
+import { armOnFirstGesture, speakSystemLine } from './systemSpeech';
 
 /**
  * Session memory of what has already been said.
@@ -72,7 +72,12 @@ export function useSystemVoice({ text, fingerprint }: UseSystemVoiceArgs): void 
     };
   }, [enabled, text, fingerprint]);
 
-  // Leaving the screen mid-sentence should not leave the System talking
-  // to an empty room.
-  useEffect(() => stopSpeaking, []);
+  // Note what is deliberately absent: a cancel on unmount. Today unmounts
+  // on every tab change, and these lines run three or four seconds, so
+  // cutting one off mid-word to move to Skills reads as a glitch rather
+  // than as tidiness. Overlap is impossible anyway — speakSystemLine
+  // cancels whatever is queued before it speaks. It also keeps React's
+  // StrictMode double-mount in development from clipping the first word
+  // of every session, which would look exactly like a bug worth
+  // reporting and would not be one.
 }

@@ -406,6 +406,50 @@ navigating back to Today does not re-announce a decree the Player has already re
 
 ---
 
+## 16.1 The spoken voice
+
+The line is also **said out loud**, once per app open, in the System's own register.
+
+**Why the browser's own engine.** `speechSynthesis` is the only option that keeps §18's
+constraints: the voices are already installed on the device, so it works with the network off,
+adds nothing to the bundle, and sends no word of the Player's state anywhere. A pack of
+pre-rendered audio would have meant ~150 files and a download; a cloud TTS call would have put
+an online dependency on the app's first paint.
+
+**The register.** `rate 0.82`, `pitch 0.65`. Slower and lower than conversation, and
+deliberately near the lower bound of natural — pushed further it stops reading as a system and
+starts reading as a novelty filter. Voice selection is scored, not taken from the platform
+default: English only (a Hindi or French engine reading English capitals produces noise, not an
+accent), then `en-IN` first — this is an arc run in Asia/Kolkata, and the accent the Player
+hears every day is the one that sounds least like a costume — then offline voices over cloud
+ones, then a masculine name over the synthetic soprano most devices default to.
+
+**Two API facts drive the implementation.**
+
+1. `getVoices()` is empty on the first call in Chrome and fills in later via `voiceschanged`.
+   Picking a voice synchronously on load gets the platform default forever, so the pick waits —
+   with a 1.2 s ceiling, because an empty list is a valid outcome and the default beats silence.
+2. **Mobile browsers refuse to speak before the document has seen a user gesture**, and a PWA
+   launched from the home screen has seen none. So a line that is merely spoken on mount is
+   dropped on exactly the platform this app targets. The fallback is `armOnFirstGesture`: if
+   `start` does not fire within 1.5 s the line is *armed rather than lost*, and says itself at
+   the Player's first tap. The check is the `start` event and never `speechSynthesis.speaking`
+   — a browser holding an utterance back reports `speaking === true` while nothing is audible,
+   which would suppress the fallback in precisely the case it exists for.
+
+**Trigger.** Keyed on the same fingerprint as the surface, in a module-level set. A page reload
+is a new app open and the System greets you again; a re-render, a tab round trip or a quest
+toggle inside one state is not. There is no cancel on unmount: these lines run three or four
+seconds, and cutting one off to move to Skills reads as a glitch rather than as tidiness —
+overlap is impossible anyway, since every utterance cancels the queue before it speaks.
+
+**Setting.** `settings.voice`, default on, in Appearance → Voice, with a Preview button (which
+doubles as the user gesture that unlocks audio on a phone). Unlike every other field in
+`Settings` it is **not** stamped on the root element — no CSS keys off it, and `applyToRoot`'s
+output is part of the theming contract.
+
+---
+
 ## 17. Reduced-motion behaviour
 
 `index.css` already collapses every `animation-duration`/`transition-duration` to `0.01ms`
@@ -540,6 +584,7 @@ Nothing else. No engine, no store, no existing component is edited.
 7. No `Math.random()`, no `fetch`, no `import()` of a remote module anywhere in the feature.
 8. The feature works with the network disabled and IndexedDB already populated.
 9. `prefers-reduced-motion: reduce` renders the finished block with no animation and no loss of meaning.
+9a. The line is spoken once per app open when `settings.voice` is on, in the best English voice the device has, and never repeats on a re-render or a tab round trip. With the setting off, nothing is ever spoken.
 10. `npm run verify` is green, including every pre-existing test.
 11. Every message is original; none is a quotation from any published work.
 

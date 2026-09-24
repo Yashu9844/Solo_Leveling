@@ -133,7 +133,7 @@ function loadVoices(timeoutMs = 1200): Promise<SpeechSynthesisVoice[]> {
  * simply never speaks, so "did it start" has to be observed rather than
  * assumed.
  */
-export async function speakSystemLine(text: string, startTimeoutMs = 900): Promise<boolean> {
+export async function speakSystemLine(text: string, startTimeoutMs = 1500): Promise<boolean> {
   const s = synth();
   if (!s || !text.trim()) return false;
 
@@ -164,7 +164,14 @@ export async function speakSystemLine(text: string, startTimeoutMs = 900): Promi
       utterance.onerror = () => done(false);
       // Some engines fire `end` without `start` for very short lines.
       utterance.onend = () => done(true);
-      const timer = setTimeout(() => done(s.speaking === true), startTimeoutMs);
+      // Deliberately NOT `s.speaking`. A browser holding an utterance
+      // back for want of a user gesture reports `speaking === true` while
+      // nothing is audible, which would suppress the gesture fallback in
+      // exactly the case it exists for. Only `start` proves sound. The
+      // cost of being wrong here is one cancel-and-restart at the next
+      // tap (speak() cancels first), which is cheap; the cost of the
+      // other mistake is permanent silence on a phone.
+      const timer = setTimeout(() => done(false), startTimeoutMs);
       s.speak(utterance);
     });
   } catch {

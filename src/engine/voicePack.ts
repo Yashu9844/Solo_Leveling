@@ -266,4 +266,217 @@ export const VOICE_PACK: SystemMessage[] = [
   m('default-006', 'THE ARC CONTINUES.', 'DEFAULT', 'STATUS', 'neutral'),
   m('default-007', 'EVIDENCE ACCUMULATES OR IT DOES NOT. NOTHING ELSE IS MEASURED.', 'DEFAULT', 'STATUS', 'neutral'),
   m('default-008', 'THE SYSTEM REPORTS. THE DECISION IS YOURS.', 'DEFAULT', 'STATUS', 'neutral'),
+
+  /* ══════════════════════════════════════════════════════════════════
+   * SECOND WAVE
+   *
+   * 160 lines added after the first 166 were in daily use. They are
+   * appended rather than merged into the sections above so that the
+   * original arrangement stays readable in a diff, and they are grouped
+   * by the same cells in the same order — a cell is found by its id
+   * prefix, which is how the generator and the show-state rows key them
+   * anyway, not by its position in this array.
+   *
+   * Same four rules (design/04 §25). Nothing here coaches, praises or
+   * claims a fact the context has not granted: every line is gated by
+   * the identical phase, band and `when` guard as the cell it extends,
+   * because a line that outruns its gate is a line that lies.
+   * ════════════════════════════════════════════════════════════════ */
+
+  /* ── EXCEPTION ───────────────────────────────────────────────────── */
+  m('exception-closed-005', 'THE DAY IS CLOSED. NOTHING MORE IS COUNTED TONIGHT.', 'EXCEPTION', 'DAY SEALED', 'restraint', { phases: ['CLOSED'], cooldownDays: 3 }),
+  m('exception-closed-006', 'THE LEDGER FOR TODAY IS SHUT. THE NEXT OPENS AT 04:00.', 'EXCEPTION', 'DAY SEALED', 'closing', { phases: ['CLOSED'], cooldownDays: 3 }),
+  m('exception-closed-007', 'RECORDING HAS STOPPED. WHAT STANDS IS WHAT STANDS.', 'EXCEPTION', 'DAY SEALED', 'closing', { phases: ['CLOSED'], cooldownDays: 3 }),
+
+  m('exception-before-003', 'THE ARC IS ARMED AND NOT YET RUNNING.', 'EXCEPTION', 'STANDBY', 'neutral', { when: (c) => c.arcState === 'before', cooldownDays: 2 }),
+  m('exception-before-004', 'NO DAY HAS OPENED. THE COUNT BEGINS ON SCHEDULE.', 'EXCEPTION', 'STANDBY', 'neutral', { when: (c) => c.arcState === 'before', cooldownDays: 2 }),
+
+  m('exception-after-004', 'THE WINDOW HAS CLOSED. THE EVIDENCE IS WHAT IT IS.', 'EXCEPTION', 'ARC CONCLUDED', 'verdict', { when: (c) => c.arcState === 'after', cooldownDays: 2 }),
+  m('exception-after-005', 'NO FURTHER DAYS WILL BE COUNTED. READ THE RECORD.', 'EXCEPTION', 'ARC CONCLUDED', 'verdict', { when: (c) => c.arcState === 'after', cooldownDays: 2 }),
+
+  /* ── EVENT ───────────────────────────────────────────────────────── */
+  m('event-level-005', 'A THRESHOLD FELL TODAY. THE NEXT ONE SITS FARTHER OUT.', 'EVENT', 'THRESHOLD BREACHED', 'verdict', { when: (c) => c.leveledUpToday, cooldownDays: 3 }),
+  m('event-level-006', 'LEVEL ADVANCED. THE RECORD MOVED IT, NOT INTENT.', 'EVENT', 'THRESHOLD BREACHED', 'verdict', { when: (c) => c.leveledUpToday, cooldownDays: 3 }),
+  m('event-level-007', 'THE BOUNDARY WAS CROSSED TODAY.', 'EVENT', 'THRESHOLD BREACHED', 'verdict', { when: (c) => c.leveledUpToday, cooldownDays: 3 }),
+
+  m('event-boss-004', 'THE BOSS CONDITION IS CLOSED. IT DOES NOT RECUR.', 'EVENT', 'BOSS CLEARED', 'threat', { when: (c) => c.eventsToday.includes('BOSS_CLEARED'), cooldownDays: 1 }),
+  m('event-boss-005', 'AN OBSTACLE WAS REMOVED TODAY. PERMANENTLY.', 'EVENT', 'BOSS CLEARED', 'threat', { when: (c) => c.eventsToday.includes('BOSS_CLEARED'), cooldownDays: 1 }),
+  m('event-boss-006', 'THREAT RESOLVED. THE RECORD CARRIES IT.', 'EVENT', 'BOSS CLEARED', 'threat', { when: (c) => c.eventsToday.includes('BOSS_CLEARED'), cooldownDays: 1 }),
+
+  m('event-checkpoint-004', 'THE CHECKPOINT IS CLOSED. THE FIGURES ARE FIXED.', 'EVENT', 'CHECKPOINT SEALED', 'verdict', { when: (c) => c.eventsToday.includes('CHECKPOINT_SEALED'), cooldownDays: 1 }),
+  m('event-checkpoint-005', 'ASSESSMENT FILED. THE NEXT SEGMENT STARTS CLEAN.', 'EVENT', 'CHECKPOINT SEALED', 'verdict', { when: (c) => c.eventsToday.includes('CHECKPOINT_SEALED'), cooldownDays: 1 }),
+  m('event-checkpoint-006', 'THE EVIDENCE HAS BEEN WEIGHED AND RECORDED.', 'EVENT', 'CHECKPOINT SEALED', 'verdict', { when: (c) => c.eventsToday.includes('CHECKPOINT_SEALED'), cooldownDays: 1 }),
+
+  m('event-weekly-004', 'THE WEEKLY CONDITION IS CLOSED.', 'EVENT', 'WEEKLY CLEARED', 'momentum', { when: (c) => c.eventsToday.includes('WEEKLY_QUEST_COMPLETED'), cooldownDays: 2 }),
+  m('event-weekly-005', 'A SEVEN-DAY REQUIREMENT HAS BEEN SATISFIED.', 'EVENT', 'WEEKLY CLEARED', 'momentum', { when: (c) => c.eventsToday.includes('WEEKLY_QUEST_COMPLETED'), cooldownDays: 2 }),
+  m('event-weekly-006', 'THE WEEK PRODUCED ITS EVIDENCE.', 'EVENT', 'WEEKLY CLEARED', 'momentum', { when: (c) => c.eventsToday.includes('WEEKLY_QUEST_COMPLETED'), cooldownDays: 2 }),
+
+  /* ── RECOVERY ────────────────────────────────────────────────────── */
+  m('recovery-reduced-006', 'THE LOAD IS REDUCED BY DESIGN. THE FLOOR STILL COUNTS.', 'RECOVERY', 'REDUCED MODE', 'restraint', { when: (c) => c.reducedMode, cooldownDays: 4 }),
+  m('recovery-reduced-007', 'A LOWER REQUIREMENT IS STILL A REQUIREMENT. MEET IT.', 'RECOVERY', 'REDUCED MODE', 'restraint', { when: (c) => c.reducedMode, cooldownDays: 4 }),
+  m('recovery-reduced-008', 'THE PROTOCOL HAS MADE TODAY SMALLER ON PURPOSE.', 'RECOVERY', 'REDUCED MODE', 'restraint', { when: (c) => c.reducedMode, cooldownDays: 4 }),
+  m('recovery-reduced-009', 'HOLDING THE LINE IS THE OBJECTIVE TODAY.', 'RECOVERY', 'REDUCED MODE', 'restraint', { when: (c) => c.reducedMode, cooldownDays: 4 }),
+
+  m('recovery-available-007', 'A PARTIAL CLAIM ON YESTERDAY IS STILL OPEN.', 'RECOVERY', 'RECOVERY AVAILABLE', 'restraint', { when: (c) => c.recoveryAvailable, cooldownDays: 4 }),
+  m('recovery-available-008', 'YESTERDAY CAN STILL BE PART-RECOVERED.', 'RECOVERY', 'RECOVERY AVAILABLE', 'restraint', { when: (c) => c.recoveryAvailable, cooldownDays: 4 }),
+  m('recovery-available-009', 'A BREAK IN THE SEQUENCE IS NOT A BREAK IN THE ARC.', 'RECOVERY', 'POST-FAILURE', 'restraint', { when: (c) => c.recoveryAvailable, cooldownDays: 4 }),
+  m('recovery-available-010', 'THE RECORD NOTED THE GAP AND MOVED ON.', 'RECOVERY', 'POST-FAILURE', 'restraint', { when: (c) => c.recoveryAvailable, cooldownDays: 4 }),
+
+  m('recovery-return-006', 'THE RECORD WAITED. IT IS UNCHANGED.', 'RECOVERY', 'RESUMED', 'restraint', { when: (c) => (c.daysSinceLastOpen ?? 0) >= 2, cooldownDays: 3 }),
+  m('recovery-return-007', 'TIME PASSED WITHOUT ENTRIES. THE ARC DID NOT STOP.', 'RECOVERY', 'RESUMED', 'restraint', { when: (c) => (c.daysSinceLastOpen ?? 0) >= 2, cooldownDays: 3 }),
+  m('recovery-return-008', 'RE-ENTRY REGISTERED. THE COUNT RESUMES TODAY.', 'RECOVERY', 'RESUMED', 'neutral', { when: (c) => (c.daysSinceLastOpen ?? 0) >= 2, cooldownDays: 3 }),
+  m('recovery-return-009', 'THE INTERVAL IS OVER. TODAY IS WRITABLE.', 'RECOVERY', 'RESUMED', 'neutral', { when: (c) => (c.daysSinceLastOpen ?? 0) >= 2, cooldownDays: 3 }),
+
+  /* ── CLEARED ─────────────────────────────────────────────────────── */
+  m('cleared-015', 'EVERY CONDITION IS CLOSED.', 'CLEARED', 'DAY CLEARED', 'verdict', { bands: ['CLEARED'] }),
+  m('cleared-016', 'THE DAY IS FULLY ACCOUNTED FOR.', 'CLEARED', 'DAY CLEARED', 'verdict', { bands: ['CLEARED'] }),
+  m('cleared-017', 'NOTHING OUTSTANDING. THE RECORD IS SEALED IN FULL.', 'CLEARED', 'DAY CLEARED', 'verdict', { bands: ['CLEARED'] }),
+  m('cleared-018', 'TODAY IS EVIDENCE NOW, NOT INTENTION.', 'CLEARED', 'EVIDENCE', 'verdict', { bands: ['CLEARED'] }),
+  m('cleared-019', 'THE RECORD GAINED A DAY THAT CANNOT BE ARGUED WITH.', 'CLEARED', 'EVIDENCE', 'verdict', { bands: ['CLEARED'] }),
+  m('cleared-020', 'CLEARED. THIS IS THE UNIT THE ARC IS BUILT FROM.', 'CLEARED', 'EVIDENCE', 'verdict', { bands: ['CLEARED'] }),
+  m('cleared-021', 'FULL CLEARANCE BEFORE THE DAY TURNED.', 'CLEARED', 'CLEARED EARLY', 'verdict', { bands: ['CLEARED'], phases: ['MORNING', 'MIDDAY'], weight: 2 }),
+  m('cleared-022', 'THE SEQUENCE TAKES ANOTHER DAY.', 'CLEARED', 'CONTINUITY', 'verdict', { bands: ['CLEARED'], minStreak: 3 }),
+  m('cleared-023', 'UNBROKEN. THE COUNT RISES BY ONE.', 'CLEARED', 'CONTINUITY', 'verdict', { bands: ['CLEARED'], minStreak: 7, weight: 2 }),
+  m('cleared-024', 'THE DAY CLOSES CLEARED.', 'CLEARED', 'DAY CLEARED', 'verdict', { bands: ['CLEARED'], phases: ['EVENING', 'NIGHT'] }),
+
+  /* ── MILESTONE ───────────────────────────────────────────────────── */
+  m('milestone-level-005', 'THE NEXT LEVEL IS INSIDE ONE CONDITION.', 'MILESTONE', 'THRESHOLD', 'momentum', { when: (c) => c.xpForNext - c.xpIntoLevel <= 60, cooldownDays: 4 }),
+  m('milestone-level-006', 'A SHORT MARGIN SEPARATES YOU FROM THE THRESHOLD.', 'MILESTONE', 'THRESHOLD', 'momentum', { when: (c) => c.xpForNext - c.xpIntoLevel <= 60, cooldownDays: 4 }),
+  m('milestone-level-007', 'THE THRESHOLD IS ONE ACTION AWAY.', 'MILESTONE', 'THRESHOLD', 'pressure', { when: (c) => c.xpForNext - c.xpIntoLevel <= 30, cooldownDays: 4, weight: 2 }),
+
+  m('milestone-checkpoint-004', 'THE CHECKPOINT READS WHAT IS LOGGED, NOT WHAT WAS PLANNED.', 'MILESTONE', 'CHECKPOINT NEAR', 'pressure', { when: (c) => c.daysToCheckpoint !== null && c.daysToCheckpoint <= 2, cooldownDays: 3 }),
+  m('milestone-checkpoint-005', 'EVALUATION IS DAYS AWAY. THE LEDGER IS THE ARGUMENT.', 'MILESTONE', 'CHECKPOINT NEAR', 'pressure', { when: (c) => c.daysToCheckpoint !== null && c.daysToCheckpoint <= 2, cooldownDays: 3 }),
+  m('milestone-checkpoint-006', 'A MEASUREMENT IS APPROACHING.', 'MILESTONE', 'CHECKPOINT NEAR', 'pressure', { when: (c) => c.daysToCheckpoint !== null && c.daysToCheckpoint <= 2, cooldownDays: 3 }),
+
+  m('milestone-streak-3-003', 'THREE DAYS HELD. THE PATTERN IS YOUNG.', 'MILESTONE', 'STREAK 03', 'momentum', { when: (c) => c.streak === 3, cooldownDays: 5 }),
+  m('milestone-streak-3-004', 'THE THIRD CONSECUTIVE CLEAR IS ON THE RECORD.', 'MILESTONE', 'STREAK 03', 'momentum', { when: (c) => c.streak === 3, cooldownDays: 5 }),
+  m('milestone-streak-7-003', 'SEVEN HELD. THE WEEK IS PROOF, NOT LUCK.', 'MILESTONE', 'STREAK 07', 'momentum', { when: (c) => c.streak === 7, cooldownDays: 5 }),
+  m('milestone-streak-7-004', 'A SEVEN-DAY SEQUENCE STANDS.', 'MILESTONE', 'STREAK 07', 'momentum', { when: (c) => c.streak === 7, cooldownDays: 5 }),
+  m('milestone-streak-14-003', 'FOURTEEN CONSECUTIVE CLEARS ARE RECORDED.', 'MILESTONE', 'STREAK 14', 'verdict', { when: (c) => c.streak === 14, cooldownDays: 5 }),
+  m('milestone-streak-14-004', 'TWO WEEKS UNBROKEN. THE HABIT IS THE MECHANISM.', 'MILESTONE', 'STREAK 14', 'verdict', { when: (c) => c.streak === 14, cooldownDays: 5 }),
+  m('milestone-streak-30-003', 'THIRTY DAYS HELD WITHOUT A GAP.', 'MILESTONE', 'STREAK 30', 'verdict', { when: (c) => c.streak === 30, cooldownDays: 5 }),
+  m('milestone-streak-30-004', 'A MONTH OF EVIDENCE. THE SYSTEM HAS NOTHING TO ADD.', 'MILESTONE', 'STREAK 30', 'verdict', { when: (c) => c.streak === 30, cooldownDays: 5 }),
+
+  m('milestone-midarc-002', 'THE MIDPOINT IS BEHIND YOU. THE REMAINDER IS SHORTER.', 'MILESTONE', 'MIDPOINT', 'neutral', { minArcDay: 60, when: (c) => c.arcDay === 60 || c.arcDay === 61, cooldownDays: 6 }),
+  m('milestone-midarc-003', 'HALF THE ARC IS SPENT. HALF IS STILL WRITABLE.', 'MILESTONE', 'MIDPOINT', 'neutral', { minArcDay: 60, when: (c) => c.arcDay === 60 || c.arcDay === 61, cooldownDays: 6 }),
+  m('milestone-final-003', 'THE LAST SEGMENT IS RUNNING. DAYS COST MORE NOW.', 'MILESTONE', 'FINAL SEGMENT', 'pressure', { minArcDay: 113, cooldownDays: 3 }),
+  m('milestone-final-004', 'THE ARC IS CLOSING. THE LEDGER CLOSES WITH IT.', 'MILESTONE', 'FINAL SEGMENT', 'pressure', { minArcDay: 113, cooldownDays: 3 }),
+  m('milestone-final-005', 'FEW DAYS REMAIN. EACH ONE IS A LARGER FRACTION.', 'MILESTONE', 'FINAL SEGMENT', 'pressure', { minArcDay: 113, cooldownDays: 3 }),
+
+  /* ── PROGRESS · MORNING ──────────────────────────────────────────── */
+  m('morning-zero-008', 'THE DAY IS OPEN AND UNMARKED.', P, 'DAY OPEN', 'awakening', { phases: ['MORNING'], bands: ['ZERO'] }),
+  m('morning-zero-009', 'NOTHING IS LOGGED. NOTHING IS LOST.', P, 'DAY OPEN', 'awakening', { phases: ['MORNING'], bands: ['ZERO'] }),
+  m('morning-zero-010', 'THE FIRST HOURS ARE THE CHEAPEST ONES TO SPEND WELL.', P, 'DAY OPEN', 'awakening', { phases: ['MORNING'], bands: ['ZERO'] }),
+  m('morning-zero-011', 'A CLEAN LEDGER. IT WILL NOT FILL ITSELF.', P, 'DAY OPEN', 'neutral', { phases: ['MORNING'], bands: ['ZERO'] }),
+  m('morning-zero-012', 'THE REQUIREMENT IS FULL AND SO IS THE DAY.', P, 'DAY OPEN', 'neutral', { phases: ['MORNING'], bands: ['ZERO'] }),
+  m('morning-zero-013', 'THE ORDER IS YOURS. THE COUNT IS NOT.', P, 'DAY OPEN', 'awakening', { phases: ['MORNING'], bands: ['ZERO'] }),
+
+  m('morning-started-005', 'AN ENTRY EXISTS BEFORE MIDDAY.', P, 'CONTINUITY DETECTED', 'momentum', { phases: ['MORNING'], bands: ['STARTED'] }),
+  m('morning-started-006', 'THE LEDGER OPENED EARLY.', P, 'CONTINUITY DETECTED', 'momentum', { phases: ['MORNING'], bands: ['STARTED'] }),
+  m('morning-started-007', 'MOVEMENT IS REGISTERED AND THE DAY IS YOUNG.', P, 'CONTINUITY DETECTED', 'momentum', { phases: ['MORNING'], bands: ['STARTED', 'BUILDING'] }),
+  m('morning-started-008', 'THE RATE IS AHEAD OF THE HOUR.', P, 'CONTINUITY DETECTED', 'momentum', { phases: ['MORNING'], bands: ['STARTED', 'BUILDING'] }),
+  m('morning-building-003', 'THE MORNING IS CARRYING WEIGHT.', P, 'MOMENTUM', 'momentum', { phases: ['MORNING'], bands: ['BUILDING', 'HALFWAY'] }),
+  m('morning-building-004', 'A REAL FRACTION IS CLEARED BEFORE NOON.', P, 'MOMENTUM', 'momentum', { phases: ['MORNING'], bands: ['BUILDING', 'HALFWAY'] }),
+  m('morning-building-005', 'THE DAY IS PRODUCING AT A GOOD HOUR.', P, 'MOMENTUM', 'momentum', { phases: ['MORNING'], bands: ['BUILDING', 'HALFWAY'] }),
+  m('morning-ahead-004', 'THE REQUIREMENT IS FALLING EARLY.', P, 'AHEAD OF SCHEDULE', 'momentum', { phases: ['MORNING'], bands: ['ADVANCING', 'NEAR_CLEAR'] }),
+  m('morning-ahead-005', 'THIS IS AHEAD OF ANY REASONABLE PACE.', P, 'AHEAD OF SCHEDULE', 'momentum', { phases: ['MORNING'], bands: ['ADVANCING', 'NEAR_CLEAR'] }),
+  m('morning-ahead-006', 'THE HARD PART OF TODAY IS ALREADY BEHIND YOU.', P, 'AHEAD OF SCHEDULE', 'momentum', { phases: ['MORNING'], bands: ['HALFWAY', 'ADVANCING', 'NEAR_CLEAR'] }),
+
+  /* ── PROGRESS · MIDDAY ───────────────────────────────────────────── */
+  m('midday-zero-006', 'MIDDAY. THE LEDGER IS BLANK.', P, 'NO ACTION', 'pressure', { phases: ['MIDDAY'], bands: ['ZERO'] }),
+  m('midday-zero-007', 'HOURS HAVE PASSED. NOTHING HAS BEEN ENTERED.', P, 'NO ACTION', 'pressure', { phases: ['MIDDAY'], bands: ['ZERO'] }),
+  m('midday-zero-008', 'THE CLOCK IS MOVING ALONE.', P, 'NO ACTION', 'pressure', { phases: ['MIDDAY'], bands: ['ZERO'] }),
+  m('midday-zero-009', 'THE DAY IS HALF AVAILABLE AND FULLY UNSPENT.', P, 'NO ACTION', 'pressure', { phases: ['MIDDAY'], bands: ['ZERO'] }),
+  m('midday-zero-010', 'ONE ENTRY WOULD CHANGE THE SHAPE OF TODAY.', P, 'NO ACTION', 'pressure', { phases: ['MIDDAY', 'AFTERNOON'], bands: ['ZERO'] }),
+
+  m('midday-started-004', 'ONE ENTRY STANDS AGAINST THE REMAINING LOAD.', P, 'UNDER RATE', 'neutral', { phases: ['MIDDAY'], bands: ['STARTED'] }),
+  m('midday-started-005', 'THE LEDGER HAS OPENED. IT IS STILL THIN.', P, 'UNDER RATE', 'neutral', { phases: ['MIDDAY'], bands: ['STARTED'] }),
+  m('midday-started-006', 'MOVEMENT EXISTS. THE RATE DOES NOT YET MATCH THE DAY.', P, 'UNDER RATE', 'neutral', { phases: ['MIDDAY'], bands: ['STARTED'] }),
+  m('midday-building-004', 'THE RECORD IS GROWING ON SCHEDULE.', P, 'MOMENTUM', 'momentum', { phases: ['MIDDAY'], bands: ['BUILDING'] }),
+  m('midday-building-005', 'A WORKING RATE. HOLD IT THROUGH THE AFTERNOON.', P, 'MOMENTUM', 'momentum', { phases: ['MIDDAY'], bands: ['BUILDING', 'HALFWAY'] }),
+  m('midday-building-006', 'PROGRESS IS REAL AND THE DAY IS NOT SPENT.', P, 'MOMENTUM', 'momentum', { phases: ['MIDDAY'], bands: ['BUILDING'] }),
+  m('midday-half-003', 'HALF IS SECURED WITH HALF THE DAY LEFT.', P, 'HALF CLEARED', 'momentum', { phases: ['MIDDAY'], bands: ['HALFWAY'] }),
+  m('midday-half-004', 'THE MIDPOINT IS CLEARED ON TIME.', P, 'HALF CLEARED', 'momentum', { phases: ['MIDDAY'], bands: ['HALFWAY'] }),
+  m('midday-half-005', 'AN EVEN SPLIT. THE AFTERNOON DECIDES IT.', P, 'HALF CLEARED', 'momentum', { phases: ['MIDDAY'], bands: ['HALFWAY', 'ADVANCING'] }),
+  m('midday-advancing-003', 'THE REMAINDER IS SMALL.', P, 'MOMENTUM', 'momentum', { phases: ['MIDDAY', 'AFTERNOON'], bands: ['ADVANCING'] }),
+  m('midday-advancing-004', 'MOST OF THE REQUIREMENT IS CLEARED BEFORE THE AFTERNOON.', P, 'MOMENTUM', 'momentum', { phases: ['MIDDAY'], bands: ['ADVANCING', 'NEAR_CLEAR'] }),
+  m('midday-advancing-005', 'THE RATE IS HOLDING ABOVE REQUIREMENT.', P, 'MOMENTUM', 'momentum', { phases: ['MIDDAY'], bands: ['ADVANCING'] }),
+  m('midday-near-003', 'CLEARANCE IS CLOSE AND THE DAY IS LONG.', P, 'NEAR CLEAR', 'momentum', { phases: ['MIDDAY'], bands: ['NEAR_CLEAR'] }),
+  m('midday-near-004', 'WHAT REMAINS WOULD FIT IN AN HOUR.', P, 'NEAR CLEAR', 'momentum', { phases: ['MIDDAY'], bands: ['NEAR_CLEAR'] }),
+  m('midday-near-005', 'THE LAST CONDITIONS ARE THE ONLY ONES OPEN.', P, 'NEAR CLEAR', 'momentum', { phases: ['MIDDAY'], bands: ['NEAR_CLEAR'] }),
+
+  /* ── PROGRESS · AFTERNOON ────────────────────────────────────────── */
+  m('afternoon-zero-006', 'THE AFTERNOON IS RUNNING AND THE RECORD IS BLANK.', P, 'STATUS UNCHANGED', 'pressure', { phases: ['AFTERNOON'], bands: ['ZERO'] }),
+  m('afternoon-zero-007', 'NO ENTRY. THE DAY IS PAST ITS MIDDLE.', P, 'STATUS UNCHANGED', 'pressure', { phases: ['AFTERNOON'], bands: ['ZERO'] }),
+  m('afternoon-zero-008', 'THE HOURS SPEND THEMSELVES EITHER WAY.', P, 'STATUS UNCHANGED', 'pressure', { phases: ['AFTERNOON'], bands: ['ZERO'] }),
+  m('afternoon-zero-009', 'STATUS: NOTHING RECORDED.', P, 'STATUS UNCHANGED', 'pressure', { phases: ['AFTERNOON'], bands: ['ZERO'] }),
+  m('afternoon-zero-010', 'THE SHORTEST PATH OUT OF ZERO IS ONE ACTION.', P, 'STATUS UNCHANGED', 'pressure', { phases: ['AFTERNOON'], bands: ['ZERO'] }),
+
+  m('afternoon-started-004', 'ONE ENTRY AND A SHRINKING DAY.', P, 'BEHIND RATE', 'pressure', { phases: ['AFTERNOON'], bands: ['STARTED'] }),
+  m('afternoon-started-005', 'THE RECORD IS OPEN BUT BEHIND.', P, 'BEHIND RATE', 'pressure', { phases: ['AFTERNOON'], bands: ['STARTED', 'BUILDING'] }),
+  m('afternoon-started-006', 'THE RATE MUST RISE OR THE DAY CLOSES SHORT.', P, 'BEHIND RATE', 'pressure', { phases: ['AFTERNOON'], bands: ['STARTED'] }),
+  m('afternoon-building-003', 'A PARTIAL RECORD WITH HOURS STILL AVAILABLE.', P, 'BEHIND RATE', 'neutral', { phases: ['AFTERNOON'], bands: ['BUILDING'] }),
+  m('afternoon-building-004', 'THE LARGER PART OF THE REQUIREMENT IS STILL OPEN.', P, 'BEHIND RATE', 'pressure', { phases: ['AFTERNOON'], bands: ['BUILDING'] }),
+  m('afternoon-building-005', 'THIS SEGMENT DECIDES WHETHER TODAY CLEARS.', P, 'BEHIND RATE', 'pressure', { phases: ['AFTERNOON'], bands: ['BUILDING'] }),
+  m('afternoon-half-003', 'HALF SECURED. THE REST IS STILL REACHABLE.', P, 'HALF CLEARED', 'momentum', { phases: ['AFTERNOON'], bands: ['HALFWAY'] }),
+  m('afternoon-half-004', 'THE BALANCE IS EVEN WITH HOURS IN HAND.', P, 'HALF CLEARED', 'momentum', { phases: ['AFTERNOON'], bands: ['HALFWAY'] }),
+  m('afternoon-half-005', 'HALF THE REQUIREMENT IS ALREADY EVIDENCE.', P, 'HALF CLEARED', 'momentum', { phases: ['AFTERNOON'], bands: ['HALFWAY'] }),
+  m('afternoon-advancing-003', 'THE MAJORITY IS CLEARED.', P, 'MOMENTUM', 'momentum', { phases: ['AFTERNOON'], bands: ['ADVANCING'] }),
+  m('afternoon-advancing-004', 'LITTLE REMAINS AND THE DAY IS NOT CLOSED.', P, 'MOMENTUM', 'momentum', { phases: ['AFTERNOON'], bands: ['ADVANCING', 'NEAR_CLEAR'] }),
+  m('afternoon-advancing-005', 'THE RUN IS HOLDING INTO THE AFTERNOON.', P, 'MOMENTUM', 'momentum', { phases: ['AFTERNOON'], bands: ['ADVANCING'] }),
+  m('afternoon-near-003', 'ONE CONDITION STANDS BETWEEN TODAY AND A CLEAR.', P, 'NEAR CLEAR', 'pressure', { phases: ['AFTERNOON'], bands: ['NEAR_CLEAR'] }),
+  m('afternoon-near-004', 'THE LAST REQUIREMENT IS OPEN AND THE DAY IS NOT.', P, 'NEAR CLEAR', 'pressure', { phases: ['AFTERNOON'], bands: ['NEAR_CLEAR'] }),
+  m('afternoon-near-005', 'NEARLY CLEARED IS NOT CLEARED.', P, 'NEAR CLEAR', 'pressure', { phases: ['AFTERNOON'], bands: ['NEAR_CLEAR'] }),
+
+  /* ── PROGRESS · EVENING ──────────────────────────────────────────── */
+  m('evening-zero-005', 'THE EVENING IS RUNNING AND NOTHING IS LOGGED.', P, 'DAY OPEN', 'pressure', { phases: ['EVENING'], bands: ['ZERO'] }),
+  m('evening-zero-006', 'THE WINDOW IS SHORT. IT IS NOT SHUT.', P, 'DAY OPEN', 'pressure', { phases: ['EVENING'], bands: ['ZERO', 'STARTED'] }),
+  m('evening-zero-007', 'A MINIMUM ENTRY STILL ALTERS TODAY.', P, 'DAY OPEN', 'restraint', { phases: ['EVENING'], bands: ['ZERO', 'STARTED'] }),
+  m('evening-zero-008', 'THE RECORD CAN STILL BE CHANGED TONIGHT.', P, 'DAY OPEN', 'pressure', { phases: ['EVENING'], bands: ['ZERO'] }),
+  m('evening-started-003', 'ONE ENTRY HOLDS. THE DAY IS STILL OPEN.', P, 'DAY OPEN', 'pressure', { phases: ['EVENING'], bands: ['STARTED'] }),
+  m('evening-started-004', 'THE LEDGER IS THIN AND THE HOURS ARE FEW.', P, 'DAY OPEN', 'pressure', { phases: ['EVENING'], bands: ['STARTED'] }),
+  m('evening-started-005', 'WHAT IS ADDED NOW STILL COUNTS IN FULL.', P, 'DAY OPEN', 'pressure', { phases: ['EVENING'], bands: ['STARTED'] }),
+  m('evening-building-003', 'A PARTIAL DAY IS SECURED. THE WINDOW IS CLOSING.', P, 'CLOSING', 'closing', { phases: ['EVENING'], bands: ['BUILDING'] }),
+  m('evening-building-004', 'THE REMAINDER IS STILL LOGGABLE TONIGHT.', P, 'CLOSING', 'closing', { phases: ['EVENING'], bands: ['BUILDING', 'HALFWAY'] }),
+  m('evening-building-005', 'PROGRESS IS BANKED. THE REST IS A DECISION.', P, 'CLOSING', 'closing', { phases: ['EVENING'], bands: ['BUILDING'] }),
+  m('evening-half-003', 'HALF IS EARNED. THE REST IS STILL AVAILABLE.', P, 'CLOSING', 'closing', { phases: ['EVENING'], bands: ['HALFWAY'] }),
+  m('evening-half-004', 'THE EVENING HOLDS ENOUGH TIME FOR WHAT REMAINS.', P, 'CLOSING', 'pressure', { phases: ['EVENING'], bands: ['HALFWAY', 'ADVANCING'] }),
+  m('evening-half-005', 'HALFWAY AT DUSK. THE DECISION IS NARROW.', P, 'CLOSING', 'closing', { phases: ['EVENING'], bands: ['HALFWAY'] }),
+  m('evening-advancing-003', 'THE DAY IS ALMOST EARNED.', P, 'FINAL PUSH', 'momentum', { phases: ['EVENING'], bands: ['ADVANCING'] }),
+  m('evening-advancing-004', 'A SMALL REMAINDER SEPARATES TODAY FROM A CLEAR.', P, 'FINAL PUSH', 'momentum', { phases: ['EVENING'], bands: ['ADVANCING'] }),
+  m('evening-advancing-005', 'THE RUN IS INTACT WITH HOURS LEFT.', P, 'FINAL PUSH', 'momentum', { phases: ['EVENING'], bands: ['ADVANCING'] }),
+  m('evening-near-004', 'ONE REQUIREMENT IS OPEN. THE REST ARE CLOSED.', P, 'FINAL CONDITION', 'pressure', { phases: ['EVENING'], bands: ['NEAR_CLEAR'] }),
+  m('evening-near-005', 'THE FINAL CONDITION IS THE SHORTEST DISTANCE LEFT TODAY.', P, 'FINAL CONDITION', 'pressure', { phases: ['EVENING'], bands: ['NEAR_CLEAR'] }),
+  m('evening-near-006', 'EVERYTHING BUT ONE IS DONE.', P, 'FINAL CONDITION', 'pressure', { phases: ['EVENING'], bands: ['NEAR_CLEAR'] }),
+
+  /* ── PROGRESS · NIGHT ────────────────────────────────────────────── */
+  m('night-zero-005', 'THE DAY IS ENDING WITH AN EMPTY RECORD.', P, 'FINAL WINDOW', 'closing', { phases: ['NIGHT'], bands: ['ZERO'] }),
+  m('night-zero-006', 'MINUTES REMAIN. THE LEDGER IS STILL OPEN.', P, 'FINAL WINDOW', 'closing', { phases: ['NIGHT'], bands: ['ZERO', 'STARTED'] }),
+  m('night-zero-007', 'ONE ENTRY WOULD STILL COUNT TONIGHT.', P, 'FINAL WINDOW', 'closing', { phases: ['NIGHT'], bands: ['ZERO', 'STARTED'] }),
+  m('night-started-002', 'THE DAY CLOSES WITH SOMETHING ON IT.', P, 'FINAL WINDOW', 'restraint', { phases: ['NIGHT'], bands: ['STARTED'] }),
+  m('night-started-003', 'ONE ENTRY STANDS. IT IS MORE THAN NONE.', P, 'FINAL WINDOW', 'restraint', { phases: ['NIGHT'], bands: ['STARTED'] }),
+  m('night-started-004', 'A THIN DAY IS STILL A RECORDED DAY.', P, 'FINAL WINDOW', 'restraint', { phases: ['NIGHT'], bands: ['STARTED'] }),
+  m('night-building-003', 'THE DAY WILL CLOSE INCOMPLETE. IT WILL NOT CLOSE EMPTY.', P, 'FINAL WINDOW', 'restraint', { phases: ['NIGHT'], bands: ['BUILDING'] }),
+  m('night-building-004', 'PART OF THE REQUIREMENT IS PERMANENT NOW.', P, 'FINAL WINDOW', 'restraint', { phases: ['NIGHT'], bands: ['BUILDING'] }),
+  m('night-building-005', 'THERE IS STILL TIME TO ADD TO THIS.', P, 'FINAL WINDOW', 'closing', { phases: ['NIGHT'], bands: ['BUILDING', 'HALFWAY'] }),
+  m('night-half-002', 'HALF THE DAY IS EARNED AT THE CLOSE.', P, 'FINAL WINDOW', 'closing', { phases: ['NIGHT'], bands: ['HALFWAY'] }),
+  m('night-half-003', 'THE RECORD CLOSES EVEN. THAT IS NOT A LOSS.', P, 'FINAL WINDOW', 'restraint', { phases: ['NIGHT'], bands: ['HALFWAY'] }),
+  m('night-advancing-003', 'THE DAY ENDS SHORT OF FULL AND WELL ABOVE EMPTY.', P, 'FINAL WINDOW', 'closing', { phases: ['NIGHT'], bands: ['ADVANCING'] }),
+  m('night-advancing-004', 'NEARLY THE WHOLE REQUIREMENT, AT THE LAST HOUR.', P, 'FINAL WINDOW', 'closing', { phases: ['NIGHT'], bands: ['ADVANCING', 'NEAR_CLEAR'] }),
+  m('night-near-003', 'ONE CONDITION IS OPEN WITH MINUTES LEFT.', P, 'FINAL CONDITION', 'pressure', { phases: ['NIGHT'], bands: ['NEAR_CLEAR'] }),
+  m('night-near-004', 'THE LAST REQUIREMENT IS STILL REACHABLE. BARELY.', P, 'FINAL CONDITION', 'pressure', { phases: ['NIGHT'], bands: ['NEAR_CLEAR'] }),
+
+  /* ── PROGRESS · CROSS-CUTTING ────────────────────────────────────── */
+  m('first-action-004', 'THE LEDGER IS OPEN. THE FIRST ENTRY IS THE EXPENSIVE ONE.', P, 'FIRST ACTION', 'momentum', { when: (c) => c.firstActionOfDay, weight: 3, cooldownDays: 5 }),
+  m('first-action-005', 'FIRST CONDITION CLEARED. THE DAY HAS DIRECTION.', P, 'FIRST ACTION', 'momentum', { when: (c) => c.firstActionOfDay, weight: 3, cooldownDays: 5 }),
+  m('final-condition-004', 'ONE CONDITION OUTSTANDING. NOTHING ELSE IS OPEN.', P, 'FINAL CONDITION', 'pressure', { when: (c) => c.coreTotal > 0 && c.coreTotal - c.coreCompleted === 1, weight: 3, cooldownDays: 4 }),
+  m('final-condition-005', 'THE DAY IS ONE ENTRY FROM CLEARED.', P, 'FINAL CONDITION', 'pressure', { when: (c) => c.coreTotal > 0 && c.coreTotal - c.coreCompleted === 1, weight: 3, cooldownDays: 4 }),
+  m('prolonged-zero-004', 'THE DAY HAS RUN LONG WITH NOTHING RECORDED.', P, 'AWAITING INPUT', 'pressure', { bands: ['ZERO'], phases: ['AFTERNOON', 'EVENING', 'NIGHT'], weight: 2, cooldownDays: 6 }),
+  m('prolonged-zero-005', 'THE SYSTEM HAS NOTHING TO READ.', P, 'AWAITING INPUT', 'pressure', { bands: ['ZERO'], phases: ['EVENING', 'NIGHT'], weight: 2, cooldownDays: 6 }),
+  m('streak-live-004', 'THE RUN IS LIVE AND TODAY IS UNDECIDED.', P, 'CONTINUITY', 'momentum', { minStreak: 7, bands: ['STARTED', 'BUILDING', 'HALFWAY'], cooldownDays: 7 }),
+  m('streak-live-005', 'A SEQUENCE IS ON THE RECORD. IT IS EXTENDED DAILY OR NOT AT ALL.', P, 'CONTINUITY', 'pressure', { minStreak: 14, bands: ['ZERO', 'STARTED'], cooldownDays: 7 }),
+
+  /* ── DEFAULT ─────────────────────────────────────────────────────── */
+  m('default-009', 'THE RECORD IS THE ONLY ARGUMENT.', 'DEFAULT', 'STATUS', 'neutral'),
+  m('default-010', 'THE SYSTEM MEASURES WHAT IS LOGGED.', 'DEFAULT', 'STATUS', 'neutral'),
 ];

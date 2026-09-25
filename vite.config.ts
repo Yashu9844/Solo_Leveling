@@ -82,15 +82,15 @@ export default defineConfig({
         orientation: 'portrait',
         background_color: '#0A0B0D',
         theme_color: '#0A0B0D',
+        // The sigil set in public/. No `maskable` entry: a maskable icon
+        // has to be drawn with a safe zone, because Android crops it to
+        // whatever shape the launcher uses, and declaring an ordinary
+        // icon maskable is how logos lose their edges. Without one the
+        // launcher letterboxes the icon instead, which is the safe
+        // failure. Add a purpose-built maskable render to restore it.
         icons: [
-          { src: '/icon-192.png', sizes: '192x192', type: 'image/png' },
-          { src: '/icon-512.png', sizes: '512x512', type: 'image/png' },
-          {
-            src: '/icon-maskable-512.png',
-            sizes: '512x512',
-            type: 'image/png',
-            purpose: 'maskable',
-          },
+          { src: '/android-chrome-192x192.png', sizes: '192x192', type: 'image/png' },
+          { src: '/android-chrome-512x512.png', sizes: '512x512', type: 'image/png' },
         ],
         shortcuts: [
           { name: 'Log problem', url: '/log/problem' },

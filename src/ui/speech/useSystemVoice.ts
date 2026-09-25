@@ -1,6 +1,6 @@
 import { useEffect, useRef } from 'react';
 import { useSettings } from '../../store/SettingsContext';
-import { announce, silence } from './announce';
+import { announce, enterStage, silence } from './announce';
 
 export { resetSpokenMemory } from './announce';
 
@@ -39,6 +39,13 @@ export function useSystemVoice({ messageId, text, fingerprint }: UseSystemVoiceA
   // the line was chosen.
   const enabledRef = useRef(enabled);
   enabledRef.current = enabled;
+
+  // Says "the System's line is on screen" for as long as this screen is
+  // mounted. The deferred half of announce() reads it to decide whether
+  // the gesture that just unlocked audio was the Player settling in or
+  // the Player leaving — without it, the very first tap on the PROGRESS
+  // tab plays Today's line over Progress.
+  useEffect(() => enterStage(), []);
 
   useEffect(() => {
     if (!enabled || !text || !fingerprint) return;

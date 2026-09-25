@@ -32,6 +32,43 @@ const said = new Set<string>();
 /** Disposer for the pending first-gesture listener, if one is armed. */
 let disarm: (() => void) | null = null;
 
+/**
+ * How many mounted screens are currently showing the System's line.
+ *
+ * A count rather than a boolean because React StrictMode mounts,
+ * unmounts and remounts, and a tab change can briefly overlap the two —
+ * a boolean would be left `false` by the outgoing screen's cleanup after
+ * the incoming one had already set it `true`.
+ */
+let onStage = 0;
+
+/**
+ * Marks the System's line as being on screen for as long as the caller
+ * is mounted. Returns the release, which is idempotent so a double
+ * cleanup cannot drive the count negative.
+ */
+export function enterStage(): () => void {
+  onStage += 1;
+  let released = false;
+  return () => {
+    if (released) return;
+    released = true;
+    onStage -= 1;
+  };
+}
+
+/**
+ * How long to wait after the unlocking gesture before deciding whether
+ * the line is still wanted.
+ *
+ * Long enough for a tab tap to have become a navigation and for the
+ * outgoing screen to have unmounted. Waiting costs nothing: a user
+ * gesture gives the document *sticky activation*, so audio stays
+ * unlocked long after the event that unlocked it — there is no narrow
+ * window to play inside.
+ */
+const SETTLE_MS = 250;
+
 /** How many user gestures may retry a line before giving up on it. A
  * failure that survives three real taps is an environment problem — no
  * audio route, a muted tab, a locked-down engine — and retrying on every
@@ -87,10 +124,30 @@ export function announce({ fingerprint, messageId, text, stillEnabled }: Announc
     release();
     disarm = armOnFirstGesture(() => {
       disarm = null;
-      if (!stillEnabled()) return;
-      void attempt().then((spoke) => {
-        if (!spoke && (retries += 1) < MAX_GESTURE_RETRIES) armRetry();
-      });
+      // The gesture that unlocks audio is, more often than not, the one
+      // that *leaves* this screen — the first thing a Player touches on
+      // a freshly opened app is usually a tab. `pointerdown` fires
+      // before the router has navigated and before the outgoing screen
+      // has unmounted, so deciding here would always decide "still on
+      // Today" and the line would play over PROGRESS. Let the
+      // navigation settle, then look at where we actually ended up.
+      window.setTimeout(() => {
+        if (!stillEnabled()) return;
+
+        if (onStage === 0) {
+          // The gesture took the Player somewhere else. Put the line
+          // back rather than saying it to the wrong screen: the next
+          // visit re-announces it, and because activation is sticky by
+          // then, that attempt plays outright and needs no fallback at
+          // all.
+          said.delete(fingerprint);
+          return;
+        }
+
+        void attempt().then((spoke) => {
+          if (!spoke && (retries += 1) < MAX_GESTURE_RETRIES) armRetry();
+        });
+      }, SETTLE_MS);
     });
   };
 

@@ -45,7 +45,15 @@ export type EventType =
   // category table row) — the 31st type, beyond the spec's original
   // 30-type catalogue, added the same way BOSS_CLEARED's handling was
   // added in Slice 13: a new domain capability needs a new event.
-  | 'WEEKLY_QUEST_COMPLETED';
+  | 'WEEKLY_QUEST_COMPLETED'
+  // Treasury (Money Discipline) domain events — design/08 §4.1
+  | 'TREASURY_CREATED'
+  | 'TREASURY_SOURCE_ADDED'
+  | 'TREASURY_SOURCE_WITHDRAWN'
+  | 'TREASURY_RECONFIGURED'
+  | 'DAILY_SPENDING_REGISTERED'
+  | 'DAILY_SPENDING_CORRECTED'
+  | 'TREASURY_PERIOD_CONCLUDED';
 
 export type EventSource = 'user' | 'system' | 'import' | 'rule';
 
@@ -560,3 +568,63 @@ export interface EngineState {
   reviews: Record<string, ReviewCompletedPayload>;
   arc: ArcState | null;
 }
+
+// ── Treasury Payload Interfaces (design/08 §4.2) ─────────────────────
+export interface TreasurySourceInputPayload {
+  name: string;
+  amountMinor: number;
+  protected: boolean;
+  note?: string;
+}
+
+export interface TreasuryCreatedPayload {
+  treasuryId: string;
+  currency: 'INR' | 'USD' | 'EUR' | 'GBP';
+  periodStartDate: string;
+  periodEndDate: string;
+  accountingOpenHour: number;
+  sources: TreasurySourceInputPayload[];
+}
+
+export interface TreasurySourceAddedPayload {
+  treasuryId: string;
+  sourceId: string;
+  localDate: string;
+  source: TreasurySourceInputPayload;
+}
+
+export interface TreasurySourceWithdrawnPayload {
+  treasuryId: string;
+  sourceId: string;
+  localDate: string;
+  reason?: string;
+}
+
+export interface TreasuryReconfiguredPayload {
+  treasuryId: string;
+  localDate: string;
+  periodEndDate?: string;
+  sourceProtectedFlips?: { sourceId: string; protected: boolean }[];
+}
+
+export interface DailySpendingRegisteredPayload {
+  treasuryId: string;
+  localDate: string;
+  amountMinor: number;
+}
+
+export interface DailySpendingCorrectedPayload {
+  treasuryId: string;
+  localDate: string;
+  previousAmountMinor: number;
+  newAmountMinor: number;
+  reason?: string;
+}
+
+export interface TreasuryPeriodConcludedPayload {
+  treasuryId: string;
+  concludedLocalDate: string;
+  finalSpendableMinor: number;
+  verdict: 'SURVIVED' | 'EXHAUSTED';
+}
+

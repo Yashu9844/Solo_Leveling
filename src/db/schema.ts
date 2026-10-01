@@ -399,3 +399,46 @@ export interface SystemTransmissionRow {
   message_id: string;
   chosen_at: string;
 }
+
+/**
+ * design/08-MONEY-DISCIPLINE-PLAN.md §4.3 — Money Discipline (Treasury) domain tables.
+ */
+export interface TreasuryRow {
+  id: string; // pk
+  currency: 'INR' | 'USD' | 'EUR' | 'GBP';
+  period_start_date: string;
+  period_end_date: string;
+  accounting_open_hour: number;
+  status: 'active' | 'concluded';
+  concluded_verdict?: 'SURVIVED' | 'EXHAUSTED';
+  concluded_local_date?: string;
+  created_at: string;
+}
+
+export interface TreasurySourceRow {
+  id: string; // pk
+  treasury_id: string;
+  name: string;
+  amount_minor: number;
+  protected: boolean;
+  note?: string;
+  active: boolean;
+  created_at: string;
+  withdrawn_at?: string;
+}
+
+export interface DailySpendingRow {
+  local_date: string; // pk
+  treasury_id: string;
+  amount_minor: number;
+  registered_at: string;
+  corrected: boolean;
+  history: { amount_minor: number; changed_at: string; reason?: string }[];
+}
+
+export const SCHEMA_V5_ADDITIONS = {
+  treasury: 'id, status',
+  treasury_source: 'id, treasury_id, active, [treasury_id+active]',
+  daily_spending: 'local_date, treasury_id',
+} as const;
+

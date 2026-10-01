@@ -520,6 +520,9 @@ export async function importSnapshotJson(json: string, config: EngineConfig, dep
       db.training_session,
       db.metric_sample,
       db.maintenance_log,
+      db.treasury,
+      db.treasury_source,
+      db.daily_spending,
     ],
     async () => {
       await Promise.all([
@@ -544,6 +547,9 @@ export async function importSnapshotJson(json: string, config: EngineConfig, dep
         db.training_session.clear(),
         db.metric_sample.clear(),
         db.maintenance_log.clear(),
+        db.treasury.clear(),
+        db.treasury_source.clear(),
+        db.daily_spending.clear(),
       ]);
 
       const importedEvents = snapshot.events as SystemEvent[];
@@ -567,6 +573,9 @@ export async function importSnapshotJson(json: string, config: EngineConfig, dep
       if (domain.trainingSessions.length > 0) await db.training_session.bulkAdd(domain.trainingSessions);
       if (domain.metricSamples.length > 0) await db.metric_sample.bulkAdd(domain.metricSamples);
       if (domain.maintenanceLogs.length > 0) await db.maintenance_log.bulkAdd(domain.maintenanceLogs);
+      if (domain.treasuries.length > 0) await db.treasury.bulkAdd(domain.treasuries);
+      if (domain.treasurySources.length > 0) await db.treasury_source.bulkAdd(domain.treasurySources);
+      if (domain.dailySpendings.length > 0) await db.daily_spending.bulkAdd(domain.dailySpendings);
     }
   );
 

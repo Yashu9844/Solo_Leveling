@@ -36,6 +36,8 @@ import type {
   ArtifactShippedPayload,
   BuildSessionLoggedPayload,
   CareerEventLoggedPayload,
+  DailySpendingCorrectedPayload,
+  DailySpendingRegisteredPayload,
   EngineConfig,
   LearningBlockLoggedPayload,
   MaintenanceLoggedPayload,
@@ -49,6 +51,11 @@ import type {
   SystemDesignLoggedPayload,
   SystemEvent,
   TrainingSessionLoggedPayload,
+  TreasuryCreatedPayload,
+  TreasuryPeriodConcludedPayload,
+  TreasuryReconfiguredPayload,
+  TreasurySourceAddedPayload,
+  TreasurySourceWithdrawnPayload,
 } from '../engine/types';
 import { careerEventKindToStatus, type ApplicationStatus } from '../engine/career';
 import { nextReview, type ReviewHistoryEntry } from '../engine/srs';
@@ -57,6 +64,7 @@ import type {
   ArtifactRow,
   BuildSessionRow,
   CareerEventRow,
+  DailySpendingRow,
   DsaAttemptRow,
   DsaProblemRow,
   LearningBlockRow,
@@ -65,6 +73,8 @@ import type {
   ResumeVersionRow,
   SystemDesignStudyRow,
   TrainingSessionRow,
+  TreasuryRow,
+  TreasurySourceRow,
 } from './schema';
 
 export interface DomainTables {
@@ -80,6 +90,9 @@ export interface DomainTables {
   trainingSessions: TrainingSessionRow[];
   metricSamples: MetricSampleRow[];
   maintenanceLogs: MaintenanceLogRow[];
+  treasuries: TreasuryRow[];
+  treasurySources: TreasurySourceRow[];
+  dailySpendings: DailySpendingRow[];
 }
 
 function payload<T>(event: SystemEvent): T {
@@ -106,9 +119,129 @@ export function buildDomainTables(events: SystemEvent[], config: EngineConfig): 
   const trainingSessions: TrainingSessionRow[] = [];
   const metricSamples: MetricSampleRow[] = [];
   const maintenanceByDate = new Map<string, MaintenanceLogRow>();
+  const treasuriesById = new Map<string, TreasuryRow>();
+  const treasurySourcesById = new Map<string, TreasurySourceRow>();
+  const dailySpendingByDate = new Map<string, DailySpendingRow>();
 
   for (const event of events) {
     switch (event.type) {
+      case 'TREASURY_CREATED': {
+        const p = payload<TreasuryCreatedPayload>(event);
+        treasuriesById.set(p.treasuryId, {
+          id: p.treasuryId,
+          currency: p.currency,
+          period_start_date: p.periodStartDate,
+          period_end_date: p.periodEndDate,
+          accounting_open_hour: p.accountingOpenHour,
+          status: 'active',
+          created_at: event.occurred_at,
+        });
+        if (p.sources) {
+          p.sources.forEach((src, idx) => {
+            const srcId = `${p.treasuryId}-src-${idx}`;
+            treasurySourcesById.set(srcId, {
+              id: srcId,
+              treasury_id: p.treasuryId,
+              name: src.name,
+              amount_minor: src.amountMinor,
+              protected: src.protected,
+              note: src.note,
+              active: true,
+              created_at: event.occurred_at,
+            });
+          });
+        }
+        break;
+      }
+
+      case 'TREASURY_SOURCE_ADDED': {
+        const p = payload<TreasurySourceAddedPayload>(event);
+        treasurySourcesById.set(p.sourceId, {
+          id: p.sourceId,
+          treasury_id: p.treasuryId,
+          name: p.source.name,
+          amount_minor: p.source.amountMinor,
+          protected: p.source.protected,
+          note: p.source.note,
+          active: true,
+          created_at: event.occurred_at,
+        });
+        break;
+      }
+
+      case 'TREASURY_SOURCE_WITHDRAWN': {
+        const p = payload<TreasurySourceWithdrawnPayload>(event);
+        const existing = treasurySourcesById.get(p.sourceId);
+        if (existing) {
+          treasurySourcesById.set(p.sourceId, {
+            ...existing,
+            active: false,
+            withdrawn_at: event.occurred_at,
+          });
+        }
+        break;
+      }
+
+      case 'TREASURY_RECONFIGURED': {
+        const p = payload<TreasuryReconfiguredPayload>(event);
+        const tr = treasuriesById.get(p.treasuryId);
+        if (tr && p.periodEndDate) {
+          treasuriesById.set(p.treasuryId, { ...tr, period_end_date: p.periodEndDate });
+        }
+        if (p.sourceProtectedFlips) {
+          for (const flip of p.sourceProtectedFlips) {
+            const src = treasurySourcesById.get(flip.sourceId);
+            if (src) {
+              treasurySourcesById.set(flip.sourceId, { ...src, protected: flip.protected });
+            }
+          }
+        }
+        break;
+      }
+
+      case 'DAILY_SPENDING_REGISTERED': {
+        const p = payload<DailySpendingRegisteredPayload>(event);
+        dailySpendingByDate.set(p.localDate, {
+          local_date: p.localDate,
+          treasury_id: p.treasuryId,
+          amount_minor: p.amountMinor,
+          registered_at: event.occurred_at,
+          corrected: false,
+          history: [{ amount_minor: p.amountMinor, changed_at: event.occurred_at }],
+        });
+        break;
+      }
+
+      case 'DAILY_SPENDING_CORRECTED': {
+        const p = payload<DailySpendingCorrectedPayload>(event);
+        const existing = dailySpendingByDate.get(p.localDate);
+        if (existing) {
+          dailySpendingByDate.set(p.localDate, {
+            ...existing,
+            amount_minor: p.newAmountMinor,
+            corrected: true,
+            history: [
+              ...existing.history,
+              { amount_minor: p.newAmountMinor, changed_at: event.occurred_at, reason: p.reason },
+            ],
+          });
+        }
+        break;
+      }
+
+      case 'TREASURY_PERIOD_CONCLUDED': {
+        const p = payload<TreasuryPeriodConcludedPayload>(event);
+        const tr = treasuriesById.get(p.treasuryId);
+        if (tr) {
+          treasuriesById.set(p.treasuryId, {
+            ...tr,
+            status: 'concluded',
+            concluded_verdict: p.verdict,
+            concluded_local_date: p.concludedLocalDate,
+          });
+        }
+        break;
+      }
       case 'APPLICATION_LOGGED': {
         const p = payload<{
           applicationId: string;
@@ -381,6 +514,9 @@ export function buildDomainTables(events: SystemEvent[], config: EngineConfig): 
     trainingSessions,
     metricSamples,
     maintenanceLogs: [...maintenanceByDate.values()],
+    treasuries: [...treasuriesById.values()],
+    treasurySources: [...treasurySourcesById.values()],
+    dailySpendings: [...dailySpendingByDate.values()],
   };
 }
 

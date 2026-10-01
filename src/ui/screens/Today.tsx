@@ -34,6 +34,10 @@ import { useCountdown } from '../hooks/useCountdown';
 import { getTodaySystemLine } from '../../store/messages';
 import { resolveTransmission, type Transmission } from '../../store/systemMessage';
 import { SystemTransmission } from '../today/SystemTransmission';
+import { TreasuryCard } from '../today/TreasuryCard';
+import { TreasurySetupSheet } from '../today/TreasurySetupSheet';
+import { TreasuryHistorySheet } from '../progress/TreasuryHistorySheet';
+import { TreasurySurvivedMoment } from '../moments/TreasurySurvivedMoment';
 import { useSystemVoice } from '../speech/useSystemVoice';
 import { recordReflectionShown } from '../../store/reflections';
 
@@ -140,6 +144,10 @@ export function Today() {
     text: transmission?.message.text ?? null,
     fingerprint: transmission?.fingerprint ?? null,
   });
+
+  const [treasuryHistoryOpen, setTreasuryHistoryOpen] = useState(false);
+  const [treasurySetupOpen, setTreasurySetupOpen] = useState(false);
+  const [treasurySurvivedMinor, setTreasurySurvivedMinor] = useState<number | null>(null);
 
   const dayClosed = isDayClosed(realDeps.now(), CONFIG);
 
@@ -761,6 +769,12 @@ export function Today() {
         </button>
       )}
 
+      <TreasuryCard
+        onOpenSetup={() => setTreasurySetupOpen(true)}
+        onOpenHistory={() => setTreasuryHistoryOpen(true)}
+        onSurvived={(minor) => setTreasurySurvivedMinor(minor)}
+      />
+
       {notice && (
         <p
           className="cut-sm mt-3 p-3 text-sm text-ink-300"
@@ -891,6 +905,14 @@ export function Today() {
             setReviewed(true);
           }}
         />
+      )}
+
+      {treasurySetupOpen && (
+        <TreasurySetupSheet isOpen={true} onClose={() => setTreasurySetupOpen(false)} />
+      )}
+      <TreasuryHistorySheet isOpen={treasuryHistoryOpen} onClose={() => setTreasuryHistoryOpen(false)} />
+      {treasurySurvivedMinor !== null && (
+        <TreasurySurvivedMoment isOpen={true} onClose={() => setTreasurySurvivedMinor(null)} finalSpendableMinor={treasurySurvivedMinor} />
       )}
       </div>
     </>

@@ -248,6 +248,19 @@ function applyOne(state: EngineState, event: SystemEvent): EngineState {
     case 'WEEKLY_QUEST_COMPLETED':
       return state;
 
+    // Money Discipline (Treasury) events — design/08 §4.1.
+    // Treasury tables (treasury, treasury_source, daily_spending) are direct-write
+    // projections rebuilt by db/domainProjections.ts on import/restore.
+    // They do not fold into EngineState (zero XP, no quest/streak dependency — §12).
+    case 'TREASURY_CREATED':
+    case 'TREASURY_SOURCE_ADDED':
+    case 'TREASURY_SOURCE_WITHDRAWN':
+    case 'TREASURY_RECONFIGURED':
+    case 'DAILY_SPENDING_REGISTERED':
+    case 'DAILY_SPENDING_CORRECTED':
+    case 'TREASURY_PERIOD_CONCLUDED':
+      return state;
+
     default:
       throw new Error(`Not implemented — Slice N (unhandled event type: ${event.type})`);
   }

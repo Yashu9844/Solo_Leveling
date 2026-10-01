@@ -8,9 +8,11 @@ import { db } from '../../db/db';
 import { getTotalXp } from '../../store/playerState';
 import { getStreakState, type LiveStreakState } from '../../store/streak';
 import { getRealitySummary, type RealitySummary } from '../../store/reality';
+import { getTreasuryRealityMetrics, type TreasuryRealityMetrics } from '../../store/treasury';
 import { AttributeBars } from '../components/AttributeBars';
 import { StreakGrid } from '../components/StreakGrid';
 import { WeeklyReview } from '../review/WeeklyReview';
+import { TreasuryHistorySheet } from '../progress/TreasuryHistorySheet';
 import { getCurrentRank } from '../../store/checkpoint';
 import { ArtLayer, DayMeta, MeterBar, ScreenTitle, SectionLabel } from '../kit';
 
@@ -260,11 +262,18 @@ function pct(x: number): string {
 
 function RealityTab() {
   const [summary, setSummary] = useState<RealitySummary | null>(null);
+  const [treasuryMetrics, setTreasuryMetrics] = useState<TreasuryRealityMetrics | null>(null);
+  const [historyOpen, setHistoryOpen] = useState(false);
 
   useEffect(() => {
     void (async () => {
       const today = localDate(realDeps.now(), DEFAULT_CONFIG.arc.timezone, DEFAULT_CONFIG.arc.dayBoundaryHour);
-      setSummary(await getRealitySummary(today));
+      const [s, t] = await Promise.all([
+        getRealitySummary(today),
+        getTreasuryRealityMetrics(today),
+      ]);
+      setSummary(s);
+      setTreasuryMetrics(t);
     })();
   }, []);
 
@@ -309,6 +318,40 @@ function RealityTab() {
       {rows.map((r) => (
         <Row key={r.label} label={r.label} day0={r.day0} now={r.now} />
       ))}
+
+      {treasuryMetrics && (
+        <div className="mt-8">
+          <SectionLabel rule>Treasury</SectionLabel>
+
+          <div className="mt-3 flex items-center gap-3 pb-1.5 border-b border-hair-faint">
+            <span className="min-w-0 flex-1 text-xxs uppercase font-bold text-ink-700">Metric</span>
+            <span className="w-[44px] shrink-0 text-right text-xxs uppercase font-bold text-faint">Start</span>
+            <span className="w-[58px] shrink-0 text-right text-xxs uppercase font-bold text-accent-mid">Now</span>
+          </div>
+
+          <Row label="Initial" day0="—" now={`₹${(treasuryMetrics.initialSpendableMinor / 100).toFixed(0)}`} />
+          <Row label="Current" day0="—" now={`₹${(treasuryMetrics.currentSpendableMinor / 100).toFixed(0)}`} />
+          <Row label="Spent (period)" day0="—" now={`₹${(treasuryMetrics.spentPeriodMinor / 100).toFixed(0)}`} />
+          <Row label="Days remaining" day0="—" now={`${treasuryMetrics.remainingDays} / ${treasuryMetrics.totalDays}`} />
+          <Row label="Current allowance" day0="—" now={treasuryMetrics.currentAllowanceMinor !== null ? `₹${(treasuryMetrics.currentAllowanceMinor / 100).toFixed(2)}` : '—'} />
+          <Row label="Average daily spend" day0="—" now={`₹${(treasuryMetrics.avgDailySpendMinor / 100).toFixed(0)}`} />
+          <Row label="Days under allowance" day0="—" now={`${treasuryMetrics.daysUnderAllowance} / ${treasuryMetrics.daysUnderAllowance + treasuryMetrics.daysOverAllowance}`} />
+          <Row label="Days over allowance" day0="—" now={`${treasuryMetrics.daysOverAllowance} / ${treasuryMetrics.daysUnderAllowance + treasuryMetrics.daysOverAllowance}`} />
+          <Row label="Survival rate" day0="—" now={`${treasuryMetrics.survivalRatePct}%`} />
+          
+          <div className="mt-4 flex justify-end">
+             <button
+              onClick={() => setHistoryOpen(true)}
+              className="text-xs uppercase tracking-wider font-bold text-[var(--accent-mana,#4da3ff)] hover:text-white transition-colors"
+              data-testid="treasury-history-open"
+             >
+               [ VIEW HISTORY › ]
+             </button>
+          </div>
+          
+          <TreasuryHistorySheet isOpen={historyOpen} onClose={() => setHistoryOpen(false)} />
+        </div>
+      )}
     </div>
   );
 }

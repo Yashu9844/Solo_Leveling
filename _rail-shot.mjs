@@ -1,3 +1,4 @@
+/* global process, console */
 import { chromium, devices } from '@playwright/test';
 
 const OUT = process.argv[2];
@@ -65,3 +66,6 @@ await p.waitForTimeout(120);
 
 await b.close();
 console.log('rail shots done', W);
+
+
+

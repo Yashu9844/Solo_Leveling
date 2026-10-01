@@ -1,3 +1,4 @@
+/* global process, console */
 import { chromium, devices } from '@playwright/test';
 
 const OUT = process.argv[2];
@@ -49,3 +50,6 @@ for (const tab of ['TODAY', 'PROGRESS', 'SKILLS', 'PROFILE']) {
 
 await b.close();
 console.log('shots done', W);
+
+
+

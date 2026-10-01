@@ -1,15 +1,11 @@
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { motion } from 'framer-motion';
+import React from 'react';
 import {
   Cpu,
   ArrowLeft,
   Hammer,
-  Code,
-  Sparkle,
   CheckCircle,
-  Rocket,
-  GitBranch,
 } from '@phosphor-icons/react';
 import { ArtLayer, ScreenTitle } from '../kit';
 import { localDate } from '../../engine/time';

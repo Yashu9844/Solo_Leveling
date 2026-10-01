@@ -1,20 +1,15 @@
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { motion, AnimatePresence } from 'framer-motion';
+import React from 'react';
 import {
   Barbell,
   CheckCircle,
   Plus,
-  Trash,
   ArrowLeft,
-  Flame,
   Gear,
-  Trophy,
-  Lightning,
   Sparkle,
-  CalendarBlank,
 } from '@phosphor-icons/react';
-import { ArtLayer, MeterBar, ScreenTitle } from '../kit';
+import { ArtLayer, ScreenTitle } from '../kit';
 import {
   DEFAULT_WEEKLY_SPLIT,
   getStoredWeeklySplit,
@@ -133,17 +128,7 @@ export function BodyDetailScreen() {
     );
   };
 
-  const handleRemoveSet = (exIdx: number, setIdx: number) => {
-    setActiveExercises((prev) =>
-      prev.map((ex, i) => {
-        if (i !== exIdx) return ex;
-        const newSets = ex.sets
-          .filter((_, sj) => sj !== setIdx)
-          .map((s, idx) => ({ ...s, setNumber: idx + 1 }));
-        return { ...ex, sets: newSets };
-      })
-    );
-  };
+
 
   const handleAddExercise = () => {
     const name = prompt('Enter Exercise Name (e.g. Incline Dumbbell Press):');

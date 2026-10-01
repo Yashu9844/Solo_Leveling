@@ -1,17 +1,14 @@
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { motion } from 'framer-motion';
+import React from 'react';
 import {
   Brain,
   ArrowLeft,
   BookOpen,
-  Code,
   Sparkle,
   CheckCircle,
-  Lightning,
-  Clock,
 } from '@phosphor-icons/react';
-import { ArtLayer, MeterBar, ScreenTitle } from '../kit';
+import { ArtLayer, ScreenTitle } from '../kit';
 import { localDate } from '../../engine/time';
 import { DEFAULT_CONFIG } from '../../engine/config';
 import { realDeps } from '../../store/deps';
@@ -27,7 +24,6 @@ export function MindDetailScreen() {
 
   const [dsaProblems, setDsaProblems] = useState<number>(0);
   const [deepMinutes, setDeepMinutes] = useState<number>(0);
-  const [logOpen, setLogOpen] = useState(false);
   const [topicInput, setTopicInput] = useState('');
   const [minutesInput, setMinutesInput] = useState(45);
   const [savedSuccess, setSavedSuccess] = useState(false);

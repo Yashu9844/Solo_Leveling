@@ -8,6 +8,7 @@ import {
   correctSpending,
   type TreasurySummary,
 } from '../../store/treasury';
+import { computeAllowanceMinor } from '../../engine/treasury';
 import { selectTreasuryMessage } from '../../engine/treasuryVoice';
 
 interface TreasuryCardProps {
@@ -74,8 +75,17 @@ export const TreasuryCard: React.FC<TreasuryCardProps> = ({ onOpenSetup, onOpenH
     isAccountingOpen,
   } = summary;
 
-  const spendableRupees = (spendableMinor / 100).toFixed(0);
-  const allowanceRupees = allowanceMinor !== null ? (allowanceMinor / 100).toFixed(2) : '—';
+  // Once today is registered the card shows the treasury as the System
+  // now stands: today's spend comes off, today stops counting as a day
+  // still to be funded, and the allowance is what tomorrow gets. That is
+  // the 3,800 -> 3,770 / 29 = 130.00 step of the spec, shown the moment
+  // the Player registers instead of the next morning.
+  const effSpendableMinor = todaySpending ? spendableMinor - todaySpending.amount_minor : spendableMinor;
+  const effDays = todaySpending ? Math.max(remainingDays - 1, 0) : remainingDays;
+  const effAllowanceMinor = todaySpending ? computeAllowanceMinor(effSpendableMinor, effDays) : allowanceMinor;
+  const spendableRupees = (effSpendableMinor / 100).toLocaleString('en-IN', { maximumFractionDigits: 2 });
+  const allowanceRupees =
+    effAllowanceMinor !== null ? (Math.max(effAllowanceMinor, 0) / 100).toFixed(2) : '—';
   const spentRupees = todaySpending ? (todaySpending.amount_minor / 100).toFixed(2) : '0';
 
   const captionCondition: TreasuryCondition =
@@ -139,7 +149,7 @@ export const TreasuryCard: React.FC<TreasuryCardProps> = ({ onOpenSetup, onOpenH
   const initialMinor = summary.sources
     .filter((src) => src.active && !src.protected)
     .reduce((sum, src) => sum + src.amount_minor, 0);
-  const gaugePct = initialMinor > 0 ? (Math.max(0, spendableMinor) / initialMinor) * 100 : 0;
+  const gaugePct = initialMinor > 0 ? (Math.max(0, effSpendableMinor) / initialMinor) * 100 : 0;
   const strained = statusResult.status === 'OVER_ALLOWANCE' || statusResult.status === 'CRITICAL';
 
   return (
@@ -169,11 +179,11 @@ export const TreasuryCard: React.FC<TreasuryCardProps> = ({ onOpenSetup, onOpenH
               className="glow-text mt-1 font-mono font-bold leading-none tabular-nums text-accent-core"
               style={{ fontSize: 'calc(34px * var(--type-scale))' }}
             >
-              {money(Number(spendableRupees).toLocaleString())}
+              {money(spendableRupees)}
             </div>
           </div>
           <div className="shrink-0 text-right">
-            <div className="font-mono text-xl font-bold leading-none tabular-nums text-ink-100">{remainingDays}</div>
+            <div className="font-mono text-xl font-bold leading-none tabular-nums text-ink-100">{effDays}</div>
             <div className="mt-1 font-mono text-[9px] font-bold uppercase tracking-[0.22em] text-ink-700">
               Days left
             </div>
@@ -185,7 +195,7 @@ export const TreasuryCard: React.FC<TreasuryCardProps> = ({ onOpenSetup, onOpenH
         <MeterBar pct={gaugePct} height={6} label="Treasury remaining" className="mt-3" />
 
         <div className="mt-3 flex items-baseline gap-2 font-mono text-[10px] font-bold uppercase tracking-[0.18em]">
-          <span className="shrink-0 text-ink-700">Allowance</span>
+          <span className="shrink-0 text-ink-700">{todaySpending ? 'Allowance · tomorrow' : 'Allowance'}</span>
           <span aria-hidden className="min-w-[12px] flex-1 border-b border-dotted border-hair" />
           <span className="shrink-0 text-xs tracking-normal tabular-nums text-accent-mid">{money(allowanceRupees)} / day</span>
         </div>

@@ -24,8 +24,20 @@ describe('Treasury Engine - P1 Pure Unit Tests', () => {
       expect(isAccountingOpen(23 * 60 + 30, false, 22)).toBe(true);
     });
 
+    it('stays open after midnight until the day closes', () => {
+      expect(isAccountingOpen(0, false, 22)).toBe(true);
+      expect(isAccountingOpen(30, false, 22)).toBe(true);
+      expect(isAccountingOpen(2 * 60 + 59, false, 22)).toBe(true);
+    });
+
+    it('is locked through the morning after the day boundary', () => {
+      expect(isAccountingOpen(4 * 60, false, 22)).toBe(false);
+      expect(isAccountingOpen(12 * 60, false, 22)).toBe(false);
+    });
+
     it('is locked when day is closed (03:00 - 04:00 window)', () => {
       expect(isAccountingOpen(23 * 60, true, 22)).toBe(false);
+      expect(isAccountingOpen(3 * 60 + 30, true, 22)).toBe(false);
     });
   });
 

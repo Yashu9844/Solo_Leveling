@@ -74,10 +74,15 @@ export interface TreasuryLedgerRow {
 export function isAccountingOpen(
   minutesOfDay: number,
   dayClosed: boolean,
-  openHour = 22
+  openHour = 22,
+  boundaryHour = 4
 ): boolean {
   if (dayClosed) return false;
-  return minutesOfDay >= openHour * 60;
+  // The window wraps past midnight: the day being accounted for does not
+  // end until the boundary, so 00:30 still belongs to the evening that
+  // opened at 22:00. Checking only `>= openHour` locked the Player out
+  // the moment the clock passed midnight.
+  return minutesOfDay >= openHour * 60 || minutesOfDay < boundaryHour * 60;
 }
 
 /**

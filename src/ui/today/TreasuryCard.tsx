@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { Lock } from '@phosphor-icons/react';
 import { MeterBar, PrimaryButton, QuietButton, SystemWindow } from '../kit';
 import { type TreasuryCondition } from '../../engine/treasuryVoicePack';
@@ -22,19 +22,24 @@ export const TreasuryCard: React.FC<TreasuryCardProps> = ({ onOpenSetup, onOpenH
   const [isEditing, setIsEditing] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
 
+  // Held in a ref so the polling effect below runs ONCE. It used to list
+  // `onSurvived` as a dependency, and Today passes a fresh arrow function
+  // on every render — so every keystroke re-ran the effect, whose reload
+  // reset the amount field to empty. That is why typing a number seemed
+  // to be ignored and the field snapped back to nothing.
+  const onSurvivedRef = useRef(onSurvived);
+  onSurvivedRef.current = onSurvived;
+  const survivedFired = useRef(false);
+
   useEffect(() => {
     let mounted = true;
     const reload = async () => {
       const sum = await getTreasurySummary();
       if (!mounted) return;
       setSummary(sum);
-      if (sum.todaySpending) {
-        setSpendInputRupees((sum.todaySpending.amount_minor / 100).toString());
-      } else {
-        setSpendInputRupees('');
-      }
-      if (sum.justConcludedVerdict === 'SURVIVED' && onSurvived) {
-        onSurvived(sum.spendableMinor);
+      if (sum.justConcludedVerdict === 'SURVIVED' && !survivedFired.current) {
+        survivedFired.current = true;
+        onSurvivedRef.current?.(sum.spendableMinor);
       }
     };
     void reload();
@@ -43,7 +48,7 @@ export const TreasuryCard: React.FC<TreasuryCardProps> = ({ onOpenSetup, onOpenH
       mounted = false;
       clearInterval(interval);
     };
-  }, [onSurvived]);
+  }, []);
 
   if (!summary || !summary.treasury) {
     return (
@@ -87,6 +92,7 @@ export const TreasuryCard: React.FC<TreasuryCardProps> = ({ onOpenSetup, onOpenH
       await registerSpending(treasury.id, amountMinor, todayLocalDate);
       setIsSubmitting(false);
       setIsEditing(false);
+      setSpendInputRupees('');
       await getTreasurySummary().then(setSummary);
     } catch {
       setIsSubmitting(false);
@@ -103,6 +109,7 @@ export const TreasuryCard: React.FC<TreasuryCardProps> = ({ onOpenSetup, onOpenH
       await correctSpending(treasury.id, todayLocalDate, amountMinor);
       setIsSubmitting(false);
       setIsEditing(false);
+      setSpendInputRupees('');
       await getTreasurySummary().then(setSummary);
     } catch {
       setIsSubmitting(false);
@@ -221,7 +228,10 @@ export const TreasuryCard: React.FC<TreasuryCardProps> = ({ onOpenSetup, onOpenH
               </p>
               {isAccountingOpen && (
                 <QuietButton
-                  onClick={() => setIsEditing(true)}
+                  onClick={() => {
+                    setSpendInputRupees(String(todaySpending.amount_minor / 100));
+                    setIsEditing(true);
+                  }}
                   className="-my-3 -mr-2 shrink-0 text-xs font-semibold uppercase tracking-[0.12em]"
                   data-testid="treasury-correct-button"
                 >

@@ -4,7 +4,6 @@
 
 export type TreasuryTone = 'restraint' | 'pressure' | 'verdict' | 'neutral';
 export type TreasuryCondition =
-  | 'LOCKED'
   | 'UNREGISTERED'
   | 'PRESERVED'
   | 'ON_ALLOWANCE'
@@ -21,15 +20,11 @@ export interface TreasuryMessage {
 }
 
 export const TREASURY_MESSAGES: TreasuryMessage[] = [
-  // LOCKED
-  { id: 'locked-1', condition: 'LOCKED', tone: 'neutral', text: 'ACCOUNTING OPENS AT 22:00.' },
-  { id: 'locked-2', condition: 'LOCKED', tone: 'neutral', text: 'TREASURY GATE LOCKED UNTIL EVENING.' },
-  { id: 'locked-3', condition: 'LOCKED', tone: 'neutral', text: 'RESOURCE MONITORING STANDBY.' },
-
-  // UNREGISTERED
-  { id: 'unregistered-1', condition: 'UNREGISTERED', tone: 'pressure', text: 'THE DAY CLOSED UNACCOUNTED.' },
+  // UNREGISTERED — true of today before it is fed and of any past day
+  // that was never entered, so none of these may claim the day has closed.
+  { id: 'unregistered-1', condition: 'UNREGISTERED', tone: 'pressure', text: 'THIS DAY IS NOT YET ACCOUNTED.' },
   { id: 'unregistered-2', condition: 'UNREGISTERED', tone: 'pressure', text: 'NO SPENDING ENTRY RECORDED.' },
-  { id: 'unregistered-3', condition: 'UNREGISTERED', tone: 'pressure', text: 'TREASURY LEDGER UNVERIFIED.' },
+  { id: 'unregistered-3', condition: 'UNREGISTERED', tone: 'pressure', text: 'TREASURY LEDGER INCOMPLETE.' },
 
   // PRESERVED
   { id: 'preserved-1', condition: 'PRESERVED', tone: 'restraint', text: 'RESOURCE PRESERVED.' },

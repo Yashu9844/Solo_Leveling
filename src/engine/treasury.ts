@@ -37,7 +37,6 @@ export interface DailySpendingItem {
 }
 
 export type TreasuryStatus =
-  | 'LOCKED'
   | 'UNREGISTERED'
   | 'PRESERVED'
   | 'ON_ALLOWANCE'
@@ -67,22 +66,54 @@ export interface TreasuryLedgerRow {
 }
 
 /**
- * Returns true if accounting is open for the day.
- * Accounting is open from openHour (default 22:00) until the day closes (03:00).
- * If dayClosed is true (03:00 - 04:00 window), accounting is locked.
+ * Spending can be entered or changed for any day of the period, at any
+ * hour, including days already gone by.
+ *
+ * It used to open only at 22:00 and shut at 03:00. In practice that meant
+ * a Player who forgot to feed the day at night simply lost it, and could
+ * never repair a wrong figure the next morning. Nothing about the maths
+ * needs the gate — the allowance is recomputed from the stored days on
+ * every read, so entering or correcting any day re-spreads the remaining
+ * money correctly — so the gate went, rather than being widened again.
+ *
+ * What stays is the only bound that is not a policy choice: a day can be
+ * accounted for only once it has begun (no spending for tomorrow), and
+ * only if it falls inside the period (nothing before it started, nothing
+ * after it ended).
  */
-export function isAccountingOpen(
-  minutesOfDay: number,
-  dayClosed: boolean,
-  openHour = 22,
-  boundaryHour = 4
+export function canEditDay(
+  localDate: string,
+  periodStartDate: string,
+  periodEndDate: string,
+  todayLocalDate: string
 ): boolean {
-  if (dayClosed) return false;
-  // The window wraps past midnight: the day being accounted for does not
-  // end until the boundary, so 00:30 still belongs to the evening that
-  // opened at 22:00. Checking only `>= openHour` locked the Player out
-  // the moment the clock passed midnight.
-  return minutesOfDay >= openHour * 60 || minutesOfDay < boundaryHour * 60;
+  return localDate >= periodStartDate && localDate <= periodEndDate && localDate <= todayLocalDate;
+}
+
+/**
+ * Days in the period, up to and including today, that have no entry —
+ * oldest first. Today is included only when `includeToday` is set,
+ * because an empty today is "not yet", where an empty past day is
+ * genuinely unaccounted.
+ */
+export function unaccountedDays(
+  periodStartDate: string,
+  periodEndDate: string,
+  todayLocalDate: string,
+  registeredDates: string[],
+  includeToday = false
+): string[] {
+  const have = new Set(registeredDates);
+  const last = periodEndDate < todayLocalDate ? periodEndDate : todayLocalDate;
+  const out: string[] = [];
+  let curr = parseISO(periodStartDate);
+  while (true) {
+    const d = format(curr, 'yyyy-MM-dd');
+    if (d > last) break;
+    if ((d < todayLocalDate || includeToday) && !have.has(d)) out.push(d);
+    curr = addDays(curr, 1);
+  }
+  return out;
 }
 
 /**
@@ -147,8 +178,6 @@ export interface DeriveStatusParams {
   spendableMinor: AmountMinor;
   allowanceMinor: AmountMinor | null;
   dailySpending: DailySpendingItem | null;
-  isAccountingOpen: boolean;
-  isDayClosed?: boolean;
 }
 
 /**
@@ -160,8 +189,6 @@ export function deriveTreasuryStatus(params: DeriveStatusParams): TreasuryStatus
     spendableMinor,
     allowanceMinor,
     dailySpending,
-    isAccountingOpen: open,
-    isDayClosed = false,
   } = params;
 
   if (remainingDays <= 0) {
@@ -172,19 +199,10 @@ export function deriveTreasuryStatus(params: DeriveStatusParams): TreasuryStatus
   }
 
   if (spendableMinor <= 0) {
-    if (!dailySpending) {
-      if (!open && !isDayClosed) {
-        return { status: 'LOCKED' };
-      }
-      return { status: 'CRITICAL' };
-    }
     return { status: 'CRITICAL' };
   }
 
   if (!dailySpending) {
-    if (!open && !isDayClosed) {
-      return { status: 'LOCKED' };
-    }
     return { status: 'UNREGISTERED' };
   }
 
@@ -210,7 +228,6 @@ export interface ComputeLedgerParams {
   sources: TreasurySourceItem[];
   dailySpendings: DailySpendingItem[];
   currentLocalDate: string;
-  openHour?: number;
 }
 
 /**
@@ -256,14 +273,11 @@ export function computeTreasuryLedger(params: ComputeLedgerParams): TreasuryLedg
         ? computeAllowanceMinor(spendableAfterMinor, remainingDays - 1)
         : null;
 
-    // For historical dates in ledger, treat accounting as having opened
-    const isToday = dStr === currentLocalDate;
     const statusResult = deriveTreasuryStatus({
       remainingDays,
       spendableMinor,
       allowanceMinor,
       dailySpending: spItem,
-      isAccountingOpen: !isToday ? true : true, // ledger view assumes accounting completed or closed for past days
     });
 
     rows.push({

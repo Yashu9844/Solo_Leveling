@@ -14,15 +14,16 @@ import {
   computeRemainingDays,
   computeSpendableMinor,
   computeTreasuryLedger,
+  canEditDay,
   deriveTreasuryStatus,
-  isAccountingOpen,
+  unaccountedDays,
   type AmountMinor,
   type CurrencyCode,
   type TreasuryLedgerRow,
   type TreasurySourceInput,
   type TreasuryStatusResult,
 } from '../engine/treasury';
-import { isDayClosed, localDate } from '../engine/time';
+import { localDate } from '../engine/time';
 import type {
   DailySpendingCorrectedPayload,
   DailySpendingRegisteredPayload,
@@ -222,6 +223,11 @@ export async function registerSpending(
   const now = deps.now();
   const today = localDateStr || localDate(now, tz);
 
+  // A day has exactly one first entry. Anything after it is a correction,
+  // which keeps the original value in history; registering again must
+  // never silently replace it.
+  if (await db.daily_spending.get(today)) return;
+
   const payload: DailySpendingRegisteredPayload = {
     treasuryId,
     localDate: today,
@@ -313,6 +319,70 @@ export async function correctSpending(
   }
 }
 
+export class TreasuryEntryError extends Error {}
+
+/**
+ * The day a source starts counting from. The sources entered at set-up
+ * are the treasury's opening balance, so they count from the first day of
+ * the period — not from the day the Player happened to type them in.
+ * Without this, setting up on the 10th and then filling in the 1st-9th
+ * would show those earlier days with no money behind them. A source added
+ * later is genuinely new money and counts from the day it was added.
+ */
+function sourceStartDate(source: TreasurySourceRow, treasury: TreasuryRow, tz: string): string {
+  return source.id.startsWith(`${treasury.id}-src-`)
+    ? treasury.period_start_date
+    : localDate(source.created_at, tz);
+}
+
+/**
+ * Enter or change the spending for any day of the period, at any hour.
+ *
+ * The one write the UI needs: the first entry for a day is a register,
+ * every later one is a correction that keeps the earlier figure in
+ * history, and entering the same figure again is a no-op. Past days are
+ * as editable as today — the allowance is recomputed from the stored days
+ * on every read, so raising or lowering an old day re-spreads what is
+ * left across the days still to come with nothing else to update.
+ */
+export async function setDaySpending(
+  treasuryId: string,
+  localDateStr: string,
+  amountMinor: AmountMinor,
+  reason?: string,
+  deps: EngineDeps = realDeps
+): Promise<'registered' | 'corrected' | 'unchanged'> {
+  if (!Number.isSafeInteger(amountMinor) || amountMinor < 0) {
+    throw new TreasuryEntryError('Enter an amount of zero or more.');
+  }
+
+  const treasury = await db.treasury.get(treasuryId);
+  if (!treasury) throw new TreasuryEntryError('No treasury to enter spending against.');
+  if (treasury.status !== 'active') {
+    throw new TreasuryEntryError('This treasury period has concluded.');
+  }
+
+  const profile = await getProfile();
+  const tz = profile?.arc_timezone || DEFAULT_CONFIG.arc.timezone;
+  const today = localDate(deps.now(), tz);
+  if (!canEditDay(localDateStr, treasury.period_start_date, treasury.period_end_date, today)) {
+    throw new TreasuryEntryError(
+      localDateStr > today
+        ? 'A day can only be accounted once it has begun.'
+        : 'That day is outside the treasury period.'
+    );
+  }
+
+  const existing = await db.daily_spending.get(localDateStr);
+  if (!existing) {
+    await registerSpending(treasuryId, amountMinor, localDateStr, deps);
+    return 'registered';
+  }
+  if (existing.amount_minor === amountMinor) return 'unchanged';
+  await correctSpending(treasuryId, localDateStr, amountMinor, reason, deps);
+  return 'corrected';
+}
+
 export async function concludeTreasuryPeriod(
   treasuryId: string,
   localDateStr: string,
@@ -375,7 +445,10 @@ export interface TreasurySummary {
   spendableMinor: AmountMinor;
   allowanceMinor: AmountMinor | null;
   statusResult: TreasuryStatusResult;
-  isAccountingOpen: boolean;
+  /** Every entered day, so the card can show any day's figure. */
+  entries: { localDate: string; amountMinor: AmountMinor }[];
+  /** Past days of the period with no entry, oldest first. */
+  unaccounted: string[];
   justConcludedVerdict?: 'SURVIVED' | 'EXHAUSTED';
 }
 
@@ -399,8 +472,9 @@ export async function getTreasurySummary(
       remainingDays: 0,
       spendableMinor: 0,
       allowanceMinor: null,
-      statusResult: { status: 'LOCKED' },
-      isAccountingOpen: false,
+      statusResult: { status: 'UNREGISTERED' },
+      entries: [],
+      unaccounted: [],
     };
   }
 
@@ -415,7 +489,7 @@ export async function getTreasurySummary(
     amountMinor: s.amount_minor,
     protected: s.protected,
     active: s.active,
-    createdAtLocalDate: localDate(s.created_at, tz),
+    createdAtLocalDate: sourceStartDate(s, treasury, tz),
     withdrawnAtLocalDate: s.withdrawn_at ? localDate(s.withdrawn_at, tz) : undefined,
   }));
 
@@ -431,17 +505,6 @@ export async function getTreasurySummary(
   const spendableMinor = computeSpendableMinor(engineSources, engineSpendings, today);
   const allowanceMinor = computeAllowanceMinor(spendableMinor, remainingDays);
 
-  const wallClock = new Date(now).toLocaleTimeString('en-US', {
-    timeZone: tz,
-    hour12: false,
-    hour: '2-digit',
-    minute: '2-digit',
-  });
-  const [hhStr, mmStr] = wallClock.split(':');
-  const minutesOfDay = Number(hhStr ?? 0) * 60 + Number(mmStr ?? 0);
-  const dayClosed = isDayClosed(now, config);
-  const open = isAccountingOpen(minutesOfDay, dayClosed, treasury.accounting_open_hour);
-
   const statusResult = deriveTreasuryStatus({
     remainingDays,
     spendableMinor,
@@ -455,8 +518,6 @@ export async function getTreasurySummary(
           corrected: todaySpending.corrected,
         }
       : null,
-    isAccountingOpen: open,
-    isDayClosed: dayClosed,
   });
 
   // Auto-conclude period if ended
@@ -476,7 +537,13 @@ export async function getTreasurySummary(
     spendableMinor,
     allowanceMinor,
     statusResult,
-    isAccountingOpen: open,
+    entries: dailySpendings.map((d) => ({ localDate: d.local_date, amountMinor: d.amount_minor })),
+    unaccounted: unaccountedDays(
+      treasury.period_start_date,
+      treasury.period_end_date,
+      today,
+      dailySpendings.map((d) => d.local_date)
+    ),
     justConcludedVerdict,
   };
 }
@@ -499,7 +566,7 @@ export async function getTreasuryLedger(currentLocalDate?: string): Promise<Trea
     amountMinor: s.amount_minor,
     protected: s.protected,
     active: s.active,
-    createdAtLocalDate: localDate(s.created_at, tz),
+    createdAtLocalDate: sourceStartDate(s, treasury, tz),
     withdrawnAtLocalDate: s.withdrawn_at ? localDate(s.withdrawn_at, tz) : undefined,
   }));
 
@@ -517,7 +584,6 @@ export async function getTreasuryLedger(currentLocalDate?: string): Promise<Trea
     sources: engineSources,
     dailySpendings: engineSpendings,
     currentLocalDate: today,
-    openHour: treasury.accounting_open_hour,
   });
 }
 

@@ -1,6 +1,7 @@
 import { describe, it, expect } from 'vitest';
 import {
-  isAccountingOpen,
+  canEditDay,
+  unaccountedDays,
   computeRemainingDays,
   computeSpendableMinor,
   computeAllowanceMinor,
@@ -11,33 +12,65 @@ import {
 } from '../../src/engine/treasury';
 
 describe('Treasury Engine - P1 Pure Unit Tests', () => {
-  describe('isAccountingOpen (10 PM Lock Gate)', () => {
-    it('is locked before 22:00 (e.g. 21:59 = 1319 mins)', () => {
-      expect(isAccountingOpen(21 * 60 + 59, false, 22)).toBe(false);
+  describe('canEditDay — no time gate, any day of the period', () => {
+    const START = '2026-09-01';
+    const END = '2026-09-30';
+
+    it('allows today', () => {
+      expect(canEditDay('2026-09-10', START, END, '2026-09-10')).toBe(true);
     });
 
-    it('is open at 22:00 exactly (1320 mins)', () => {
-      expect(isAccountingOpen(22 * 60, false, 22)).toBe(true);
+    it('allows yesterday and any earlier day, however long ago', () => {
+      expect(canEditDay('2026-09-09', START, END, '2026-09-10')).toBe(true);
+      expect(canEditDay('2026-09-01', START, END, '2026-09-10')).toBe(true);
     });
 
-    it('is open after 22:00 (e.g. 23:30 = 1410 mins)', () => {
-      expect(isAccountingOpen(23 * 60 + 30, false, 22)).toBe(true);
+    it('refuses a day that has not begun', () => {
+      expect(canEditDay('2026-09-11', START, END, '2026-09-10')).toBe(false);
     });
 
-    it('stays open after midnight until the day closes', () => {
-      expect(isAccountingOpen(0, false, 22)).toBe(true);
-      expect(isAccountingOpen(30, false, 22)).toBe(true);
-      expect(isAccountingOpen(2 * 60 + 59, false, 22)).toBe(true);
+    it('refuses a day before the period started', () => {
+      expect(canEditDay('2026-08-31', START, END, '2026-09-10')).toBe(false);
     });
 
-    it('is locked through the morning after the day boundary', () => {
-      expect(isAccountingOpen(4 * 60, false, 22)).toBe(false);
-      expect(isAccountingOpen(12 * 60, false, 22)).toBe(false);
+    it('refuses a day after the period ended, even though it has already happened', () => {
+      expect(canEditDay('2026-10-01', START, END, '2026-10-05')).toBe(false);
     });
 
-    it('is locked when day is closed (03:00 - 04:00 window)', () => {
-      expect(isAccountingOpen(23 * 60, true, 22)).toBe(false);
-      expect(isAccountingOpen(3 * 60 + 30, true, 22)).toBe(false);
+    it('allows the last day of the period', () => {
+      expect(canEditDay('2026-09-30', START, END, '2026-10-02')).toBe(true);
+    });
+  });
+
+  describe('unaccountedDays', () => {
+    it('lists past days with no entry, oldest first, excluding today', () => {
+      expect(
+        unaccountedDays('2026-09-01', '2026-09-30', '2026-09-05', ['2026-09-02', '2026-09-04'])
+      ).toEqual(['2026-09-01', '2026-09-03']);
+    });
+
+    it('is empty when every past day is entered', () => {
+      expect(
+        unaccountedDays('2026-09-01', '2026-09-30', '2026-09-03', ['2026-09-01', '2026-09-02'])
+      ).toEqual([]);
+    });
+
+    it('is empty on the first day of the period', () => {
+      expect(unaccountedDays('2026-09-01', '2026-09-30', '2026-09-01', [])).toEqual([]);
+    });
+
+    it('includes today only when asked', () => {
+      expect(unaccountedDays('2026-09-01', '2026-09-30', '2026-09-02', ['2026-09-01'], true)).toEqual([
+        '2026-09-02',
+      ]);
+    });
+
+    it('never reaches past the end of the period', () => {
+      expect(unaccountedDays('2026-09-01', '2026-09-03', '2026-09-20', [])).toEqual([
+        '2026-09-01',
+        '2026-09-02',
+        '2026-09-03',
+      ]);
     });
   });
 
@@ -168,24 +201,12 @@ describe('Treasury Engine - P1 Pure Unit Tests', () => {
   });
 
   describe('Status State Machine (§10)', () => {
-    it('returns LOCKED before 22:00 if not registered', () => {
+    it('returns UNREGISTERED at any hour if the day has no entry', () => {
       const res = deriveTreasuryStatus({
         remainingDays: 10,
         spendableMinor: 100000,
         allowanceMinor: 10000,
         dailySpending: null,
-        isAccountingOpen: false,
-      });
-      expect(res.status).toBe('LOCKED');
-    });
-
-    it('returns UNREGISTERED after 22:00 if not registered', () => {
-      const res = deriveTreasuryStatus({
-        remainingDays: 10,
-        spendableMinor: 100000,
-        allowanceMinor: 10000,
-        dailySpending: null,
-        isAccountingOpen: true,
       });
       expect(res.status).toBe('UNREGISTERED');
     });
@@ -202,7 +223,6 @@ describe('Treasury Engine - P1 Pure Unit Tests', () => {
           registeredAt: '2026-09-05T22:05:00Z',
           corrected: false,
         },
-        isAccountingOpen: true,
       });
       expect(res.status).toBe('PRESERVED');
     });
@@ -219,7 +239,6 @@ describe('Treasury Engine - P1 Pure Unit Tests', () => {
           registeredAt: '2026-09-05T22:05:00Z',
           corrected: false,
         },
-        isAccountingOpen: true,
       });
       expect(res.status).toBe('ON_ALLOWANCE');
     });
@@ -236,7 +255,6 @@ describe('Treasury Engine - P1 Pure Unit Tests', () => {
           registeredAt: '2026-09-05T22:05:00Z',
           corrected: false,
         },
-        isAccountingOpen: true,
       });
       expect(res.status).toBe('OVER_ALLOWANCE');
     });
@@ -253,7 +271,6 @@ describe('Treasury Engine - P1 Pure Unit Tests', () => {
           registeredAt: '2026-09-05T22:05:00Z',
           corrected: false,
         },
-        isAccountingOpen: true,
       });
       expect(res.status).toBe('CRITICAL');
     });
@@ -264,7 +281,6 @@ describe('Treasury Engine - P1 Pure Unit Tests', () => {
         spendableMinor: 500,
         allowanceMinor: null,
         dailySpending: null,
-        isAccountingOpen: true,
       });
       expect(res.status).toBe('CONCLUDED');
       expect(res.verdict).toBe('SURVIVED');
@@ -276,7 +292,6 @@ describe('Treasury Engine - P1 Pure Unit Tests', () => {
         spendableMinor: -500,
         allowanceMinor: null,
         dailySpending: null,
-        isAccountingOpen: true,
       });
       expect(res.status).toBe('CONCLUDED');
       expect(res.verdict).toBe('EXHAUSTED');

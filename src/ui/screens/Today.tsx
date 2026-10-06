@@ -147,6 +147,7 @@ export function Today() {
 
   const [treasuryHistoryOpen, setTreasuryHistoryOpen] = useState(false);
   const [treasurySetupOpen, setTreasurySetupOpen] = useState(false);
+  const [treasuryReload, setTreasuryReload] = useState(0);
   const [treasurySurvivedMinor, setTreasurySurvivedMinor] = useState<number | null>(null);
 
   const dayClosed = isDayClosed(realDeps.now(), CONFIG);
@@ -770,6 +771,7 @@ export function Today() {
       )}
 
       <TreasuryCard
+        reloadToken={treasuryReload}
         onOpenSetup={() => setTreasurySetupOpen(true)}
         onOpenHistory={() => setTreasuryHistoryOpen(true)}
         onSurvived={(minor) => setTreasurySurvivedMinor(minor)}
@@ -908,7 +910,11 @@ export function Today() {
       )}
 
       {treasurySetupOpen && (
-        <TreasurySetupSheet isOpen={true} onClose={() => setTreasurySetupOpen(false)} />
+        <TreasurySetupSheet
+          isOpen={true}
+          onClose={() => setTreasurySetupOpen(false)}
+          onSuccess={() => setTreasuryReload((n) => n + 1)}
+        />
       )}
       <TreasuryHistorySheet isOpen={treasuryHistoryOpen} onClose={() => setTreasuryHistoryOpen(false)} />
       {treasurySurvivedMinor !== null && (

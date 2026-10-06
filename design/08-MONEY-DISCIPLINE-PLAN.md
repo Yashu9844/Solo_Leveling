@@ -14,6 +14,18 @@
 > choice below cites the existing pattern it follows or the specific reason it departs
 > from one.
 
+> **Amendment (supersedes §9 and every 22:00 reference below).** The 22:00-03:00
+> accounting window was removed. A Player who forgot to feed the day at night
+> lost it for good and could never repair a wrong figure the next morning, and
+> the maths never needed the gate: the allowance is recomputed from the stored
+> days on every read. Spending can now be entered or changed **at any hour, for
+> any day of the period up to today**; only a day that has not begun, or one
+> outside the period, is refused (`canEditDay`). Raising or lowering a past day
+> re-spreads the remaining money across the days still to come. Past days with
+> no entry are surfaced as "N days unaccounted" with a one-tap way to fill them.
+> The `LOCKED` status and `accounting_open_hour` are retired (the field stays in
+> stored events, unread).
+
 ---
 
 ## 0. One-paragraph summary

@@ -225,6 +225,18 @@ export function buildDomainTables(events: SystemEvent[], config: EngineConfig): 
               { amount_minor: p.newAmountMinor, changed_at: event.occurred_at, reason: p.reason },
             ],
           });
+        } else {
+          // A correction whose registration is not in the log (an older
+          // build wrote one for a day never entered) must still restore:
+          // dropping it would silently lose the figure on import.
+          dailySpendingByDate.set(p.localDate, {
+            local_date: p.localDate,
+            treasury_id: p.treasuryId,
+            amount_minor: p.newAmountMinor,
+            registered_at: event.occurred_at,
+            corrected: true,
+            history: [{ amount_minor: p.newAmountMinor, changed_at: event.occurred_at, reason: p.reason }],
+          });
         }
         break;
       }

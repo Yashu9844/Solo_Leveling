@@ -4,7 +4,6 @@ import { TREASURY_MESSAGES, type TreasuryCondition } from '../../src/engine/trea
 
 describe('Treasury Voice - Unit Tests (P4)', () => {
   const conditions: TreasuryCondition[] = [
-    'LOCKED',
     'UNREGISTERED',
     'PRESERVED',
     'ON_ALLOWANCE',

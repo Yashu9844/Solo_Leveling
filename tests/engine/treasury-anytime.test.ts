@@ -40,7 +40,7 @@ const at = (iso: string): EngineDeps => ({ now: () => iso, newId: realDeps.newId
  * old 22:00-03:00 window would have refused everything. */
 const morning = (day: number) => at(`2026-09-${String(day).padStart(2, '0')}T04:30:00Z`);
 
-async function setup(opening = 380000, start = '2026-09-01', end = '2026-09-30'): Promise<string> {
+async function setup(opening = 380000, start = '2026-09-01', end = '2026-09-30', setUpOn = morning(1)): Promise<string> {
   return createTreasury(
     {
       periodStartDate: start,
@@ -48,7 +48,7 @@ async function setup(opening = 380000, start = '2026-09-01', end = '2026-09-30')
       currency: 'INR',
       sources: [{ name: 'Bank', amountMinor: opening, protected: false }],
     },
-    morning(1)
+    setUpOn
   );
 }
 
@@ -338,7 +338,7 @@ describe('Treasury entry — any hour, any day', () => {
     });
 
     it('refuses a day before the period started', async () => {
-      const id = await setup(380000, '2026-09-05', '2026-09-30');
+      const id = await setup(380000, '2026-09-05', '2026-09-30', morning(5));
       await expect(setDaySpending(id, '2026-09-04', 1000, undefined, morning(10))).rejects.toThrow(
         /outside the treasury period/
       );

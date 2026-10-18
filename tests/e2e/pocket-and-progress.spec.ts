@@ -9,19 +9,65 @@ import { completeOnboarding } from './helpers';
  *  3. A weekly "ship one" quest can be marked done.
  */
 
+async function seedEndedTreasury(page: Page) {
+  await page.evaluate(
+    () =>
+      new Promise<void>((resolve, reject) => {
+        const open = indexedDB.open('system-arc');
+        open.onerror = () => reject(open.error);
+        open.onsuccess = () => {
+          const tx = open.result.transaction(['treasury', 'treasury_source'], 'readwrite');
+          tx.objectStore('treasury').add({
+            id: 't-sep',
+            currency: 'INR',
+            period_start_date: '2026-09-05',
+            period_end_date: '2026-10-04',
+            accounting_open_hour: 22,
+            status: 'active',
+            created_at: '2026-09-05T04:30:00.000Z',
+          });
+          tx.objectStore('treasury_source').add({
+            id: 't-sep-src-0',
+            treasury_id: 't-sep',
+            name: 'Pocket',
+            amount_minor: 300000,
+            protected: false,
+            active: true,
+            created_at: '2026-09-05T00:00:00.000Z',
+          });
+          tx.oncomplete = () => resolve();
+          tx.onerror = () => reject(tx.error);
+        };
+      })
+  );
+}
+
+test('set up after midnight, the money shows at once', async ({ page }) => {
+  // 01:29 IST on 19 Oct: the System's day is still the 18th. The sheet
+  // used to start the period on the phone's date (19th) and show ₹0.
+  await page.clock.install({ time: new Date('2026-10-18T19:59:00Z') });
+  await completeOnboarding(page);
+  await page.getByText('Set up ›').click();
+  await page.getByPlaceholder('Source name (e.g. Bank, Cash)').fill('Pocket');
+  await page.getByPlaceholder('Amount ₹').fill('2000');
+  // 18 Oct .. 4 Nov = 18 days; floor(2000 / 18) = 111.11
+  await expect(page.getByTestId('treasury-setup-preview')).toContainText('₹2,000 to spend over 18 days');
+  await page.getByTestId('treasury-setup-submit').click();
+  await expect(page.getByTestId('treasury-spendable')).toHaveText('₹2,000');
+  await expect(page.getByTestId('treasury-days-left')).toHaveText('18');
+  await expect(page.getByTestId('treasury-allowance')).toContainText('₹111.11');
+});
+
 test.describe('monthly pocket check-in', () => {
   // 19 Oct 2026, 15:30 IST. The treasury being set up ran 5 Sep - 4 Oct,
   // so a new cycle (5 Oct - 4 Nov) has begun and not been answered.
   test.beforeEach(async ({ page }) => {
     await page.clock.install({ time: new Date('2026-10-19T10:00:00Z') });
     await completeOnboarding(page);
-    await page.getByText('Set up ›').click();
-    const sheet = page.getByTestId('treasury-setup-sheet');
-    await sheet.locator('input[type="date"]').nth(0).fill('2026-09-05');
-    await sheet.locator('input[type="date"]').nth(1).fill('2026-10-04');
-    await page.getByPlaceholder('Source name (e.g. Bank, Cash)').fill('Pocket');
-    await page.getByPlaceholder('Amount ₹').fill('3000');
-    await page.getByTestId('treasury-setup-submit').click();
+    // The sheet will not set up a period that has already ended, so last
+    // month's treasury is written in as it would have been left.
+    await seedEndedTreasury(page);
+    await page.reload();
     // The ended period concludes as SURVIVED and the ceremony plays once;
     // dismiss it to reach the question underneath.
     await expect(page.getByTestId('treasury-survived-moment')).toBeVisible();

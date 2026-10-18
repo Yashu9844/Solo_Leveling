@@ -219,6 +219,7 @@ export function buildDomainTables(events: SystemEvent[], config: EngineConfig): 
         if (existing) {
           dailySpendingByDate.set(p.localDate, {
             ...existing,
+            treasury_id: p.treasuryId,
             amount_minor: p.newAmountMinor,
             corrected: true,
             history: [

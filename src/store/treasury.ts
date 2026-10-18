@@ -61,10 +61,29 @@ export async function createTreasury(
   const now = deps.now();
   const today = localDate(now, tz);
 
-  const existingActive = await db.treasury.where('status').equals('active').first();
+  if (params.periodStartDate > today) {
+    throw new TreasuryEntryError('The period cannot start after today.');
+  }
+  if (params.periodEndDate < params.periodStartDate) {
+    throw new TreasuryEntryError('The period has to end on or after the day it starts.');
+  }
+  if (params.sources.length === 0) {
+    throw new TreasuryEntryError('Add at least one source of money.');
+  }
+  for (const src of params.sources) {
+    if (!src.name.trim()) throw new TreasuryEntryError('Give every source a name.');
+    if (!Number.isSafeInteger(src.amountMinor) || src.amountMinor < 0) {
+      throw new TreasuryEntryError('Enter an amount of zero or more for every source.');
+    }
+  }
+
+  // The period being replaced is concluded through the log, not only in
+  // the table: otherwise rebuilding from the log on import brings it back
+  // as a second active treasury.
+  const existingActive = await getActiveTreasury();
   if (existingActive) {
-    // Conclude active treasury before creating a new one
-    await db.treasury.update(existingActive.id, { status: 'concluded' });
+    const left = await remainingOf(existingActive, tz);
+    await concludeTreasuryPeriod(existingActive.id, today, left, left >= 0 ? 'SURVIVED' : 'EXHAUSTED', deps);
   }
 
   const treasuryId = deps.newId();
@@ -230,8 +249,10 @@ export async function registerSpending(
 
   // A day has exactly one first entry. Anything after it is a correction,
   // which keeps the original value in history; registering again must
-  // never silently replace it.
-  if (await db.daily_spending.get(today)) return;
+  // never silently replace it. A row left on that date by an earlier
+  // treasury is not this treasury's entry, and is replaced.
+  const prior = await db.daily_spending.get(today);
+  if (prior && prior.treasury_id === treasuryId) return;
 
   const payload: DailySpendingRegisteredPayload = {
     treasuryId,
@@ -254,7 +275,7 @@ export async function registerSpending(
   await appendEvent(event as unknown as SystemEvent);
 
   const existing = await db.daily_spending.get(today);
-  if (!existing) {
+  if (!existing || existing.treasury_id !== treasuryId) {
     const row: DailySpendingRow = {
       local_date: today,
       treasury_id: treasuryId,
@@ -308,6 +329,7 @@ export async function correctSpending(
     ];
     await db.daily_spending.put({
       ...existing,
+      treasury_id: treasuryId,
       amount_minor: newAmountMinor,
       corrected: true,
       history: newHistory,
@@ -325,6 +347,27 @@ export async function correctSpending(
 }
 
 export class TreasuryEntryError extends Error {}
+
+/**
+ * The treasury as it should be read. Before the set-up sheet used the
+ * System's day, setting up between midnight and 04:00 saved a period that
+ * starts the day *after* the one the System was on — so the opening money
+ * counted from tomorrow and today showed ₹0. A period can never start
+ * after the day it was set up (createTreasury now refuses that), so such
+ * a start is read as the set-up day. Nothing stored is rewritten: the
+ * correction is applied on every read, which also covers a log imported
+ * from an older backup.
+ */
+function asRead(t: TreasuryRow, tz: string): TreasuryRow {
+  const setUpOn = localDate(t.created_at, tz);
+  if (t.period_start_date <= setUpOn) return t;
+  return {
+    ...t,
+    period_start_date: setUpOn,
+    pocket_counted_on:
+      t.pocket_counted_on && t.pocket_counted_on > setUpOn ? setUpOn : t.pocket_counted_on,
+  };
+}
 
 /** The day the opening money was counted. Spending dated earlier is
  * already inside that figure. Treasuries made before this was recorded
@@ -382,14 +425,15 @@ export async function setDaySpending(
     throw new TreasuryEntryError('Enter an amount of zero or more.');
   }
 
-  const treasury = await db.treasury.get(treasuryId);
-  if (!treasury) throw new TreasuryEntryError('No treasury to enter spending against.');
-  if (treasury.status !== 'active') {
+  const stored = await db.treasury.get(treasuryId);
+  if (!stored) throw new TreasuryEntryError('No treasury to enter spending against.');
+  if (stored.status !== 'active') {
     throw new TreasuryEntryError('This treasury period has concluded.');
   }
 
   const profile = await getProfile();
   const tz = profile?.arc_timezone || DEFAULT_CONFIG.arc.timezone;
+  const treasury = asRead(stored, tz);
   const today = localDate(deps.now(), tz);
   if (!canEditDay(localDateStr, editableFrom(treasury, tz), treasury.period_end_date, today)) {
     throw new TreasuryEntryError(
@@ -400,7 +444,7 @@ export async function setDaySpending(
   }
 
   const existing = await db.daily_spending.get(localDateStr);
-  if (!existing) {
+  if (!existing || existing.treasury_id !== treasuryId) {
     await registerSpending(treasuryId, amountMinor, localDateStr, deps);
     return 'registered';
   }
@@ -474,7 +518,8 @@ export interface CycleCheckIn {
  * Money left in a treasury: every non-protected source that is still in,
  * less every day entered. Used to pre-fill the monthly pocket question.
  */
-async function remainingOf(treasury: TreasuryRow, tz: string): Promise<AmountMinor> {
+async function remainingOf(stored: TreasuryRow, tz: string): Promise<AmountMinor> {
+  const treasury = asRead(stored, tz);
   const [sources, spendings] = await Promise.all([
     db.treasury_source.where('treasury_id').equals(treasury.id).toArray(),
     db.daily_spending.where('treasury_id').equals(treasury.id).toArray(),
@@ -597,8 +642,8 @@ export async function getTreasurySummary(
   const tz = profile?.arc_timezone || config.arc.timezone;
   const today = localDate(now, tz);
 
-  const treasury = await getActiveTreasury();
-  if (!treasury) {
+  const activeRow = await getActiveTreasury();
+  if (!activeRow) {
     return {
       treasury: null,
       sources: [],
@@ -615,6 +660,7 @@ export async function getTreasurySummary(
     };
   }
 
+  const treasury = asRead(activeRow, tz);
   const sources = await db.treasury_source.where('treasury_id').equals(treasury.id).toArray();
   const dailySpendings = await db.daily_spending.where('treasury_id').equals(treasury.id).toArray();
   const todaySpending = dailySpendings.find((s) => s.local_date === today) ?? null;
@@ -687,13 +733,17 @@ export async function getTreasurySummary(
   };
 }
 
-export async function getTreasuryLedger(currentLocalDate?: string): Promise<TreasuryLedgerRow[]> {
-  const treasury = await getActiveOrLatestTreasury();
-  if (!treasury) return [];
+export async function getTreasuryLedger(
+  currentLocalDate?: string,
+  deps: EngineDeps = realDeps
+): Promise<TreasuryLedgerRow[]> {
+  const stored = await getActiveOrLatestTreasury();
+  if (!stored) return [];
 
   const profile = await getProfile();
   const tz = profile?.arc_timezone || DEFAULT_CONFIG.arc.timezone;
-  const today = currentLocalDate || localDate(new Date().toISOString(), tz);
+  const treasury = asRead(stored, tz);
+  const today = currentLocalDate || localDate(deps.now(), tz);
 
   const sources = await db.treasury_source.where('treasury_id').equals(treasury.id).toArray();
   const dailySpendings = await db.daily_spending.where('treasury_id').equals(treasury.id).toArray();
@@ -740,18 +790,22 @@ export interface TreasuryRealityMetrics {
   survivalRatePct: number;
 }
 
-export async function getTreasuryRealityMetrics(currentLocalDate?: string): Promise<TreasuryRealityMetrics | null> {
-  const treasury = await getActiveOrLatestTreasury();
-  if (!treasury) return null;
+export async function getTreasuryRealityMetrics(
+  currentLocalDate?: string,
+  deps: EngineDeps = realDeps
+): Promise<TreasuryRealityMetrics | null> {
+  const stored = await getActiveOrLatestTreasury();
+  if (!stored) return null;
 
   const profile = await getProfile();
   const tz = profile?.arc_timezone || DEFAULT_CONFIG.arc.timezone;
-  let today = currentLocalDate || localDate(new Date().toISOString(), tz);
+  const treasury = asRead(stored, tz);
+  let today = currentLocalDate || localDate(deps.now(), tz);
   if (today < treasury.period_start_date) {
     today = treasury.period_start_date;
   }
 
-  const ledger = await getTreasuryLedger(today);
+  const ledger = await getTreasuryLedger(today, deps);
   if (ledger.length === 0) return null;
 
   const initialSpendableMinor = ledger[0]?.spendableMinor ?? 0;

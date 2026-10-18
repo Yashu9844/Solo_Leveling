@@ -584,6 +584,9 @@ export interface TreasuryCreatedPayload {
   periodEndDate: string;
   accountingOpenHour: number;
   sources: TreasurySourceInputPayload[];
+  /** The day the opening money was counted. Spending dated before it is
+   * already reflected in that figure, so it is recorded but not deducted. */
+  pocketCountedOn?: string;
 }
 
 export interface TreasurySourceAddedPayload {

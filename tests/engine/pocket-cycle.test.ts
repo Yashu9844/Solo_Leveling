@@ -11,6 +11,7 @@ import {
   startNewCycle,
   getTreasurySummary,
   getActiveTreasury,
+  getTreasuryLedger,
   TreasuryEntryError,
 } from '../../src/store/treasury';
 
@@ -154,15 +155,17 @@ describe('startNewCycle', () => {
     expect(s.allowanceMinor).toBe(10258); // floor(318000 / 31)
   });
 
-  it('an answer given late starts from today, not from the 5th', async () => {
+  it('an answer given late counts the pocket from today, over the rest of the cycle', async () => {
     await septemberCycle();
     await startNewCycle(318000, ist10('2026-10-19'));
     const s = await getTreasurySummary('2026-10-19T04:30:00Z');
-    expect(s.treasury?.period_start_date).toBe('2026-10-19');
+    expect(s.treasury?.period_start_date).toBe('2026-10-05'); // the whole cycle is the period
+    expect(s.treasury?.pocket_counted_on).toBe('2026-10-19');
     expect(s.treasury?.period_end_date).toBe('2026-11-04');
+    expect(s.spendableMinor).toBe(318000);
     expect(s.remainingDays).toBe(17); // 19 Oct .. 4 Nov
     expect(s.allowanceMinor).toBe(18705); // floor(318000 / 17)
-    expect(s.unaccounted).toEqual([]); // no backlog of days before today
+    expect(s.unaccounted).toEqual([]); // days before the count are not owed
   });
 
   it('the pocket figure replaces the old arithmetic rather than adding to it', async () => {
@@ -273,5 +276,154 @@ describe('a treasury set up this cycle is not asked about again', () => {
       ist10('2026-10-10')
     );
     expect(await getCycleCheckIn('2026-11-05T04:30:00Z')).not.toBeNull();
+  });
+});
+
+describe('days before the pocket was counted', () => {
+  beforeEach(wipe);
+
+  // Pocket counted on the 19th, AFTER the 18th's spending, so the 18th is
+  // already out of the ₹3,180 the Player gave.
+  async function lateCycle(): Promise<string> {
+    await septemberCycle();
+    return startNewCycle(318000, ist10('2026-10-19'));
+  }
+  const nowIs19 = '2026-10-19T04:30:00Z';
+
+  it('the 18th can be registered (it used to be refused as outside the period)', async () => {
+    const id = await lateCycle();
+    expect(await setDaySpending(id, '2026-10-18', 25000, undefined, ist10('2026-10-19'))).toBe('registered');
+    expect((await db.daily_spending.get('2026-10-18'))?.amount_minor).toBe(25000);
+  });
+
+  it('registering the 18th changes neither the pocket nor the allowance', async () => {
+    const id = await lateCycle();
+    await setDaySpending(id, '2026-10-18', 25000, undefined, ist10('2026-10-19'));
+    const s = await getTreasurySummary(nowIs19);
+    expect(s.spendableMinor).toBe(318000);
+    expect(s.allowanceMinor).toBe(18705);
+  });
+
+  it('raising or lowering the 18th still changes nothing, however often', async () => {
+    const id = await lateCycle();
+    for (const amt of [25000, 90000, 100, 0]) {
+      await setDaySpending(id, '2026-10-18', amt, undefined, ist10('2026-10-19'));
+      expect((await getTreasurySummary(nowIs19)).spendableMinor).toBe(318000);
+    }
+    expect((await db.daily_spending.get('2026-10-18'))?.history).toHaveLength(4);
+  });
+
+  it('any earlier day of the cycle can be recorded, down to the 5th', async () => {
+    const id = await lateCycle();
+    for (const d of ['2026-10-05', '2026-10-11', '2026-10-17']) {
+      expect(await setDaySpending(id, d, 10000, undefined, ist10('2026-10-19'))).toBe('registered');
+    }
+    expect((await getTreasurySummary(nowIs19)).spendableMinor).toBe(318000);
+  });
+
+  it('the day before the cycle began is still refused', async () => {
+    const id = await lateCycle();
+    await expect(setDaySpending(id, '2026-10-04', 1000, undefined, ist10('2026-10-19'))).rejects.toThrow(
+      /outside the treasury period/
+    );
+  });
+
+  it('spending from the counted day onward does come off', async () => {
+    const id = await lateCycle();
+    await setDaySpending(id, '2026-10-19', 18000, undefined, ist10('2026-10-19'));
+    const s = await getTreasurySummary('2026-10-20T04:30:00Z');
+    expect(s.spendableMinor).toBe(300000); // 3,180 - 180
+    expect(s.remainingDays).toBe(16);
+    expect(s.allowanceMinor).toBe(18750); // 300000 / 16
+  });
+
+  it('records on both sides of the line without mixing them up', async () => {
+    const id = await lateCycle();
+    await setDaySpending(id, '2026-10-18', 40000, undefined, ist10('2026-10-19')); // before: ignored
+    await setDaySpending(id, '2026-10-19', 18000, undefined, ist10('2026-10-19')); // from: deducted
+    await setDaySpending(id, '2026-10-18', 99999, undefined, ist10('2026-10-19')); // edited: still ignored
+    expect((await getTreasurySummary('2026-10-20T04:30:00Z')).spendableMinor).toBe(300000);
+  });
+
+  it('the ledger starts on the counted day, showing the pocket as given', async () => {
+    const id = await lateCycle();
+    await setDaySpending(id, '2026-10-18', 40000, undefined, ist10('2026-10-19'));
+    const ledger = await getTreasuryLedger('2026-10-19');
+    expect(ledger.map((r) => r.localDate)).toEqual(['2026-10-19']);
+    expect(ledger[0]?.spendableMinor).toBe(318000);
+    expect(ledger[0]?.allowanceMinor).toBe(18705);
+  });
+
+  it('only days from the counted day are listed as unaccounted', async () => {
+    await lateCycle();
+    const s = await getTreasurySummary('2026-10-22T04:30:00Z');
+    expect(s.unaccounted).toEqual(['2026-10-19', '2026-10-20', '2026-10-21']);
+  });
+
+  it('a pocket counted on the 5th itself behaves exactly as before', async () => {
+    await septemberCycle();
+    const id = await startNewCycle(318000, ist10('2026-10-05'));
+    await setDaySpending(id, '2026-10-05', 12000, undefined, ist10('2026-10-05'));
+    const s = await getTreasurySummary('2026-10-06T04:30:00Z');
+    expect(s.spendableMinor).toBe(306000);
+    expect(s.remainingDays).toBe(30);
+  });
+
+  it('survives a rebuild from the event log, counted-on date included', async () => {
+    const id = await lateCycle();
+    await setDaySpending(id, '2026-10-18', 40000, undefined, ist10('2026-10-19'));
+    const { getAllEvents } = await import('../../src/db/events');
+    const { buildDomainTables } = await import('../../src/db/domainProjections');
+    const { DEFAULT_CONFIG } = await import('../../src/engine/config');
+    const rebuilt = buildDomainTables(await getAllEvents(), DEFAULT_CONFIG);
+    expect(rebuilt.treasuries.find((t) => t.id === id)?.pocket_counted_on).toBe('2026-10-19');
+    expect(rebuilt.dailySpendings.find((d) => d.local_date === '2026-10-18')?.amount_minor).toBe(40000);
+  });
+});
+
+describe('a treasury made before the counted-on date existed (as already on a phone)', () => {
+  beforeEach(wipe);
+
+  // What the previous build wrote on the 19th: a period starting that day
+  // and no counted-on date.
+  async function legacyTreasury(): Promise<string> {
+    return createTreasury(
+      {
+        periodStartDate: '2026-10-19',
+        periodEndDate: '2026-11-04',
+        currency: 'INR',
+        sources: [{ name: 'Pocket', amountMinor: 318000, protected: false }],
+      },
+      ist10('2026-10-19')
+    );
+  }
+  const nowIs19 = '2026-10-19T04:30:00Z';
+
+  it('can now record the 18th, which it used to refuse', async () => {
+    const id = await legacyTreasury();
+    expect(await setDaySpending(id, '2026-10-18', 25000, undefined, ist10('2026-10-19'))).toBe('registered');
+  });
+
+  it('and the 18th does not come off the pocket', async () => {
+    const id = await legacyTreasury();
+    await setDaySpending(id, '2026-10-18', 25000, undefined, ist10('2026-10-19'));
+    const s = await getTreasurySummary(nowIs19);
+    expect(s.spendableMinor).toBe(318000);
+    expect(s.allowanceMinor).toBe(18705);
+  });
+
+  it('can step back through the cycle to the 5th, but not past it', async () => {
+    const id = await legacyTreasury();
+    expect(await setDaySpending(id, '2026-10-05', 1000, undefined, ist10('2026-10-19'))).toBe('registered');
+    await expect(setDaySpending(id, '2026-10-04', 1000, undefined, ist10('2026-10-19'))).rejects.toThrow(
+      /outside the treasury period/
+    );
+    expect((await getTreasurySummary(nowIs19)).editableFrom).toBe('2026-10-05');
+  });
+
+  it("today's spending still deducts", async () => {
+    const id = await legacyTreasury();
+    await setDaySpending(id, '2026-10-19', 18000, undefined, ist10('2026-10-19'));
+    expect((await getTreasurySummary('2026-10-20T04:30:00Z')).spendableMinor).toBe(300000);
   });
 });

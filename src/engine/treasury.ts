@@ -174,7 +174,9 @@ export function computeRemainingDays(localDate: string, periodEndDate: string): 
 export function computeSpendableMinor(
   sources: TreasurySourceItem[],
   dailySpendings: DailySpendingItem[],
-  targetLocalDate: string
+  targetLocalDate: string,
+  /** Spending dated before this is already in the counted figure. */
+  spendingFromDate?: string
 ): AmountMinor {
   const totalSources = sources.reduce((sum, s) => {
     if (s.protected) return sum;
@@ -189,6 +191,7 @@ export function computeSpendableMinor(
   }, 0);
 
   const priorSpending = dailySpendings.reduce((sum, sp) => {
+    if (spendingFromDate && sp.localDate < spendingFromDate) return sum;
     if (sp.localDate < targetLocalDate) {
       return sum + sp.amountMinor;
     }
@@ -266,6 +269,8 @@ export interface ComputeLedgerParams {
   sources: TreasurySourceItem[];
   dailySpendings: DailySpendingItem[];
   currentLocalDate: string;
+  /** The day the pocket was counted; the ledger starts here. */
+  pocketCountedOn?: string;
 }
 
 /**
@@ -279,10 +284,15 @@ export function computeTreasuryLedger(params: ComputeLedgerParams): TreasuryLedg
     sources,
     dailySpendings,
     currentLocalDate,
+    pocketCountedOn,
   } = params;
 
   const rows: TreasuryLedgerRow[] = [];
-  let curr = parseISO(periodStartDate);
+  // Days before the pocket was counted are recorded but not part of the
+  // running treasury, so the ledger begins on the day it was counted.
+  const ledgerStart =
+    pocketCountedOn && pocketCountedOn > periodStartDate ? pocketCountedOn : periodStartDate;
+  let curr = parseISO(ledgerStart);
   const end = parseISO(periodEndDate);
 
   while (curr <= end) {
@@ -290,7 +300,7 @@ export function computeTreasuryLedger(params: ComputeLedgerParams): TreasuryLedg
     if (dStr > currentLocalDate) break;
 
     const remainingDays = computeRemainingDays(dStr, periodEndDate);
-    const spendableMinor = computeSpendableMinor(sources, dailySpendings, dStr);
+    const spendableMinor = computeSpendableMinor(sources, dailySpendings, dStr, pocketCountedOn);
     const allowanceMinor = computeAllowanceMinor(spendableMinor, remainingDays);
     const spItem = dailySpendings.find((s) => s.localDate === dStr) ?? null;
     const spentMinor = spItem ? spItem.amountMinor : null;

@@ -49,6 +49,7 @@ export interface CreateTreasuryParams {
   currency?: CurrencyCode;
   accountingOpenHour?: number;
   sources: TreasurySourceInput[];
+  pocketCountedOn?: string;
 }
 
 export async function createTreasury(
@@ -77,6 +78,7 @@ export async function createTreasury(
     periodEndDate: params.periodEndDate,
     accountingOpenHour: openHour,
     sources: params.sources,
+    pocketCountedOn: params.pocketCountedOn,
   };
 
   const event: SystemEvent<TreasuryCreatedPayload> = {
@@ -99,6 +101,7 @@ export async function createTreasury(
     period_start_date: params.periodStartDate,
     period_end_date: params.periodEndDate,
     accounting_open_hour: openHour,
+    pocket_counted_on: params.pocketCountedOn,
     status: 'active',
     created_at: now,
   };
@@ -323,6 +326,24 @@ export async function correctSpending(
 
 export class TreasuryEntryError extends Error {}
 
+/** The day the opening money was counted. Spending dated earlier is
+ * already inside that figure. Treasuries made before this was recorded
+ * counted from the first day of their period, which is what it defaults to. */
+function countedOn(t: TreasuryRow): string {
+  return t.pocket_counted_on ?? t.period_start_date;
+}
+
+/**
+ * The earliest day that can be recorded: the start of the monthly cycle the
+ * treasury began in. A Player who sets up or re-counts the pocket partway
+ * through a cycle can still log the days of that cycle that came before —
+ * they are kept as a record, and (being before the count) not deducted.
+ */
+export function editableFrom(t: TreasuryRow): string {
+  const cycleStart = cycleBounds(countedOn(t)).start;
+  return cycleStart < t.period_start_date ? cycleStart : t.period_start_date;
+}
+
 /**
  * The day a source starts counting from. The sources entered at set-up
  * are the treasury's opening balance, so they count from the first day of
@@ -367,7 +388,7 @@ export async function setDaySpending(
   const profile = await getProfile();
   const tz = profile?.arc_timezone || DEFAULT_CONFIG.arc.timezone;
   const today = localDate(deps.now(), tz);
-  if (!canEditDay(localDateStr, treasury.period_start_date, treasury.period_end_date, today)) {
+  if (!canEditDay(localDateStr, editableFrom(treasury), treasury.period_end_date, today)) {
     throw new TreasuryEntryError(
       localDateStr > today
         ? 'A day can only be accounted once it has begun.'
@@ -473,7 +494,8 @@ async function remainingOf(treasury: TreasuryRow, tz: string): Promise<AmountMin
       registeredAt: d.registered_at,
       corrected: d.corrected,
     })),
-    '9999-12-31'
+    '9999-12-31',
+    countedOn(treasury)
   );
 }
 
@@ -529,10 +551,14 @@ export async function startNewCycle(
 
   return createTreasury(
     {
-      periodStartDate: today,
+      // The whole cycle is the period, so any day of it can be recorded —
+      // including days before the pocket was counted — but only spending
+      // from today onward comes off the figure the Player just gave.
+      periodStartDate: cycleBounds(today).start,
       periodEndDate: cycleBounds(today).end,
       currency: 'INR',
       sources: [{ name: 'Pocket', amountMinor: pocketMinor, protected: false }],
+      pocketCountedOn: today,
     },
     deps
   );
@@ -551,6 +577,8 @@ export interface TreasurySummary {
   entries: { localDate: string; amountMinor: AmountMinor }[];
   /** Past days of the period with no entry, oldest first. */
   unaccounted: string[];
+  /** Earliest day the card may step back to. */
+  editableFrom: string | null;
   /** Set when a new monthly cycle has begun and the pocket has not been re-counted. */
   cycleCheckIn: CycleCheckIn | null;
   justConcludedVerdict?: 'SURVIVED' | 'EXHAUSTED';
@@ -579,6 +607,7 @@ export async function getTreasurySummary(
       statusResult: { status: 'UNREGISTERED' },
       entries: [],
       unaccounted: [],
+      editableFrom: null,
       cycleCheckIn: await getCycleCheckIn(now, deps),
     };
   }
@@ -607,7 +636,7 @@ export async function getTreasurySummary(
   }));
 
   const remainingDays = computeRemainingDays(today, treasury.period_end_date);
-  const spendableMinor = computeSpendableMinor(engineSources, engineSpendings, today);
+  const spendableMinor = computeSpendableMinor(engineSources, engineSpendings, today, countedOn(treasury));
   const allowanceMinor = computeAllowanceMinor(spendableMinor, remainingDays);
 
   const statusResult = deriveTreasuryStatus({
@@ -644,11 +673,12 @@ export async function getTreasurySummary(
     statusResult,
     entries: dailySpendings.map((d) => ({ localDate: d.local_date, amountMinor: d.amount_minor })),
     unaccounted: unaccountedDays(
-      treasury.period_start_date,
+      countedOn(treasury),
       treasury.period_end_date,
       today,
       dailySpendings.map((d) => d.local_date)
     ),
+    editableFrom: editableFrom(treasury),
     cycleCheckIn: await getCycleCheckIn(now, deps),
     justConcludedVerdict,
   };
@@ -690,6 +720,7 @@ export async function getTreasuryLedger(currentLocalDate?: string): Promise<Trea
     sources: engineSources,
     dailySpendings: engineSpendings,
     currentLocalDate: today,
+    pocketCountedOn: countedOn(treasury),
   });
 }
 

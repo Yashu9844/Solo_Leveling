@@ -412,6 +412,9 @@ export interface TreasuryRow {
   status: 'active' | 'concluded';
   concluded_verdict?: 'SURVIVED' | 'EXHAUSTED';
   concluded_local_date?: string;
+  /** See TreasuryCreatedPayload.pocketCountedOn. Absent = counted on the
+   * first day of the period, so every entered day is deducted. */
+  pocket_counted_on?: string;
   created_at: string;
 }
 

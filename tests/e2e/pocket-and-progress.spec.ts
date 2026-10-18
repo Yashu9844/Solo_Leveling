@@ -54,6 +54,31 @@ test.describe('monthly pocket check-in', () => {
     await expect(page.getByTestId('treasury-allowance')).toContainText('₹187.50'); // 3000 / 16
   });
 
+  test('yesterday can still be registered after the pocket was counted, without changing it', async ({ page }) => {
+    // Pocket counted on the 19th, after the 18th's spending was already out of it.
+    await page.getByTestId('cycle-pocket-input').fill('3180');
+    await page.getByTestId('cycle-start-button').click();
+    await expect(page.getByTestId('treasury-spendable')).toHaveText('₹3,180');
+
+    await page.getByTestId('treasury-prev-day').click();
+    await expect(page.getByTestId('treasury-day-label')).toHaveText(/Sun 18 Oct/);
+    await page.getByTestId('treasury-spend-input').fill('250');
+    await page.getByTestId('treasury-register-button').click();
+
+    // It is recorded: the button now offers Update, and the figure is kept.
+    await expect(page.getByTestId('treasury-register-button')).toContainText('Update');
+    await expect(page.getByTestId('treasury-spend-input')).toHaveValue('250');
+    // ...but the pocket the Player gave is untouched.
+    await expect(page.getByTestId('treasury-spendable')).toHaveText('₹3,180');
+    await expect(page.getByTestId('treasury-days-left')).toHaveText('17');
+    await expect(page.getByTestId('treasury-allowance')).toContainText('₹187.05');
+
+    // The 18th can be changed again; still no effect on the pocket.
+    await page.getByTestId('treasury-spend-input').fill('900');
+    await page.getByTestId('treasury-register-button').click();
+    await expect(page.getByTestId('treasury-spendable')).toHaveText('₹3,180');
+  });
+
   test('"Not now" puts the normal card back, and the question returns on reload', async ({ page }) => {
     await page.getByTestId('cycle-later').click();
     await expect(page.getByTestId('cycle-checkin')).toHaveCount(0);

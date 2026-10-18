@@ -203,6 +203,7 @@ export const TreasuryCard: React.FC<TreasuryCardProps> = ({ onOpenSetup, onOpenH
   } = summary;
 
   const isToday = day === todayLocalDate;
+  const earliestDay = summary.editableFrom ?? treasury.period_start_date;
 
   // Once today is registered the card shows the treasury as the System
   // now stands: today's spend comes off, today stops counting as a day
@@ -247,7 +248,7 @@ export const TreasuryCard: React.FC<TreasuryCardProps> = ({ onOpenSetup, onOpenH
     const d = parseISO(day);
     d.setDate(d.getDate() + delta);
     const next = format(d, 'yyyy-MM-dd');
-    if (next < treasury.period_start_date || next > todayLocalDate) return;
+    if (next < earliestDay || next > todayLocalDate) return;
     setSelectedDate(next === todayLocalDate ? null : next);
   };
 
@@ -330,7 +331,7 @@ export const TreasuryCard: React.FC<TreasuryCardProps> = ({ onOpenSetup, onOpenH
               type="button"
               aria-label="Previous day"
               onClick={() => shiftDay(-1)}
-              disabled={day <= treasury.period_start_date}
+              disabled={day <= earliestDay}
               className="-ml-2 flex min-h-tap min-w-[44px] items-center justify-center text-accent-mid disabled:opacity-30"
               data-testid="treasury-prev-day"
             >

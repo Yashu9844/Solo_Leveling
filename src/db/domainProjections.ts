@@ -133,6 +133,7 @@ export function buildDomainTables(events: SystemEvent[], config: EngineConfig): 
           period_start_date: p.periodStartDate,
           period_end_date: p.periodEndDate,
           accounting_open_hour: p.accountingOpenHour,
+          pocket_counted_on: p.pocketCountedOn,
           status: 'active',
           created_at: event.occurred_at,
         });

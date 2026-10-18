@@ -61,6 +61,68 @@ export interface LogBuildSessionInput {
   shippedArtifact?: { kind: ArtifactRow['kind']; title: string; url?: string; costPerTaskStated?: boolean };
 }
 
+export interface ShipInput {
+  kind: ArtifactRow['kind'];
+  title: string;
+  url?: string;
+  projectKey?: string;
+}
+
+/**
+ * Record that something was shipped, with no build session attached.
+ *
+ * The weekly "ship one real unit of progress" quest counts shipped
+ * artifacts, and the only way to create one used to be a BUILD session in
+ * SHIP mode — 45 minutes of logged building to claim a thing that was
+ * already finished. A Player who had simply shipped it had no way to say
+ * so, and the quest ran out on Sunday unfulfilled. This writes the same
+ * ARTIFACT_SHIPPED event and row (and so the same ship bonus) without
+ * inventing build minutes that never happened.
+ */
+export async function shipArtifact(
+  today: string,
+  arcId: string,
+  input: ShipInput,
+  config: EngineConfig,
+  deps: EngineDeps
+): Promise<void> {
+  const title = input.title.trim();
+  if (!title) throw new Error('Name what you shipped.');
+  const projectKey = (input.projectKey ?? title).trim().toLowerCase().replace(/\s+/g, '-') || 'shipped';
+
+  await db.transaction('rw', REBUILD_ADJACENT_TABLES, async () => {
+    const artifactId = deps.newId();
+    await appendEvent({
+      id: deps.newId(),
+      type: 'ARTIFACT_SHIPPED',
+      occurred_at: deps.now(),
+      local_date: today,
+      arc_id: arcId,
+      payload: {
+        artifactId,
+        kind: input.kind,
+        title,
+        url: input.url,
+        projectKey,
+      } satisfies ArtifactShippedPayload,
+      source: 'user',
+      idem_key: `artifact:${artifactId}`,
+      schema_v: 1,
+    });
+    const artifactRow: ArtifactRow = {
+      id: artifactId,
+      kind: input.kind,
+      title,
+      url: input.url,
+      project_key: projectKey,
+      local_date: today,
+    };
+    await db.artifact.add(artifactRow);
+  });
+
+  await rebuildProjections(config, deps);
+}
+
 export async function logBuildSession(
   today: string,
   arcId: string,

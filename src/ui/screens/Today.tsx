@@ -23,6 +23,7 @@ import { getRevisitsDue, logRevisit, type RevisitDue } from '../../store/dsa';
 import { getActiveWeeklyQuest, type ActiveWeeklyQuest } from '../../store/weeklyQuest';
 import { getCurrentRank } from '../../store/checkpoint';
 import { LogBuildSessionSheet } from '../build/LogBuildSessionSheet';
+import { ShipSheet } from '../today/ShipSheet';
 import { LogTrainingSheet } from '../training/LogTrainingSheet';
 import { LogSleepSheet } from '../lifestyle/LogSleepSheet';
 import { LogAttentionSheet } from '../lifestyle/LogAttentionSheet';
@@ -148,6 +149,7 @@ export function Today() {
   const [treasuryHistoryOpen, setTreasuryHistoryOpen] = useState(false);
   const [treasurySetupOpen, setTreasurySetupOpen] = useState(false);
   const [treasuryReload, setTreasuryReload] = useState(0);
+  const [shipOpen, setShipOpen] = useState(false);
   const [treasurySurvivedMinor, setTreasurySurvivedMinor] = useState<number | null>(null);
 
   const dayClosed = isDayClosed(realDeps.now(), CONFIG);
@@ -693,6 +695,21 @@ export function Today() {
               <div className="mt-2.5">
                 <MeterBar pct={weeklyQuest.row.target > 0 ? (weeklyQuest.progress / weeklyQuest.row.target) * 100 : 0} label="Weekly quest progress" />
               </div>
+              {/* The ship quest is evidenced by a shipped artifact, and the
+                  only other route to one was a 45-minute build session — so
+                  a Player who had simply shipped it had no way to say so
+                  and watched the quest run out unfulfilled. */}
+              {weeklyQuest.row.kind === 'ship_project' && weeklyQuest.progress < weeklyQuest.row.target && (
+                <button
+                  type="button"
+                  onClick={() => setShipOpen(true)}
+                  className="cut-sm mt-3 flex min-h-tap w-full items-center justify-center px-3 font-mono text-[10px] font-bold uppercase tracking-[0.16em] text-accent-mid"
+                  style={{ border: '1px solid var(--accent)', background: 'rgba(77,163,255,0.08)' }}
+                  data-testid="weekly-ship-open"
+                >
+                  Mark as shipped
+                </button>
+              )}
             </div>
             {/* Side quote overlay text */}
             <div className="absolute right-3 top-3 bottom-3 flex flex-col justify-center text-right border-l border-hair-faint pl-2">
@@ -872,6 +889,15 @@ export function Today() {
             setLearningBlockOpen(false);
             void refresh();
           }}
+        />
+      )}
+
+      {shipOpen && arc && (
+        <ShipSheet
+          today={today}
+          arcId={arc.id}
+          onClose={() => setShipOpen(false)}
+          onShipped={() => void refresh()}
         />
       )}
 

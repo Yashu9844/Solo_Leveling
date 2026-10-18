@@ -2,7 +2,7 @@
 // Follows design/08-MONEY-DISCIPLINE-PLAN.md §7, §9, §10.
 // No I/O, no Dexie, no side effects.
 
-import { parseISO, differenceInCalendarDays, addDays, format } from 'date-fns';
+import { parseISO, differenceInCalendarDays, addDays, addMonths, subMonths, setDate, format } from 'date-fns';
 
 export type CurrencyCode = 'INR' | 'USD' | 'EUR' | 'GBP';
 
@@ -114,6 +114,44 @@ export function unaccountedDays(
     curr = addDays(curr, 1);
   }
   return out;
+}
+
+/** The day of the month the pocket is counted again. */
+export const CYCLE_START_DAY = 5;
+
+/**
+ * The monthly cycle `todayLocalDate` falls in: from the 5th of one month
+ * to the 4th of the next, inclusive.
+ *
+ * The Player is paid and re-counts their pocket on the 5th, so the money
+ * is planned in 5th-to-4th cycles rather than calendar months. Before the
+ * 5th, today still belongs to the cycle that began on the previous
+ * month's 5th.
+ */
+export function cycleBounds(
+  todayLocalDate: string,
+  startDay = CYCLE_START_DAY
+): { start: string; end: string } {
+  const t = parseISO(todayLocalDate);
+  const thisMonthStart = setDate(t, startDay);
+  const start = t.getDate() >= startDay ? thisMonthStart : subMonths(thisMonthStart, 1);
+  const nextStart = addMonths(start, 1);
+  return { start: format(start, 'yyyy-MM-dd'), end: format(addDays(nextStart, -1), 'yyyy-MM-dd') };
+}
+
+/**
+ * Whether the Player should be asked for their pocket now: some treasury
+ * has existed, and none has been started inside the current cycle. (A
+ * first-ever treasury goes through ordinary set-up instead.)
+ */
+export function needsCycleCheckIn(
+  todayLocalDate: string,
+  hasEverHadTreasury: boolean,
+  activePeriodStartDate: string | null
+): boolean {
+  if (!hasEverHadTreasury) return false;
+  if (activePeriodStartDate === null) return true;
+  return activePeriodStartDate < cycleBounds(todayLocalDate).start;
 }
 
 /**

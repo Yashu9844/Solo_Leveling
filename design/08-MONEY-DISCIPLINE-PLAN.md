@@ -26,6 +26,14 @@
 > The `LOCKED` status and `accounting_open_hour` are retired (the field stays in
 > stored events, unread).
 
+> **Amendment 2 — monthly cycle.** The pocket is re-counted on the 5th of every
+> month. Cycles run 5th to 4th (`cycleBounds`). Once a new cycle has begun and no
+> treasury has been started in it, the Today card asks "How much is in your
+> pocket right now?"; the answer becomes the whole spendable treasury from today
+> to the 4th, and the previous period is concluded with its verdict
+> (`startNewCycle`). A treasury set up this cycle is not asked about again until
+> the next 5th. "Not now" hides the question until the next load.
+
 ---
 
 ## 0. One-paragraph summary

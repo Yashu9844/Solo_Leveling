@@ -4,6 +4,7 @@ import { getDsaTopicMastery, getFoundationTopicMastery } from './mastery';
 import { db } from '../db/db';
 import type { MasteryState, EngineConfig, EngineDeps } from '../engine/types';
 import { logLearningBlock } from './build';
+import { logProblem, type LogProblemInput } from './dsa';
 import { foundationMasteryFor } from '../engine/foundations';
 
 export interface TopicMastery {
@@ -95,6 +96,51 @@ export async function logQuickSkillPractice(
   note?: string
 ): Promise<void> {
   await logLearningBlock(today, arcId, topic, minutes, config, deps, note);
+}
+
+export interface QuickDsaPractice {
+  topic: string;
+  title: string;
+  difficulty: LogProblemInput['difficulty'];
+  outcome: LogProblemInput['outcome'];
+  minutes: number;
+  insight?: string;
+}
+
+/**
+ * Practising a DSA topic from the Skills screen logs the problem itself.
+ *
+ * A DSA topic's mastery and the weekly "N problems" quest are both read
+ * from logged problem attempts. This used to write a learning block
+ * instead, which neither of them reads, so practising Arrays moved
+ * nothing — the skill stayed unseen and the weekly count stayed at 0.
+ * Going through logProblem also completes the DSA quest, the same as
+ * logging from Today.
+ */
+export async function logQuickDsaPractice(
+  today: string,
+  arcId: string,
+  practice: QuickDsaPractice,
+  config: EngineConfig,
+  deps: EngineDeps
+): Promise<void> {
+  const title = practice.title.trim();
+  if (!title) throw new Error('A problem name is required.');
+  await logProblem(
+    today,
+    arcId,
+    {
+      slug: title.toLowerCase().replace(/\s+/g, '-'),
+      title,
+      topic: practice.topic,
+      difficulty: practice.difficulty,
+      outcome: practice.outcome,
+      minutes: practice.minutes,
+      insight: practice.insight,
+    },
+    config,
+    deps
+  );
 }
 
 export interface CareerTreeOverview {

@@ -15,7 +15,9 @@ import {
   computeSpendableMinor,
   computeTreasuryLedger,
   canEditDay,
+  cycleBounds,
   deriveTreasuryStatus,
+  needsCycleCheckIn,
   unaccountedDays,
   type AmountMinor,
   type CurrencyCode,
@@ -436,6 +438,106 @@ export async function getActiveOrLatestTreasury(): Promise<TreasuryRow | null> {
   return all[0] ?? null;
 }
 
+export interface CycleCheckIn {
+  /** First and last day of the cycle being started (5th to 4th). */
+  cycleStart: string;
+  cycleEnd: string;
+  /** What was left of the last treasury, as a starting suggestion. */
+  suggestedMinor: AmountMinor;
+}
+
+/**
+ * Money left in a treasury: every non-protected source that is still in,
+ * less every day entered. Used to pre-fill the monthly pocket question.
+ */
+async function remainingOf(treasury: TreasuryRow, tz: string): Promise<AmountMinor> {
+  const [sources, spendings] = await Promise.all([
+    db.treasury_source.where('treasury_id').equals(treasury.id).toArray(),
+    db.daily_spending.where('treasury_id').equals(treasury.id).toArray(),
+  ]);
+  return computeSpendableMinor(
+    sources.map((src) => ({
+      id: src.id,
+      treasuryId: src.treasury_id,
+      name: src.name,
+      amountMinor: src.amount_minor,
+      protected: src.protected,
+      active: src.active,
+      createdAtLocalDate: sourceStartDate(src, treasury, tz),
+      withdrawnAtLocalDate: src.withdrawn_at ? localDate(src.withdrawn_at, tz) : undefined,
+    })),
+    spendings.map((d) => ({
+      localDate: d.local_date,
+      treasuryId: d.treasury_id,
+      amountMinor: d.amount_minor,
+      registeredAt: d.registered_at,
+      corrected: d.corrected,
+    })),
+    '9999-12-31'
+  );
+}
+
+export async function getCycleCheckIn(
+  instantIso?: string,
+  deps: EngineDeps = realDeps
+): Promise<CycleCheckIn | null> {
+  const profile = await getProfile();
+  const tz = profile?.arc_timezone || DEFAULT_CONFIG.arc.timezone;
+  const today = localDate(instantIso || deps.now(), tz);
+
+  const all = await db.treasury.toArray();
+  const active = all.find((t) => t.status === 'active') ?? null;
+  // A treasury counts as started when it was set up, not only when its
+  // period says it began: someone who sets up today with a period that
+  // starts on the 1st has just told the System their pocket, and must not
+  // be asked again before the next 5th.
+  const activeStartedOn = active
+    ? [active.period_start_date, localDate(active.created_at, tz)].sort()[1] ?? active.period_start_date
+    : null;
+  if (!needsCycleCheckIn(today, all.length > 0, activeStartedOn)) return null;
+
+  const latest = active ?? [...all].sort((a, b) => b.created_at.localeCompare(a.created_at))[0];
+  const left = latest ? await remainingOf(latest, tz) : 0;
+  const { start, end } = cycleBounds(today);
+  return { cycleStart: start, cycleEnd: end, suggestedMinor: Math.max(left, 0) };
+}
+
+/**
+ * Start the new monthly cycle from the pocket the Player just counted.
+ *
+ * The money they say they hold is the whole spendable treasury from today
+ * to the 4th, so deduction starts from that figure — not from whatever the
+ * previous treasury's arithmetic says should be left. The old period is
+ * concluded properly (with its verdict) rather than dropped.
+ */
+export async function startNewCycle(
+  pocketMinor: AmountMinor,
+  deps: EngineDeps = realDeps
+): Promise<string> {
+  if (!Number.isSafeInteger(pocketMinor) || pocketMinor < 0) {
+    throw new TreasuryEntryError('Enter the amount in your pocket, zero or more.');
+  }
+  const profile = await getProfile();
+  const tz = profile?.arc_timezone || DEFAULT_CONFIG.arc.timezone;
+  const today = localDate(deps.now(), tz);
+
+  const active = await getActiveTreasury();
+  if (active) {
+    const left = await remainingOf(active, tz);
+    await concludeTreasuryPeriod(active.id, today, left, left >= 0 ? 'SURVIVED' : 'EXHAUSTED', deps);
+  }
+
+  return createTreasury(
+    {
+      periodStartDate: today,
+      periodEndDate: cycleBounds(today).end,
+      currency: 'INR',
+      sources: [{ name: 'Pocket', amountMinor: pocketMinor, protected: false }],
+    },
+    deps
+  );
+}
+
 export interface TreasurySummary {
   treasury: TreasuryRow | null;
   sources: TreasurySourceRow[];
@@ -449,6 +551,8 @@ export interface TreasurySummary {
   entries: { localDate: string; amountMinor: AmountMinor }[];
   /** Past days of the period with no entry, oldest first. */
   unaccounted: string[];
+  /** Set when a new monthly cycle has begun and the pocket has not been re-counted. */
+  cycleCheckIn: CycleCheckIn | null;
   justConcludedVerdict?: 'SURVIVED' | 'EXHAUSTED';
 }
 
@@ -475,6 +579,7 @@ export async function getTreasurySummary(
       statusResult: { status: 'UNREGISTERED' },
       entries: [],
       unaccounted: [],
+      cycleCheckIn: await getCycleCheckIn(now, deps),
     };
   }
 
@@ -544,6 +649,7 @@ export async function getTreasurySummary(
       today,
       dailySpendings.map((d) => d.local_date)
     ),
+    cycleCheckIn: await getCycleCheckIn(now, deps),
     justConcludedVerdict,
   };
 }

@@ -3,7 +3,7 @@ import { CaretLeft, CaretRight } from '@phosphor-icons/react';
 import { format, parseISO } from 'date-fns';
 import { MeterBar, PrimaryButton, QuietButton, SystemWindow } from '../kit';
 import { type TreasuryCondition } from '../../engine/treasuryVoicePack';
-import { getTreasurySummary, setDaySpending, type TreasurySummary } from '../../store/treasury';
+import { getTreasurySummary, setDaySpending, startNewCycle, type TreasurySummary } from '../../store/treasury';
 import { computeAllowanceMinor } from '../../engine/treasury';
 import { selectTreasuryMessage } from '../../engine/treasuryVoice';
 
@@ -25,6 +25,11 @@ export const TreasuryCard: React.FC<TreasuryCardProps> = ({ onOpenSetup, onOpenH
   const [selectedDate, setSelectedDate] = useState<string | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  // Monthly pocket check-in (the 5th). Dismissal lasts until the next
+  // load, so the question comes back rather than being silenced for good.
+  const [pocketInput, setPocketInput] = useState('');
+  const [checkInDismissed, setCheckInDismissed] = useState(false);
+  const pocketPrefilled = useRef(false);
 
   // Held in a ref so the polling effect below runs ONCE. It used to list
   // `onSurvived` as a dependency, and Today passes a fresh arrow function
@@ -78,6 +83,100 @@ export const TreasuryCard: React.FC<TreasuryCardProps> = ({ onOpenSetup, onOpenH
     setSpendInputRupees(storedMinor === null ? '' : String(storedMinor / 100));
     setError(null);
   }, [day, syncKey, storedMinor]);
+
+  const checkIn = summary?.cycleCheckIn ?? null;
+  useEffect(() => {
+    if (checkIn && !pocketPrefilled.current) {
+      pocketPrefilled.current = true;
+      setPocketInput(checkIn.suggestedMinor > 0 ? String(checkIn.suggestedMinor / 100) : '');
+    }
+  }, [checkIn]);
+
+  const handleStartCycle = async () => {
+    const rupees = pocketInput.trim() === '' ? NaN : Number(pocketInput);
+    const minor = Number.isFinite(rupees) ? Math.round(rupees * 100) : NaN;
+    if (!Number.isFinite(minor) || minor < 0) {
+      setError('Enter the amount in your pocket.');
+      return;
+    }
+    try {
+      setIsSubmitting(true);
+      setError(null);
+      await startNewCycle(minor);
+      pocketPrefilled.current = false;
+      setSelectedDate(null);
+      await getTreasurySummary().then(setSummary);
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Could not start the new cycle.');
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
+
+  if (checkIn && !checkInDismissed) {
+    const range = `${format(parseISO(checkIn.cycleStart), 'd MMM')} – ${format(parseISO(checkIn.cycleEnd), 'd MMM')}`;
+    return (
+      <div className="mt-3" data-testid="treasury-card">
+        <SystemWindow arrive className="px-4 py-4">
+          <div data-testid="cycle-checkin">
+            <Heading label="New cycle" />
+            <p className="mt-3 font-mono text-[10px] font-bold uppercase tracking-[0.18em] text-ink-700">
+              {range}
+            </p>
+            <p className="mt-1 text-sm text-ink-100">How much is in your pocket right now?</p>
+            <p className="mt-1 text-xs text-faint">
+              Spending is counted down from this amount until the 4th.
+            </p>
+
+            <div className="mt-3 flex items-center gap-2">
+              <div className="init-slot min-w-0 flex-1 px-3">
+                <span aria-hidden className="mr-1 shrink-0 font-mono text-sm text-ink-700">₹</span>
+                <input
+                  type="number"
+                  inputMode="decimal"
+                  step="0.01"
+                  min="0"
+                  placeholder="0.00"
+                  aria-label="Money in your pocket"
+                  value={pocketInput}
+                  onChange={(e) => setPocketInput(e.target.value)}
+                  onKeyDown={(e) => {
+                    if (e.key === 'Enter') void handleStartCycle();
+                  }}
+                  className="tabular-nums"
+                  data-testid="cycle-pocket-input"
+                />
+              </div>
+              <PrimaryButton
+                size="md"
+                fullWidth={false}
+                className="shrink-0"
+                onClick={handleStartCycle}
+                disabled={isSubmitting || pocketInput.trim() === ''}
+                data-testid="cycle-start-button"
+              >
+                Start
+              </PrimaryButton>
+            </div>
+
+            {error && (
+              <p role="alert" className="mt-2 text-xs text-state-alert">
+                {error}
+              </p>
+            )}
+
+            <QuietButton
+              onClick={() => setCheckInDismissed(true)}
+              className="-ml-2 mt-1 text-xs"
+              data-testid="cycle-later"
+            >
+              Not now
+            </QuietButton>
+          </div>
+        </SystemWindow>
+      </div>
+    );
+  }
 
   if (!summary || !summary.treasury) {
     return (
@@ -322,7 +421,7 @@ export const TreasuryCard: React.FC<TreasuryCardProps> = ({ onOpenSetup, onOpenH
   );
 };
 
-function Heading() {
+function Heading({ label = 'Treasury' }: { label?: string }) {
   return (
     <span className="flex min-w-0 items-center gap-2.5">
       <span
@@ -331,7 +430,7 @@ function Heading() {
         style={{ background: 'var(--accent-core)', boxShadow: 'var(--glow-sm)' }}
       />
       <span className="font-mono text-[10px] font-bold uppercase tracking-[0.22em] text-accent-mid">
-        ⟨ Treasury ⟩
+        ⟨ {label} ⟩
       </span>
     </span>
   );

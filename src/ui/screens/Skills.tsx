@@ -26,6 +26,7 @@ import {
   getAiSkillsOverview,
   getCareerTreeOverview,
   logQuickSkillPractice,
+  logQuickDsaPractice,
   type TopicMastery,
   type CareerTreeOverview,
 } from '../../store/skills';
@@ -35,6 +36,7 @@ import {
   logInterviewBenchmark,
 } from '../../store/training';
 import type { MasteryState, Rank } from '../../engine/types';
+import { DSA_TOPICS } from '../../engine/dsa';
 import {
   ArtLayer,
   DayMeta,
@@ -977,14 +979,35 @@ function QuickPracticeModal({
   const [minutes, setMinutes] = useState(30);
   const [note, setNote] = useState('');
   const [submitting, setSubmitting] = useState(false);
+  // A DSA topic's mastery, and the weekly "N problems" quest, are both
+  // counted from logged problem attempts — not from a free-form practice
+  // block. Practising a DSA topic used to write a learning block, which
+  // neither of them reads, so the Skills bar never moved and the weekly
+  // progress stayed at 0 however much was done. A DSA topic now logs the
+  // problem itself.
+  const isDsa = (DSA_TOPICS as readonly string[]).includes(topic);
+  const [problemName, setProblemName] = useState('');
+  const [difficulty, setDifficulty] = useState<'E' | 'M' | 'H'>('M');
+  const [outcome, setOutcome] = useState<'first_attempt' | 'hint' | 'editorial' | 'unsolved'>('first_attempt');
+  const canSubmit = !isDsa || problemName.trim().length > 0;
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
-    if (submitting) return;
+    if (submitting || !canSubmit) return;
     setSubmitting(true);
     try {
       const todayStr = localDate(realDeps.now(), DEFAULT_CONFIG.arc.timezone, DEFAULT_CONFIG.arc.dayBoundaryHour);
-      await logQuickSkillPractice(todayStr, arcId, topic, minutes, DEFAULT_CONFIG, realDeps, note || undefined);
+      if (isDsa) {
+        await logQuickDsaPractice(
+          todayStr,
+          arcId,
+          { topic, title: problemName, difficulty, outcome, minutes, insight: note || undefined },
+          DEFAULT_CONFIG,
+          realDeps
+        );
+      } else {
+        await logQuickSkillPractice(todayStr, arcId, topic, minutes, DEFAULT_CONFIG, realDeps, note || undefined);
+      }
       onSaved();
     } catch {
       alert('Could not save practice trial.');
@@ -994,7 +1017,12 @@ function QuickPracticeModal({
   }
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-4" style={{ background: 'rgba(4, 7, 13, 0.95)' }}>
+    <div className="fixed inset-0 z-50 overflow-y-auto p-4" style={{ background: 'rgba(4, 7, 13, 0.95)' }}>
+      {/* Centred when it fits, scrollable when it does not. A flex-centred
+          modal taller than the screen clips its own header and its submit
+          button off both ends with no way to reach them — which the DSA
+          fields made the normal case on a phone. */}
+      <div className="flex min-h-full items-center justify-center">
       <motion.div
         initial={{ opacity: 0, scale: 0.94, y: 20 }}
         animate={{ opacity: 1, scale: 1, y: 0 }}
@@ -1026,6 +1054,79 @@ function QuickPracticeModal({
         </div>
 
         <form onSubmit={(e) => void handleSubmit(e)}>
+          {isDsa && (
+            <>
+              <div className="mb-4">
+                <label className="block text-[10px] font-mono font-bold uppercase tracking-widest text-accent-mid mb-2">
+                  PROBLEM SOLVED
+                </label>
+                <input
+                  type="text"
+                  value={problemName}
+                  onChange={(e) => setProblemName(e.target.value)}
+                  placeholder="e.g. Two Sum"
+                  aria-label="Problem name"
+                  className="w-full min-h-tap rounded-md bg-[#070e1a] border border-accent/40 px-3 text-xs font-mono text-ink-100 placeholder:text-ink-700 focus:outline-none focus:border-accent"
+                />
+              </div>
+
+              <div className="mb-4">
+                <label className="block text-[10px] font-mono font-bold uppercase tracking-widest text-accent-mid mb-2">
+                  DIFFICULTY
+                </label>
+                <div className="grid grid-cols-3 gap-2">
+                  {(['E', 'M', 'H'] as const).map((d) => (
+                    <button
+                      key={d}
+                      type="button"
+                      onClick={() => setDifficulty(d)}
+                      aria-pressed={difficulty === d}
+                      className={[
+                        'min-h-tap cut-sm text-xs font-mono font-bold border transition-all',
+                        difficulty === d
+                          ? 'bg-accent-deep border-accent text-ink-100 shadow-[0_0_14px_rgba(77,163,255,0.5)] glow-text'
+                          : 'bg-[#0c1626] border-hair-faint text-ink-500 hover:border-accent/40 hover:text-ink-300',
+                      ].join(' ')}
+                    >
+                      {d === 'E' ? 'EASY' : d === 'M' ? 'MEDIUM' : 'HARD'}
+                    </button>
+                  ))}
+                </div>
+              </div>
+
+              <div className="mb-4">
+                <label className="block text-[10px] font-mono font-bold uppercase tracking-widest text-accent-mid mb-2">
+                  HOW IT WENT
+                </label>
+                <div className="grid grid-cols-2 gap-2">
+                  {(
+                    [
+                      ['first_attempt', 'FIRST ATTEMPT'],
+                      ['hint', 'WITH A HINT'],
+                      ['editorial', 'READ EDITORIAL'],
+                      ['unsolved', 'UNSOLVED'],
+                    ] as const
+                  ).map(([value, label]) => (
+                    <button
+                      key={value}
+                      type="button"
+                      onClick={() => setOutcome(value)}
+                      aria-pressed={outcome === value}
+                      className={[
+                        'min-h-tap cut-sm px-1 text-[10px] font-mono font-bold border transition-all',
+                        outcome === value
+                          ? 'bg-accent-deep border-accent text-ink-100 shadow-[0_0_14px_rgba(77,163,255,0.5)] glow-text'
+                          : 'bg-[#0c1626] border-hair-faint text-ink-500 hover:border-accent/40 hover:text-ink-300',
+                      ].join(' ')}
+                    >
+                      {label}
+                    </button>
+                  ))}
+                </div>
+              </div>
+            </>
+          )}
+
           <div className="mb-4">
             <label className="block text-[10px] font-mono font-bold uppercase tracking-widest text-accent-mid mb-2">
               PRACTICE DURATION (MINUTES)
@@ -1063,13 +1164,13 @@ function QuickPracticeModal({
 
           <div className="p-3 mb-5 rounded-md border border-emerald-500/40 bg-[#051a12] text-[11px] font-mono text-emerald-300 flex items-center gap-2 shadow-[0_0_10px_rgba(52,211,153,0.2)]">
             <Check size={14} className="text-emerald-400 shrink-0" />
-            <span>This practice will auto-fill your Skill level and sync with Today&rsquo;s Learning log!</span>
+            <span>{isDsa ? 'This is logged as a solved problem: it raises this skill and counts toward the weekly quest.' : 'This practice will auto-fill your Skill level and sync with Today&rsquo;s Learning log!'}</span>
           </div>
 
           <div className="flex gap-2">
             <PrimaryButton
               type="submit"
-              disabled={submitting}
+              disabled={submitting || !canSubmit}
               className="flex-1 font-mono uppercase font-bold tracking-wider shadow-[0_0_20px_rgba(77,163,255,0.5)]"
             >
               {submitting ? 'LOGGING...' : '⚡ RECORD PRACTICE & ADVANCE'}
@@ -1077,6 +1178,7 @@ function QuickPracticeModal({
           </div>
         </form>
       </motion.div>
+      </div>
     </div>
   );
 }

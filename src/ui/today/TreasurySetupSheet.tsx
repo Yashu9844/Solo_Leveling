@@ -2,7 +2,8 @@ import React, { useState } from 'react';
 import { Sheet } from '../kit/Sheet';
 import { PrimaryButton, QuietButton } from '../kit';
 import { createTreasury } from '../../store/treasury';
-import { format, addDays } from 'date-fns';
+import { format } from 'date-fns';
+import { cycleBounds } from '../../engine/treasury';
 
 interface TreasurySetupSheetProps {
   isOpen: boolean;
@@ -22,7 +23,9 @@ export const TreasurySetupSheet: React.FC<TreasurySetupSheetProps> = ({
   onSuccess,
 }) => {
   const todayStr = format(new Date(), 'yyyy-MM-dd');
-  const defaultEndStr = format(addDays(new Date(), 29), 'yyyy-MM-dd');
+  // The pocket is re-counted on the 5th, so a new treasury runs to the
+  // 4th rather than for an arbitrary 30 days.
+  const defaultEndStr = cycleBounds(todayStr).end;
 
   const [periodStartDate, setPeriodStartDate] = useState(todayStr);
   const [periodEndDate, setPeriodEndDate] = useState(defaultEndStr);

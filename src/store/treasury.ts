@@ -339,7 +339,10 @@ function countedOn(t: TreasuryRow): string {
  * through a cycle can still log the days of that cycle that came before —
  * they are kept as a record, and (being before the count) not deducted.
  */
-export function editableFrom(t: TreasuryRow): string {
+export function editableFrom(t: TreasuryRow, tz: string): string {
+  // A start the Player typed in that lies before the day they set the
+  // treasury up was a deliberate choice: nothing earlier belongs to it.
+  if (t.period_start_date < localDate(t.created_at, tz)) return t.period_start_date;
   const cycleStart = cycleBounds(countedOn(t)).start;
   return cycleStart < t.period_start_date ? cycleStart : t.period_start_date;
 }
@@ -388,7 +391,7 @@ export async function setDaySpending(
   const profile = await getProfile();
   const tz = profile?.arc_timezone || DEFAULT_CONFIG.arc.timezone;
   const today = localDate(deps.now(), tz);
-  if (!canEditDay(localDateStr, editableFrom(treasury), treasury.period_end_date, today)) {
+  if (!canEditDay(localDateStr, editableFrom(treasury, tz), treasury.period_end_date, today)) {
     throw new TreasuryEntryError(
       localDateStr > today
         ? 'A day can only be accounted once it has begun.'
@@ -678,7 +681,7 @@ export async function getTreasurySummary(
       today,
       dailySpendings.map((d) => d.local_date)
     ),
-    editableFrom: editableFrom(treasury),
+    editableFrom: editableFrom(treasury, tz),
     cycleCheckIn: await getCycleCheckIn(now, deps),
     justConcludedVerdict,
   };
